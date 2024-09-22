@@ -1,0 +1,34 @@
+[
+   {
+      "type": "FILE_OUTSIDE_ID",
+      "files": [
+         {
+            "name": "File Outside Area",
+            "nested_under": []
+         }
+      ]
+   },
+   {
+      "type": "FILE_OUTSIDE_ID",
+      "files": [
+         {
+            "name": "File Outside Category",
+            "nested_under": [
+               "00-09 System"
+            ]
+         }
+      ]
+   },
+   {
+      "type": "FILE_OUTSIDE_ID",
+      "files": [
+         {
+            "name": "File Outside Id",
+            "nested_under": [
+               "00-09 System",
+               "01 System Stuff"
+            ]
+         }
+      ]
+   }
+]
