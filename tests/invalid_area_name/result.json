@@ -1,0 +1,20 @@
+[
+   {
+      "type": "INVALID_AREA_NAME",
+      "files": [
+         {
+            "name": "10-18 Malformed",
+            "nested_under": []
+         }
+      ]
+   },
+   {
+      "type": "INVALID_AREA_NAME",
+      "files": [
+         {
+            "name": "No ID",
+            "nested_under": []
+         }
+      ]
+   }
+]
