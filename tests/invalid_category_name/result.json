@@ -1,0 +1,24 @@
+[
+   {
+      "type": "INVALID_CATEGORY_NAME",
+      "files": [
+         {
+            "name": "2 Malformed",
+            "nested_under": [
+               "00-09 System"
+            ]
+         }
+      ]
+   },
+   {
+      "type": "INVALID_CATEGORY_NAME",
+      "files": [
+         {
+            "name": "No ID",
+            "nested_under": [
+               "00-09 System"
+            ]
+         }
+      ]
+   }
+]
