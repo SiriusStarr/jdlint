@@ -1,0 +1,24 @@
+[
+   {
+      "error": {
+         "type": "DUPLICATE_ID",
+         "id": "01.00"
+      },
+      "files": [
+         {
+            "name": "01.00 A Reuse",
+            "nested_under": [
+               "00-09 System",
+               "01 System Stuff"
+            ]
+         },
+         {
+            "name": "01.00 An ID",
+            "nested_under": [
+               "00-09 System",
+               "01 System Stuff"
+            ]
+         }
+      ]
+   }
+]
