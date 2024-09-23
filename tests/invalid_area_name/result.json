@@ -1,6 +1,6 @@
 [
    {
-      "type": "INVALID_AREA_NAME",
+      "error": "INVALID_AREA_NAME",
       "files": [
          {
             "name": "10-18 Malformed",
@@ -9,7 +9,7 @@
       ]
    },
    {
-      "type": "INVALID_AREA_NAME",
+      "error": "INVALID_AREA_NAME",
       "files": [
          {
             "name": "No ID",

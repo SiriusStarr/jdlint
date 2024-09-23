@@ -1,6 +1,6 @@
 [
    {
-      "type": "FILE_OUTSIDE_ID",
+      "error": "FILE_OUTSIDE_ID",
       "files": [
          {
             "name": "File Outside Area",
@@ -9,7 +9,7 @@
       ]
    },
    {
-      "type": "FILE_OUTSIDE_ID",
+      "error": "FILE_OUTSIDE_ID",
       "files": [
          {
             "name": "File Outside Category",
@@ -20,7 +20,7 @@
       ]
    },
    {
-      "type": "FILE_OUTSIDE_ID",
+      "error": "FILE_OUTSIDE_ID",
       "files": [
          {
             "name": "File Outside Id",

@@ -1,6 +1,6 @@
 [
    {
-      "type": "INVALID_CATEGORY_NAME",
+      "error": "INVALID_CATEGORY_NAME",
       "files": [
          {
             "name": "2 Malformed",
@@ -11,7 +11,7 @@
       ]
    },
    {
-      "type": "INVALID_CATEGORY_NAME",
+      "error": "INVALID_CATEGORY_NAME",
       "files": [
          {
             "name": "No ID",

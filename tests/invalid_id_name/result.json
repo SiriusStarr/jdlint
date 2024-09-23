@@ -1,6 +1,6 @@
 [
    {
-      "type": "INVALID_ID_NAME",
+      "error": "INVALID_ID_NAME",
       "files": [
          {
             "name": "01.1 Malformed",
@@ -12,7 +12,7 @@
       ]
    },
    {
-      "type": "INVALID_ID_NAME",
+      "error": "INVALID_ID_NAME",
       "files": [
          {
             "name": "No ID",
