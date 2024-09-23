@@ -1,7 +1,7 @@
 [
    {
       "error": {
-         "type": "ID_NOT_IN_INDEX",
+         "type": "ID_NOT_IN_JDEX",
          "id": "01.02"
       },
       "files": [
