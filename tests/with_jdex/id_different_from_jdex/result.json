@@ -1,0 +1,18 @@
+[
+   {
+      "error": {
+         "type": "ID_DIFFERENT_FROM_JDEX",
+         "id": "01.02",
+         "jdex_name": "01.02 A Name"
+      },
+      "files": [
+         {
+            "name": "01.02 A Naem",
+            "nested_under": [
+               "00-09 System",
+               "01 System Stuff"
+            ]
+         }
+      ]
+   }
+]
