@@ -1,0 +1,17 @@
+[
+   {
+      "error": {
+         "type": "NONEMPTY_INBOX",
+         "num_items": 2
+      },
+      "files": [
+         {
+            "name": "01.01 Inbox",
+            "nested_under": [
+               "00-09 System",
+               "01 System Stuff"
+            ]
+         }
+      ]
+   }
+]
