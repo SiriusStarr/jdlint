@@ -1,0 +1,18 @@
+[
+   {
+      "error": {
+         "area": "0",
+         "type": "DUPLICATE_AREA"
+      },
+      "files": [
+         {
+            "name": "00-09 A Reuse",
+            "nested_under": []
+         },
+         {
+            "name": "00-09 An Area",
+            "nested_under": []
+         }
+      ]
+   }
+]

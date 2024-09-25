@@ -12,6 +12,8 @@ clean.
     * [I Am A Robot And Want Something Machine-Readable](#i-am-a-robot-and-want-something-machine-readable)
   * [Rules Checked](#rules-checked)
     * [`CATEGORY_IN_WRONG_AREA`](#category_in_wrong_area)
+    * [`DUPLICATE_AREA`](#duplicate_area)
+    * [`DUPLICATE_CATEGORY`](#duplicate_category)
     * [`DUPLICATE_ID`](#duplicate_id)
     * [`FILE_OUTSIDE_ID`](#file_outside_id)
     * [`ID_DIFFERENT_FROM_JDEX`](#id_different_from_jdex)
@@ -89,8 +91,35 @@ A category that, by its number, has been put in the wrong area, e.g.
 └── 00-09 System
     ├── 01 System Stuff
     │   └── 01.00 An ID
-    └── 11 Whoops <-- This is in the wrong area
+    └── 11 Whoops       <-- This is in the wrong area
         └── 11.01 Inbox
+```
+
+### `DUPLICATE_AREA`
+
+An area that has been used multiple times, e.g.
+
+```text
+.
+├── 00-09 An Area           <-- 00-09 has been used twice!
+│   └── 01 A Category
+│       └── 01.00 An ID
+└── 00-09 A Reuse           <-- 00-09 has been used twice!
+    └── 02 Another Category
+        └── 02.00 An ID
+```
+
+### `DUPLICATE_CATEGORY`
+
+A category that has been used multiple times, e.g.
+
+```text
+.
+└── 00-09 System
+    ├── 01 A Category        <-- 01 has been used twice!
+    │   └── 01.00 An ID
+    └── 01 A Reuse           <-- 01 has been used twice!
+        └── 01.02 Another ID
 ```
 
 ### `DUPLICATE_ID`
@@ -132,7 +161,7 @@ An ID with a differently-named JDex entry, e.g.
 │   └── 00-09 System
 │       └── 01 System Stuff
 │           ├── 01.00 An ID
-│           ├── 01.02 A Naem <-- This is a typo, oops!
+│           ├── 01.02 A Naem     <-- This is a typo, oops!
 │           └── 01.03 Another ID
 └── jdex
     ├── 01.00 An ID.md
@@ -179,8 +208,8 @@ like, e.g.
 ├── 00-09 System
 │   └── 01 System Stuff
 │       └── 01.00 An ID
-├── 10-18 Malformed <-- This has numbers that were typo'd.
-└── No ID           <-- This doesn't have numbers at all
+├── 10-18 Malformed     <-- This has numbers that were typo'd.
+└── No ID               <-- This doesn't have numbers at all
 ```
 
 ### `INVALID_CATEGORY_NAME`
@@ -193,8 +222,8 @@ like, e.g.
 └── 00-09 System
     ├── 01 System Stuff
     │   └── 01.00 An ID
-    ├── 2 Malformed <-- This has numbers that were typo'd.
-    └── No ID       <-- This doesn't have numbers at all
+    ├── 2 Malformed     <-- This has numbers that were typo'd.
+    └── No ID           <-- This doesn't have numbers at all
 ```
 
 ### `INVALID_ID_NAME`
