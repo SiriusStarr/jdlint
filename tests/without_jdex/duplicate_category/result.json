@@ -1,22 +1,25 @@
-[
-   {
-      "error": {
-         "type": "DUPLICATE_CATEGORY",
-         "category": "01"
-      },
-      "files": [
-         {
-            "name": "01 A Category",
-            "nested_under": [
-               "00-09 System"
-            ]
+{
+   "errors": [
+      {
+         "error": {
+            "type": "DUPLICATE_CATEGORY",
+            "category": "01"
          },
-         {
-            "name": "01 A Reuse",
-            "nested_under": [
-               "00-09 System"
-            ]
-         }
-      ]
-   }
-]
+         "files": [
+            {
+               "name": "01 A Category",
+               "nested_under": [
+                  "00-09 System"
+               ]
+            },
+            {
+               "name": "01 A Reuse",
+               "nested_under": [
+                  "00-09 System"
+               ]
+            }
+         ]
+      }
+   ],
+   "jdex_errors": []
+}

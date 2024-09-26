@@ -1,34 +1,37 @@
-[
-   {
-      "error": "FILE_OUTSIDE_ID",
-      "files": [
-         {
-            "name": "File Outside Area",
-            "nested_under": []
-         }
-      ]
-   },
-   {
-      "error": "FILE_OUTSIDE_ID",
-      "files": [
-         {
-            "name": "File Outside Category",
-            "nested_under": [
-               "00-09 System"
-            ]
-         }
-      ]
-   },
-   {
-      "error": "FILE_OUTSIDE_ID",
-      "files": [
-         {
-            "name": "File Outside Id",
-            "nested_under": [
-               "00-09 System",
-               "01 System Stuff"
-            ]
-         }
-      ]
-   }
-]
+{
+   "errors": [
+      {
+         "error": "FILE_OUTSIDE_ID",
+         "files": [
+            {
+               "name": "File Outside Area",
+               "nested_under": []
+            }
+         ]
+      },
+      {
+         "error": "FILE_OUTSIDE_ID",
+         "files": [
+            {
+               "name": "File Outside Category",
+               "nested_under": [
+                  "00-09 System"
+               ]
+            }
+         ]
+      },
+      {
+         "error": "FILE_OUTSIDE_ID",
+         "files": [
+            {
+               "name": "File Outside Id",
+               "nested_under": [
+                  "00-09 System",
+                  "01 System Stuff"
+               ]
+            }
+         ]
+      }
+   ],
+   "jdex_errors": []
+}

@@ -1,18 +1,21 @@
-[
-   {
-      "error": {
-         "type": "ID_IN_WRONG_CATEGORY",
-         "id_ac": "11",
-         "actual_ac": "01"
-      },
-      "files": [
-         {
-            "name": "11.01 Whoops",
-            "nested_under": [
-               "00-09 System",
-               "01 System Stuff"
-            ]
-         }
-      ]
-   }
-]
+{
+   "errors": [
+      {
+         "error": {
+            "type": "ID_IN_WRONG_CATEGORY",
+            "id_ac": "11",
+            "actual_ac": "01"
+         },
+         "files": [
+            {
+               "name": "11.01 Whoops",
+               "nested_under": [
+                  "00-09 System",
+                  "01 System Stuff"
+               ]
+            }
+         ]
+      }
+   ],
+   "jdex_errors": []
+}

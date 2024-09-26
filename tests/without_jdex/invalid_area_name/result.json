@@ -1,20 +1,23 @@
-[
-   {
-      "error": "INVALID_AREA_NAME",
-      "files": [
-         {
-            "name": "10-18 Malformed",
-            "nested_under": []
-         }
-      ]
-   },
-   {
-      "error": "INVALID_AREA_NAME",
-      "files": [
-         {
-            "name": "No ID",
-            "nested_under": []
-         }
-      ]
-   }
-]
+{
+   "errors": [
+      {
+         "error": "INVALID_AREA_NAME",
+         "files": [
+            {
+               "name": "10-18 Malformed",
+               "nested_under": []
+            }
+         ]
+      },
+      {
+         "error": "INVALID_AREA_NAME",
+         "files": [
+            {
+               "name": "No ID",
+               "nested_under": []
+            }
+         ]
+      }
+   ],
+   "jdex_errors": []
+}

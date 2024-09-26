@@ -1,24 +1,27 @@
-[
-   {
-      "error": "INVALID_CATEGORY_NAME",
-      "files": [
-         {
-            "name": "2 Malformed",
-            "nested_under": [
-               "00-09 System"
-            ]
-         }
-      ]
-   },
-   {
-      "error": "INVALID_CATEGORY_NAME",
-      "files": [
-         {
-            "name": "No ID",
-            "nested_under": [
-               "00-09 System"
-            ]
-         }
-      ]
-   }
-]
+{
+   "errors": [
+      {
+         "error": "INVALID_CATEGORY_NAME",
+         "files": [
+            {
+               "name": "2 Malformed",
+               "nested_under": [
+                  "00-09 System"
+               ]
+            }
+         ]
+      },
+      {
+         "error": "INVALID_CATEGORY_NAME",
+         "files": [
+            {
+               "name": "No ID",
+               "nested_under": [
+                  "00-09 System"
+               ]
+            }
+         ]
+      }
+   ],
+   "jdex_errors": []
+}

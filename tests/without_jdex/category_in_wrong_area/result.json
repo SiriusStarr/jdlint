@@ -1,17 +1,20 @@
-[
-   {
-      "error": {
-         "type": "CATEGORY_IN_WRONG_AREA",
-         "cat_area": "1",
-         "actual_area": "0"
-      },
-      "files": [
-         {
-            "name": "11 Whoops",
-            "nested_under": [
-               "00-09 System"
-            ]
-         }
-      ]
-   }
-]
+{
+   "errors": [
+      {
+         "error": {
+            "type": "CATEGORY_IN_WRONG_AREA",
+            "cat_area": "1",
+            "actual_area": "0"
+         },
+         "files": [
+            {
+               "name": "11 Whoops",
+               "nested_under": [
+                  "00-09 System"
+               ]
+            }
+         ]
+      }
+   ],
+   "jdex_errors": []
+}

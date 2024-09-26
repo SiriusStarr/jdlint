@@ -1,18 +1,21 @@
-[
-   {
-      "error": {
-         "area": "0",
-         "type": "DUPLICATE_AREA"
-      },
-      "files": [
-         {
-            "name": "00-09 A Reuse",
-            "nested_under": []
+{
+   "errors": [
+      {
+         "error": {
+            "area": "0",
+            "type": "DUPLICATE_AREA"
          },
-         {
-            "name": "00-09 An Area",
-            "nested_under": []
-         }
-      ]
-   }
-]
+         "files": [
+            {
+               "name": "00-09 A Reuse",
+               "nested_under": []
+            },
+            {
+               "name": "00-09 An Area",
+               "nested_under": []
+            }
+         ]
+      }
+   ],
+   "jdex_errors": []
+}

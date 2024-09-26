@@ -1,17 +1,20 @@
-[
-   {
-      "error": {
-         "type": "ID_NOT_IN_JDEX",
-         "id": "01.02"
-      },
-      "files": [
-         {
-            "name": "01.02 Missing ID",
-            "nested_under": [
-               "00-09 System",
-               "01 System Stuff"
-            ]
-         }
-      ]
-   }
-]
+{
+   "errors": [
+      {
+         "error": {
+            "type": "ID_NOT_IN_JDEX",
+            "id": "01.02"
+         },
+         "files": [
+            {
+               "name": "01.02 Missing ID",
+               "nested_under": [
+                  "00-09 System",
+                  "01 System Stuff"
+               ]
+            }
+         ]
+      }
+   ],
+   "jdex_errors": []
+}
