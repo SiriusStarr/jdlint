@@ -1,0 +1,20 @@
+{
+   "errors": [
+      {
+         "error": {
+            "type": "CATEGORY_DIFFERENT_FROM_JDEX",
+            "area": "01",
+            "jdex_name": "01 System Stuff"
+         },
+         "files": [
+            {
+               "name": "01 System Stuf",
+               "nested_under": [
+                  "00-09 System"
+               ]
+            }
+         ]
+      }
+   ],
+   "jdex_errors": []
+}

@@ -1,0 +1,18 @@
+{
+   "errors": [
+      {
+         "error": {
+            "type": "AREA_DIFFERENT_FROM_JDEX",
+            "area": "0",
+            "jdex_name": "00-09 System"
+         },
+         "files": [
+            {
+               "name": "00-09 Systme",
+               "nested_under": []
+            }
+         ]
+      }
+   ],
+   "jdex_errors": []
+}
