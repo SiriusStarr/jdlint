@@ -2,16 +2,14 @@
    "errors": [
       {
          "error": {
-            "type": "CATEGORY_DIFFERENT_FROM_JDEX",
-            "area": "01",
-            "jdex_name": "01 System Stuff"
+            "type": "AREA_DIFFERENT_FROM_JDEX",
+            "area": "0",
+            "jdex_name": "00-09 System"
          },
          "files": [
             {
-               "name": "01 System Stuf",
-               "nested_under": [
-                  "00-09 System"
-               ]
+               "name": "00-09 Systme",
+               "nested_under": []
             }
          ]
       }
