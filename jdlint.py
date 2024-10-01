@@ -35,3 +35,23 @@ class AreaNotInJDex:
             explanation="An area was found in your files that is missing from your JDex.",
             fix="Go add a corresponding entry to your JDex, or delete this if it's unused.",
         )
+
+
+@dataclass(frozen=True)
+class CategoryDifferentFromJDex:
+    """A category with a differently-named JDex entry."""
+
+    category: str
+    jdex_name: str
+    type: Literal["CATEGORY_DIFFERENT_FROM_JDEX"] = "CATEGORY_DIFFERENT_FROM_JDEX"
+
+    def display(self, files: list[File]) -> str:
+        """Display this particular instance of an error."""
+        return f"{_print_nest(files[0])} [JDex name: {self.jdex_name}]"
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="A category was found, the name of which is different from its corresponding JDex entry.",
+            fix="Update the one that is incorrect.",
+        )

@@ -13,6 +13,7 @@ clean.
   * [File Errors](#file-errors)
     * [`AREA_DIFFERENT_FROM_JDEX`](#area_different_from_jdex)
     * [`AREA_NOT_IN_JDEX`](#area_not_in_jdex)
+    * [`CATEGORY_DIFFERENT_FROM_JDEX`](#category_different_from_jdex)
     * [`CATEGORY_IN_WRONG_AREA`](#category_in_wrong_area)
     * [`DUPLICATE_AREA`](#duplicate_area)
     * [`DUPLICATE_CATEGORY`](#duplicate_category)
@@ -125,6 +126,27 @@ An area without a corresponding JDex entry, e.g.
     ├── 01.03 Another ID.md
     ├── 11.00 Cat.md
     └── 11.12 ID.md
+```
+
+### `CATEGORY_DIFFERENT_FROM_JDEX`
+
+A category with a differently-named JDex entry, e.g.
+
+```text
+.
+├── files
+│   └── 00-09 System
+│       └── 01 System Stuf          <-- This is a typo, oops!
+│           ├── 01.00 An ID
+│           │   └── Other File
+│           ├── 01.02 A Name
+│           └── 01.03 Another ID
+└── jdex
+    └── 00-09 System
+        └── 01 System Stuff
+            ├── 01.00 An ID.md
+            ├── 01.02 A Name.md
+            └── 01.03 Another ID.md
 ```
 
 ### `CATEGORY_IN_WRONG_AREA`
