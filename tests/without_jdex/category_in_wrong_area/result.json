@@ -3,8 +3,8 @@
       {
          "error": {
             "type": "CATEGORY_IN_WRONG_AREA",
-            "cat_area": "1",
-            "actual_area": "0"
+            "category_area": "1",
+            "file_area": "0"
          },
          "files": [
             {

@@ -61,13 +61,13 @@ class CategoryDifferentFromJDex:
 class CategoryInWrongArea:
     """A category that, by its number, has been put in the wrong area."""
 
-    cat_area: str
-    actual_area: str
+    category_area: str
+    file_area: str
     type: Literal["CATEGORY_IN_WRONG_AREA"] = "CATEGORY_IN_WRONG_AREA"
 
     def display(self, files: list[File]) -> str:
         """Given the file's name, print the error message for it."""
-        return f"{_print_nest(files[0])} [in {_print_area(self.actual_area)} but should be in {_print_area(self.cat_area)}]"
+        return f"{_print_nest(files[0])} [in {_print_area(self.file_area)} but should be in {_print_area(self.category_area)}]"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -192,4 +192,26 @@ class IdDifferentFromJDex:
         return _Explanation(
             explanation="An ID was found, the name of which is different from its corresponding JDex entry.",
             fix="Update the one that is incorrect.",
+        )
+
+
+@dataclass(frozen=True)
+class IdInWrongCategory:
+    """An ID that, by its number, has been put in the wrong category."""
+
+    id_ac: str
+    file_ac: str
+    type: Literal["ID_IN_WRONG_CATEGORY"] = "ID_IN_WRONG_CATEGORY"
+
+    def display(self, files: list[File]) -> str:
+        """Display this particular instance of an error."""
+        return (
+            f"{_print_nest(files[0])} [in {self.file_ac} but should be in {self.id_ac}]"
+        )
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="Some IDs are in the wrong category",
+            fix="Move them into the correct category folder.",
         )

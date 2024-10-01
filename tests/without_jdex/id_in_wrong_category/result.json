@@ -4,7 +4,7 @@
          "error": {
             "type": "ID_IN_WRONG_CATEGORY",
             "id_ac": "11",
-            "actual_ac": "01"
+            "file_ac": "01"
          },
          "files": [
             {
