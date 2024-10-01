@@ -27,7 +27,7 @@ class AreaNotInJDex:
 
     def display(self, files: list[File]) -> str:
         """Display this particular instance of an error."""
-        return f"{_print_nest(files[0])} [area {_print_area(self.area)}]"
+        return f"{_print_nest(files[0])} [area: {_print_area(self.area)}]"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -74,4 +74,23 @@ class CategoryInWrongArea:
         return _Explanation(
             explanation="Some categories are in the wrong area.",
             fix="Move them into the correct area folder.",
+        )
+
+
+@dataclass(frozen=True)
+class CategoryNotInJDex:
+    """An category without a corresponding JDex entry."""
+
+    category: str
+    type: Literal["CATEGORY_NOT_IN_JDEX"] = "CATEGORY_NOT_IN_JDEX"
+
+    def display(self, files: list[File]) -> str:
+        """Display this particular instance of an error."""
+        return f"{_print_nest(files[0])} [category: {self.category}]"
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="A category was found in the files that is missing from the JDex.",
+            fix="Go add a corresponding entry to your JDex.",
         )

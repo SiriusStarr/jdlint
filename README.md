@@ -15,6 +15,7 @@ clean.
     * [`AREA_NOT_IN_JDEX`](#area_not_in_jdex)
     * [`CATEGORY_DIFFERENT_FROM_JDEX`](#category_different_from_jdex)
     * [`CATEGORY_IN_WRONG_AREA`](#category_in_wrong_area)
+    * [`CATEGORY_NOT_IN_JDEX`](#category_not_in_jdex)
     * [`DUPLICATE_AREA`](#duplicate_area)
     * [`DUPLICATE_CATEGORY`](#duplicate_category)
     * [`DUPLICATE_ID`](#duplicate_id)
@@ -160,6 +161,23 @@ A category that, by its number, has been put in the wrong area, e.g.
     │   └── 01.00 An ID
     └── 11 Whoops       <-- This is in the wrong area
         └── 11.01 Inbox
+```
+
+### `CATEGORY_NOT_IN_JDEX`
+
+A category without a corresponding JDex entry, e.g.
+
+```text
+.
+├── files
+│   └── 00-09 System
+│       └── 01 System Stuff      <-- This category has no corresponding entry in the JDex
+│           ├── 01.02 An ID
+│           └── 01.03 Another ID
+└── jdex
+    ├── 00.00 System.md
+    ├── 01.00 An ID.md
+    └── 01.03 Another ID.md
 ```
 
 ### `DUPLICATE_AREA`

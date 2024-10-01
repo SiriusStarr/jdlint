@@ -1,0 +1,19 @@
+{
+   "errors": [
+      {
+         "error": {
+            "type": "CATEGORY_NOT_IN_JDEX",
+            "category": "01"
+         },
+         "files": [
+            {
+               "name": "01 System Stuff",
+               "nested_under": [
+                  "00-09 System"
+               ]
+            }
+         ]
+      }
+   ],
+   "jdex_errors": []
+}
