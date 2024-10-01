@@ -106,7 +106,7 @@ class DuplicateArea:
     def display(self, files: list[File]) -> str:
         """Display this particular instance of an error."""
         return f"Area {_print_area(self.area)}:\n    " + "\n    ".join(
-            [_print_nest(f) for f in files]
+            [_print_nest(f) for f in files],
         )
 
     def explain(self) -> _Explanation:
@@ -127,7 +127,7 @@ class DuplicateCategory:
     def display(self, files: list[File]) -> str:
         """Display this particular instance of an error."""
         return f"Category {self.category}:\n    " + "\n    ".join(
-            [_print_nest(f) for f in files]
+            [_print_nest(f) for f in files],
         )
 
     def explain(self) -> _Explanation:
@@ -172,4 +172,24 @@ class FileOutsideId:
         return _Explanation(
             explanation="Files were found outside of IDs.",
             fix="Files should only be kept in IDs and not higher in the hierarchy.",
+        )
+
+
+@dataclass(frozen=True)
+class IdDifferentFromJDex:
+    """An ID with a differently-named JDex entry."""
+
+    id: str
+    jdex_name: str
+    type: Literal["ID_DIFFERENT_FROM_JDEX"] = "ID_DIFFERENT_FROM_JDEX"
+
+    def display(self, files: list[File]) -> str:
+        """Display this particular instance of an error."""
+        return f"{_print_nest(files[0])} [JDex name: {self.jdex_name}]"
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="An ID was found, the name of which is different from its corresponding JDex entry.",
+            fix="Update the one that is incorrect.",
         )

@@ -241,17 +241,18 @@ e.g. `.stignore` is you use Syncthing.
 An ID with a differently-named JDex entry, e.g.
 
 ```text
-.
 ├── files
 │   └── 00-09 System
 │       └── 01 System Stuff
-│           ├── 01.00 An ID
 │           ├── 01.02 A Naem     <-- This is a typo, oops!
-│           └── 01.03 Another ID
+│           ├── 01.03 Another ID
+│           └── 01.04 An ID
 └── jdex
-    ├── 01.00 An ID.md
+    ├── 00.00 System.md
+    ├── 01.00 System Stuff.md
     ├── 01.02 A Name.md
-    └── 01.03 Another ID.md
+    ├── 01.03 Another ID.md
+    └── 01.04 An ID.md
 ```
 
 ### `ID_IN_WRONG_CATEGORY`
