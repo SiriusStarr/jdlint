@@ -94,3 +94,64 @@ class CategoryNotInJDex:
             explanation="A category was found in the files that is missing from the JDex.",
             fix="Go add a corresponding entry to your JDex.",
         )
+
+
+@dataclass(frozen=True)
+class DuplicateArea:
+    """An area that has been used multiple times."""
+
+    area: str
+    type: Literal["DUPLICATE_AREA"] = "DUPLICATE_AREA"
+
+    def display(self, files: list[File]) -> str:
+        """Display this particular instance of an error."""
+        return f"Area {_print_area(self.area)}:\n    " + "\n    ".join(
+            [_print_nest(f) for f in files]
+        )
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="Duplicate areas were used.",
+            fix="Assign a new area to one of them.",
+        )
+
+
+@dataclass(frozen=True)
+class DuplicateCategory:
+    """A category that has been used multiple times."""
+
+    category: str
+    type: Literal["DUPLICATE_CATEGORY"] = "DUPLICATE_CATEGORY"
+
+    def display(self, files: list[File]) -> str:
+        """Display this particular instance of an error."""
+        return f"Category {self.category}:\n    " + "\n    ".join(
+            [_print_nest(f) for f in files]
+        )
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="Duplicate categorys were used.",
+            fix="Assign a new category to one of them.",
+        )
+
+
+@dataclass(frozen=True)
+class DuplicateId:
+    """An ID that has been used multiple times."""
+
+    id: str
+    type: Literal["DUPLICATE_ID"] = "DUPLICATE_ID"
+
+    def display(self, files: list[File]) -> str:
+        """Display this particular instance of an error."""
+        return f"ID {self.id}:\n    " + "\n    ".join([_print_nest(f) for f in files])
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="Duplicate IDs were used.",
+            fix="Assign a new ID to one of them.",
+        )

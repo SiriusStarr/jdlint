@@ -215,7 +215,7 @@ An ID that has been used multiple times, e.g.
 .
 └── 00-09 System
     └── 01 System Stuff
-        ├── 01.11 An ID
+        ├── 01.11 An ID   <-- 01.11 has been used twice!
         └── 01.11 A Reuse <-- 01.11 has been used twice!
 ```
 
