@@ -234,3 +234,57 @@ class IdNotInJDex:
             explanation="An ID was found in the files that is missing from the JDex.",
             fix="Go add a corresponding entry to your JDex.",
         )
+
+
+@dataclass(frozen=True)
+class InvalidAreaName:
+    """A folder at the area level that doesn't match the normal format."""
+
+    type: Literal["INVALID_AREA_NAME"] = "INVALID_AREA_NAME"
+
+    def display(self, files: list[File]) -> str:
+        """Display this particular instance of an error."""
+        return _print_nest(files[0])
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="Some areas have invalid names.",
+            fix='Valid area names look like "10-19 Life Admin", so edit the names to match that format',
+        )
+
+
+@dataclass(frozen=True)
+class InvalidCategoryName:
+    """A folder at the category level that doesn't match the normal format."""
+
+    type: Literal["INVALID_CATEGORY_NAME"] = "INVALID_CATEGORY_NAME"
+
+    def display(self, files: list[File]) -> str:
+        """Display this particular instance of an error."""
+        return _print_nest(files[0])
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="Some categories have invalid names.",
+            fix='Valid category names look like "11 Me, Myself, & I", so edit the names to match that format',
+        )
+
+
+@dataclass(frozen=True)
+class InvalidIDName:
+    """A folder at the ID level that doesn't match the normal format."""
+
+    type: Literal["INVALID_ID_NAME"] = "INVALID_ID_NAME"
+
+    def display(self, files: list[File]) -> str:
+        """Display this particular instance of an error."""
+        return _print_nest(files[0])
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="Some IDs have invalid names.",
+            fix='Valid ID names look like "11.11 A Cool Project", so edit then names to match that format',
+        )
