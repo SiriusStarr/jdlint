@@ -11,6 +11,7 @@ clean.
     * [Disabling Specific Rules](#disabling-specific-rules)
     * [I Am A Robot And Want Something Machine-Readable](#i-am-a-robot-and-want-something-machine-readable)
   * [File Errors](#file-errors)
+    * [`AREA_DIFFERENT_FROM_JDEX`](#area_different_from_jdex)
     * [`AREA_NOT_IN_JDEX`](#area_not_in_jdex)
     * [`CATEGORY_IN_WRONG_AREA`](#category_in_wrong_area)
     * [`DUPLICATE_AREA`](#duplicate_area)
@@ -82,6 +83,26 @@ Ask nicely for JSON output instead!
 ```
 
 ## File Errors
+
+### `AREA_DIFFERENT_FROM_JDEX`
+
+An area with a differently-named JDex entry, e.g.
+
+```text
+.
+├── files
+│   └── 00-09 Systme             <-- This is a typo, oops!
+│       └── 01 System Stuff
+│           ├── 01.00 An ID
+│           ├── 01.02 A Name
+│           └── 01.03 Another ID
+└── jdex
+    └── 00-09 System
+        └── 01 System Stuff
+            ├── 01.00 An ID.md
+            ├── 01.02 A Name.md
+            └── 01.03 Another ID.md
+```
 
 ### `AREA_NOT_IN_JDEX`
 
