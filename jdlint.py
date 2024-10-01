@@ -288,3 +288,42 @@ class InvalidIDName:
             explanation="Some IDs have invalid names.",
             fix='Valid ID names look like "11.11 A Cool Project", so edit then names to match that format',
         )
+
+
+@dataclass(frozen=True)
+class NonemptyInbox:
+    """An inbox (AC.01) that contains items."""
+
+    num_items: int
+    type: Literal["NONEMPTY_INBOX"] = "NONEMPTY_INBOX"
+
+    def display(self, files: list[File]) -> str:
+        """Display this particular instance of an error."""
+        return f"{_print_nest(files[0])} [{self.num_items} items]"
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="Files were found in an inbox.",
+            fix="Go sort them into the appropriate IDs",
+        )
+
+
+ErrorType = (
+    AreaDifferentFromJDex
+    | AreaNotInJDex
+    | CategoryDifferentFromJDex
+    | CategoryInWrongArea
+    | CategoryNotInJDex
+    | DuplicateArea
+    | DuplicateCategory
+    | DuplicateId
+    | FileOutsideId
+    | IdDifferentFromJDex
+    | IdInWrongCategory
+    | IdNotInJDex
+    | InvalidAreaName
+    | InvalidCategoryName
+    | InvalidIDName
+    | NonemptyInbox
+)
