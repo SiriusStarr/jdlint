@@ -1,0 +1,18 @@
+{
+   "errors": [],
+   "jdex_errors": [
+      {
+         "error": {
+            "type": "JDEX_AREA_HEADER_DIFFERENT_FROM_AREA",
+            "area": "1",
+            "jdex_name": "10-19 Life Admin"
+         },
+         "files": [
+            {
+               "name": "10. Life Adminn.md",
+               "nested_under": []
+            }
+         ]
+      }
+   ]
+}

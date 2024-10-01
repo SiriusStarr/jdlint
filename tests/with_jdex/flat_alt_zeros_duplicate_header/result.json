@@ -1,0 +1,21 @@
+{
+   "errors": [],
+   "jdex_errors": [
+      {
+         "error": {
+            "type": "JDEX_DUPLICATE_AREA_HEADER",
+            "area": "1"
+         },
+         "files": [
+            {
+               "name": "10. Life Admin.md",
+               "nested_under": []
+            },
+            {
+               "name": "10. Life Adminn.md",
+               "nested_under": []
+            }
+         ]
+      }
+   ]
+}

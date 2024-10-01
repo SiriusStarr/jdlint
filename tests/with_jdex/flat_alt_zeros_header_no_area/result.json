@@ -1,0 +1,17 @@
+{
+   "errors": [],
+   "jdex_errors": [
+      {
+         "error": {
+            "type": "JDEX_AREA_HEADER_WITHOUT_AREA",
+            "area": "2"
+         },
+         "files": [
+            {
+               "name": "20. Life Admin.md",
+               "nested_under": []
+            }
+         ]
+      }
+   ]
+}
