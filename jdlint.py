@@ -212,6 +212,25 @@ class IdInWrongCategory:
     def explain(self) -> _Explanation:
         """Explain what this error is."""
         return _Explanation(
-            explanation="Some IDs are in the wrong category",
+            explanation="Some IDs are in the wrong category.",
             fix="Move them into the correct category folder.",
+        )
+
+
+@dataclass(frozen=True)
+class IdNotInJDex:
+    """An ID without a corresponding JDex entry."""
+
+    id: str
+    type: Literal["ID_NOT_IN_JDEX"] = "ID_NOT_IN_JDEX"
+
+    def display(self, files: list[File]) -> str:
+        """Display this particular instance of an error."""
+        return f"{_print_nest(files[0])} [ID: {self.id}]"
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="An ID was found in the files that is missing from the JDex.",
+            fix="Go add a corresponding entry to your JDex.",
         )
