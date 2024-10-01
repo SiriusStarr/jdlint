@@ -1,0 +1,17 @@
+{
+   "errors": [
+      {
+         "error": {
+            "type": "AREA_NOT_IN_JDEX",
+            "area": "1"
+         },
+         "files": [
+            {
+               "name": "10-19 Oops",
+               "nested_under": []
+            }
+         ]
+      }
+   ],
+   "jdex_errors": []
+}

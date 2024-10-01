@@ -10,7 +10,8 @@ clean.
     * [Ignoring Files](#ignoring-files)
     * [Disabling Specific Rules](#disabling-specific-rules)
     * [I Am A Robot And Want Something Machine-Readable](#i-am-a-robot-and-want-something-machine-readable)
-  * [Rules Checked](#rules-checked)
+  * [File Errors](#file-errors)
+    * [`AREA_NOT_IN_JDEX`](#area_not_in_jdex)
     * [`CATEGORY_IN_WRONG_AREA`](#category_in_wrong_area)
     * [`DUPLICATE_AREA`](#duplicate_area)
     * [`DUPLICATE_CATEGORY`](#duplicate_category)
@@ -80,7 +81,30 @@ Ask nicely for JSON output instead!
 ./jdlint.py ~/Documents --json
 ```
 
-## Rules Checked
+## File Errors
+
+### `AREA_NOT_IN_JDEX`
+
+An area without a corresponding JDex entry, e.g.
+
+```text
+.
+├── files
+│   ├── 00-09 System
+│   │   └── 01 System Stuff
+│   │       ├── 01.02 A Name
+│   │       └── 01.03 Another ID
+│   └── 10-19 Oops               <-- This area has no corresponding entry in the JDex/index
+│       └── 11 Cat
+│           └── 11.12 ID
+└──jdex
+    ├── 00.00 System.md
+    ├── 01.00 System Stuff.md
+    ├── 01.02 A Name.md
+    ├── 01.03 Another ID.md
+    ├── 11.00 Cat.md
+    └── 11.12 ID.md
+```
 
 ### `CATEGORY_IN_WRONG_AREA`
 
