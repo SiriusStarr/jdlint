@@ -155,3 +155,21 @@ class DuplicateId:
             explanation="Duplicate IDs were used.",
             fix="Assign a new ID to one of them.",
         )
+
+
+@dataclass(frozen=True)
+class FileOutsideId:
+    """A file was encountered not in a terminal ID folder."""
+
+    type: Literal["FILE_OUTSIDE_ID"] = "FILE_OUTSIDE_ID"
+
+    def display(self, files: list[File]) -> str:
+        """Display this particular instance of an error."""
+        return _print_nest(files[0])
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="Files were found outside of IDs.",
+            fix="Files should only be kept in IDs and not higher in the hierarchy.",
+        )

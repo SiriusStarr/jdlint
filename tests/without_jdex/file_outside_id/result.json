@@ -1,7 +1,9 @@
 {
    "errors": [
       {
-         "error": "FILE_OUTSIDE_ID",
+         "error": {
+            "type": "FILE_OUTSIDE_ID"
+         },
          "files": [
             {
                "name": "File Outside Area",
@@ -10,7 +12,9 @@
          ]
       },
       {
-         "error": "FILE_OUTSIDE_ID",
+         "error": {
+            "type": "FILE_OUTSIDE_ID"
+         },
          "files": [
             {
                "name": "File Outside Category",
@@ -21,7 +25,9 @@
          ]
       },
       {
-         "error": "FILE_OUTSIDE_ID",
+         "error": {
+            "type": "FILE_OUTSIDE_ID"
+         },
          "files": [
             {
                "name": "File Outside Id",
