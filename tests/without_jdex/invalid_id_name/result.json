@@ -1,7 +1,9 @@
 {
    "errors": [
       {
-         "error": "INVALID_ID_NAME",
+         "error": {
+            "type": "INVALID_ID_NAME"
+         },
          "files": [
             {
                "name": "01.1 Malformed",
@@ -13,7 +15,9 @@
          ]
       },
       {
-         "error": "INVALID_ID_NAME",
+         "error": {
+            "type": "INVALID_ID_NAME"
+         },
          "files": [
             {
                "name": "No ID",

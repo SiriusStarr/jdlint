@@ -1,7 +1,9 @@
 {
    "errors": [
       {
-         "error": "INVALID_CATEGORY_NAME",
+         "error": {
+            "type": "INVALID_CATEGORY_NAME"
+         },
          "files": [
             {
                "name": "2 Malformed",
@@ -12,7 +14,9 @@
          ]
       },
       {
-         "error": "INVALID_CATEGORY_NAME",
+         "error": {
+            "type": "INVALID_CATEGORY_NAME"
+         },
          "files": [
             {
                "name": "No ID",
