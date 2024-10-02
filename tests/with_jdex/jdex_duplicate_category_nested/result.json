@@ -1,0 +1,25 @@
+{
+   "errors": [],
+   "jdex_errors": [
+      {
+         "error": {
+            "category": "01",
+            "type": "JDEX_DUPLICATE_CATEGORY"
+         },
+         "files": [
+            {
+               "name": "01 A Category",
+               "nested_under": [
+                  "00-09 An Area"
+               ]
+            },
+            {
+               "name": "01 A Reuse",
+               "nested_under": [
+                  "00-09 An Area"
+               ]
+            }
+         ]
+      }
+   ]
+}

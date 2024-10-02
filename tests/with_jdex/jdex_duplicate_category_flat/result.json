@@ -1,0 +1,37 @@
+{
+   "errors": [],
+   "jdex_errors": [
+      {
+         "error": {
+            "category": "01",
+            "type": "JDEX_DUPLICATE_CATEGORY"
+         },
+         "files": [
+            {
+               "name": "01.00 A Category.md",
+               "nested_under": []
+            },
+            {
+               "name": "01.00 A Reuse.md",
+               "nested_under": []
+            }
+         ]
+      },
+      {
+         "error": {
+            "id": "01.00",
+            "type": "JDEX_DUPLICATE_ID"
+         },
+         "files": [
+            {
+               "name": "01.00 A Category.md",
+               "nested_under": []
+            },
+            {
+               "name": "01.00 A Reuse.md",
+               "nested_under": []
+            }
+         ]
+      }
+   ]
+}

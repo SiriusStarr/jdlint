@@ -430,3 +430,24 @@ class JDexDuplicateAreaHeader:
             explanation="Duplicate headers were found for the same area in the JDex.",
             fix="Delete the one that is incorrect or fix the area number.",
         )
+
+
+@dataclass(frozen=True)
+class JDexDuplicateCategory:
+    """An category that has been used multiple times."""
+
+    category: str
+    type: Literal["JDEX_DUPLICATE_CATEGORY"] = "JDEX_DUPLICATE_CATEGORY"
+
+    def display(self, files: list[File]) -> str:
+        """Display this particular instance of an error."""
+        return (
+            self.category + ":\n    " + "\n    ".join([_print_nest(f) for f in files])
+        )
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="Duplicate categories were used in the JDex.",
+            fix="Assign a new category to one of them.",
+        )

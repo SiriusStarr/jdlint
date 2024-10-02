@@ -33,6 +33,7 @@ clean.
     * [`JDEX_CATEGORY_IN_WRONG_AREA`](#jdex_category_in_wrong_area)
     * [`JDEX_DUPLICATE_AREA`](#jdex_duplicate_area)
     * [`JDEX_DUPLICATE_AREA_HEADER`](#jdex_duplicate_area_header)
+    * [`JDEX_DUPLICATE_CATEGORY`](#jdex_duplicate_category)
   * [Why Doesn't This Check For-](#why-doesnt-this-check-for-)
   * [Acknowledgements](#acknowledgements)
 
@@ -422,6 +423,20 @@ jdex
 ├── 10.00 Me, Myself, and I.md
 └── 10.02 An ID.md
 ```
+
+### `JDEX_DUPLICATE_CATEGORY`
+
+A JDex category that has been used multiple times, e.g.
+
+```text
+jdex
+└── 00-09 System
+    ├── 01 A Category        <-- 01 has been used twice!
+    │   └── 01.00 An ID
+    └── 01 A Reuse           <-- 01 has been used twice!
+        └── 01.02 Another ID
+```
+
 ## Why Doesn't This Check For-
 
 Because I didn't think of it. Open an issue and maybe it will get added!
