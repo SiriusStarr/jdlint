@@ -1,0 +1,21 @@
+{
+   "errors": [],
+   "jdex_errors": [
+      {
+         "error": {
+            "area": "1",
+            "type": "JDEX_DUPLICATE_AREA_HEADER"
+         },
+         "files": [
+            {
+               "name": "10. A Reuse.md",
+               "nested_under": []
+            },
+            {
+               "name": "10. An Area.md",
+               "nested_under": []
+            }
+         ]
+      }
+   ]
+}

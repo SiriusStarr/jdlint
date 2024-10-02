@@ -32,6 +32,7 @@ clean.
     * [`JDEX_AREA_HEADER_WITHOUT_AREA`](#jdex_area_header_without_area)
     * [`JDEX_CATEGORY_IN_WRONG_AREA`](#jdex_category_in_wrong_area)
     * [`JDEX_DUPLICATE_AREA`](#jdex_duplicate_area)
+    * [`JDEX_DUPLICATE_AREA_HEADER`](#jdex_duplicate_area_header)
   * [Why Doesn't This Check For-](#why-doesnt-this-check-for-)
   * [Acknowledgements](#acknowledgements)
 
@@ -407,6 +408,20 @@ jdex
         └── 02.00 An ID
 ```
 
+### `JDEX_DUPLICATE_AREA_HEADER`
+
+An (optional) area header that has been used multiple times, e.g.
+
+```text
+jdex
+├── 00.00 System Area Management.md
+├── 01.00 An Area.md
+├── 01.03 Area Standard Zero.md
+├── 10. An Area.md                   <-- These are both for 10-19
+├── 10. A Reuse.md                   <-- These are both for 10-19
+├── 10.00 Me, Myself, and I.md
+└── 10.02 An ID.md
+```
 ## Why Doesn't This Check For-
 
 Because I didn't think of it. Open an issue and maybe it will get added!

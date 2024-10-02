@@ -133,7 +133,7 @@ class DuplicateCategory:
     def explain(self) -> _Explanation:
         """Explain what this error is."""
         return _Explanation(
-            explanation="Duplicate categorys were used.",
+            explanation="Duplicate categories were used.",
             fix="Assign a new category to one of them.",
         )
 
@@ -408,4 +408,25 @@ class JDexDuplicateArea:
         return _Explanation(
             explanation="Duplicate areas were used in the JDex.",
             fix="Assign a new area to one of them.",
+        )
+
+
+@dataclass(frozen=True)
+class JDexDuplicateAreaHeader:
+    """Multiple headers for the same area."""
+
+    area: str
+    type: Literal["JDEX_DUPLICATE_AREA_HEADER"] = "JDEX_DUPLICATE_AREA_HEADER"
+
+    def display(self, files: list[File]) -> str:
+        """Display this particular instance of an error."""
+        return f"Area {_print_area(self.area)}:\n    " + "\n    ".join(
+            [_print_nest(f) for f in files],
+        )
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="Duplicate headers were found for the same area in the JDex.",
+            fix="Delete the one that is incorrect or fix the area number.",
         )
