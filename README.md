@@ -30,6 +30,7 @@ clean.
   * [JDex Errors](#jdex-errors)
     * [`JDEX_AREA_HEADER_DIFFERENT_FROM_AREA`](#jdex_area_header_different_from_area)
     * [`JDEX_AREA_HEADER_WITHOUT_AREA`](#jdex_area_header_without_area)
+    * [`JDEX_CATEGORY_IN_WRONG_AREA`](#jdex_category_in_wrong_area)
   * [Why Doesn't This Check For-](#why-doesnt-this-check-for-)
   * [Acknowledgements](#acknowledgements)
 
@@ -376,6 +377,19 @@ jdex
 ├── 10.00 Me, Myself, and I.md
 ├── 10.02 An ID.md
 └── 20. Digital Stuff.md                <- There is no corresponding area
+```
+
+### `JDEX_CATEGORY_IN_WRONG_AREA`
+
+A category that, by its number, has been put in the wrong area, e.g.
+
+```text
+jdex
+└── 00-09 System
+    ├── 01 System Stuff
+    │   └── 01.00 An ID
+    └── 11 Whoops       <-- This is in the wrong area
+        └── 11.01 Inbox
 ```
 
 ## Why Doesn't This Check For-

@@ -368,3 +368,23 @@ class JDexAreaHeaderWithoutArea:
             explanation="An area header was found in the JDex with no corresponding area entry.",
             fix="Go add a corresponding entry to your JDex, or delete this header if it is no longer needed.",
         )
+
+
+@dataclass(frozen=True)
+class JDexCategoryInWrongArea:
+    """A JDex category that, by its number, has been put in the wrong area."""
+
+    category_area: str
+    file_area: str
+    type: Literal["JDEX_CATEGORY_IN_WRONG_AREA"] = "JDEX_CATEGORY_IN_WRONG_AREA"
+
+    def display(self, files: list[File]) -> str:
+        """Given the file's name, print the error message for it."""
+        return f"{_print_nest(files[0])} [in {_print_area(self.file_area)} but should be in {_print_area(self.category_area)}]"
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="Some JDex categories are in the wrong area.",
+            fix="Move them into the correct area folder, or use a flat JDex structure.",
+        )

@@ -1,0 +1,20 @@
+{
+   "errors": [],
+   "jdex_errors": [
+      {
+         "error": {
+            "type": "JDEX_CATEGORY_IN_WRONG_AREA",
+            "category_area": "1",
+            "file_area": "0"
+         },
+         "files": [
+            {
+               "name": "11 Whoops",
+               "nested_under": [
+                  "00-09 System"
+               ]
+            }
+         ]
+      }
+   ]
+}
