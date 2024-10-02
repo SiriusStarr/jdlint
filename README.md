@@ -29,6 +29,7 @@ clean.
     * [`NONEMPTY_INBOX`](#nonempty_inbox)
   * [JDex Errors](#jdex-errors)
     * [`JDEX_AREA_HEADER_DIFFERENT_FROM_AREA`](#jdex_area_header_different_from_area)
+    * [`JDEX_AREA_HEADER_WITHOUT_AREA`](#jdex_area_header_without_area)
   * [Why Doesn't This Check For-](#why-doesnt-this-check-for-)
   * [Acknowledgements](#acknowledgements)
 
@@ -360,6 +361,21 @@ jdex
 ├── 10. Life Adminn.md                  <-- This is a typo, oops!
 ├── 10.00 Me, Myself, and I.md
 └── 10.02 An ID.md
+```
+
+### `JDEX_AREA_HEADER_WITHOUT_AREA`
+
+An (optional) area header without any corresponding JDex entry, e.g.
+
+```text
+jdex
+├── 00.00 System Area Management.md
+├── 01.00 Life Admin Area Management.md
+├── 01.03 Area Standard Zero.md
+├── 10. Life Admin.md
+├── 10.00 Me, Myself, and I.md
+├── 10.02 An ID.md
+└── 20. Digital Stuff.md                <- There is no corresponding area
 ```
 
 ## Why Doesn't This Check For-

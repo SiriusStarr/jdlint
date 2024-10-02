@@ -349,3 +349,22 @@ class JDexAreaHeaderDifferentFromArea:
             explanation="An area header was found, the name of which is different from its corresponding JDex entry.",
             fix="Update the one that is incorrect.",
         )
+
+
+@dataclass(frozen=True)
+class JDexAreaHeaderWithoutArea:
+    """An area header with no corresponding area."""
+
+    area: str
+    type: Literal["JDEX_AREA_HEADER_WITHOUT_AREA"] = "JDEX_AREA_HEADER_WITHOUT_AREA"
+
+    def display(self, files: list[File]) -> str:
+        """Display this particular instance of an error."""
+        return f"{_print_nest(files[0])} [area: {_print_area(self.area)}]"
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="An area header was found in the JDex with no corresponding area entry.",
+            fix="Go add a corresponding entry to your JDex, or delete this header if it is no longer needed.",
+        )
