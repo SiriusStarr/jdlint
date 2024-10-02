@@ -327,3 +327,25 @@ ErrorType = (
     | InvalidIDName
     | NonemptyInbox
 )
+
+
+@dataclass(frozen=True)
+class JDexAreaHeaderDifferentFromArea:
+    """An area header with a different name than the correspnoding area."""
+
+    area: str
+    jdex_name: str
+    type: Literal["JDEX_AREA_HEADER_DIFFERENT_FROM_AREA"] = (
+        "JDEX_AREA_HEADER_DIFFERENT_FROM_AREA"
+    )
+
+    def display(self, files: list[File]) -> str:
+        """Display this particular instance of an error."""
+        return f"{_print_nest(files[0])} [JDex name: {self.jdex_name}]"
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="An area header was found, the name of which is different from its corresponding JDex entry.",
+            fix="Update the one that is incorrect.",
+        )

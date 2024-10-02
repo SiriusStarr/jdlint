@@ -27,6 +27,8 @@ clean.
     * [`INVALID_CATEGORY_NAME`](#invalid_category_name)
     * [`INVALID_ID_NAME`](#invalid_id_name)
     * [`NONEMPTY_INBOX`](#nonempty_inbox)
+  * [JDex Errors](#jdex-errors)
+    * [`JDEX_AREA_HEADER_DIFFERENT_FROM_AREA`](#jdex_area_header_different_from_area)
   * [Why Doesn't This Check For-](#why-doesnt-this-check-for-)
   * [Acknowledgements](#acknowledgements)
 
@@ -85,6 +87,9 @@ Ask nicely for JSON output instead!
 ```
 
 ## File Errors
+
+These are errors that can be generated for your files.  Some of them require you
+passing your JDex via the `--jdex` argument to be detected.
 
 ### `AREA_DIFFERENT_FROM_JDEX`
 
@@ -336,6 +341,25 @@ An inbox (AC.01) that contains items, e.g.
     ├── 01.01 Inbox
     │   └── This is something you meant to sort that you never got around to...
     └── 01.11 An ID
+```
+
+## JDex Errors
+
+These are errors that are only generated with the `--jdex` argument and concern
+the state of your JDex, not your organized files.
+
+### `JDEX_AREA_HEADER_DIFFERENT_FROM_AREA`
+
+An (optional) area header with a differently-named JDex entry, e.g.
+
+```text
+jdex
+├── 00.00 System Area Management.md
+├── 01.00 Life Admin Area Management.md
+├── 01.03 Area Standard Zero.md
+├── 10. Life Adminn.md                  <-- This is a typo, oops!
+├── 10.00 Me, Myself, and I.md
+└── 10.02 An ID.md
 ```
 
 ## Why Doesn't This Check For-
