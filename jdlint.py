@@ -388,3 +388,24 @@ class JDexCategoryInWrongArea:
             explanation="Some JDex categories are in the wrong area.",
             fix="Move them into the correct area folder, or use a flat JDex structure.",
         )
+
+
+@dataclass(frozen=True)
+class JDexDuplicateArea:
+    """An area that has been used multiple times."""
+
+    area: str
+    type: Literal["JDEX_DUPLICATE_AREA"] = "JDEX_DUPLICATE_AREA"
+
+    def display(self, files: list[File]) -> str:
+        """Display this particular instance of an error."""
+        return f"Area {_print_area(self.area)}:\n    " + "\n    ".join(
+            [_print_nest(f) for f in files],
+        )
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="Duplicate areas were used in the JDex.",
+            fix="Assign a new area to one of them.",
+        )

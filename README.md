@@ -31,6 +31,7 @@ clean.
     * [`JDEX_AREA_HEADER_DIFFERENT_FROM_AREA`](#jdex_area_header_different_from_area)
     * [`JDEX_AREA_HEADER_WITHOUT_AREA`](#jdex_area_header_without_area)
     * [`JDEX_CATEGORY_IN_WRONG_AREA`](#jdex_category_in_wrong_area)
+    * [`JDEX_DUPLICATE_AREA`](#jdex_duplicate_area)
   * [Why Doesn't This Check For-](#why-doesnt-this-check-for-)
   * [Acknowledgements](#acknowledgements)
 
@@ -381,7 +382,7 @@ jdex
 
 ### `JDEX_CATEGORY_IN_WRONG_AREA`
 
-A category that, by its number, has been put in the wrong area, e.g.
+A JDex category that, by its number, has been put in the wrong area, e.g.
 
 ```text
 jdex
@@ -390,6 +391,20 @@ jdex
     │   └── 01.00 An ID
     └── 11 Whoops       <-- This is in the wrong area
         └── 11.01 Inbox
+```
+
+### `JDEX_DUPLICATE_AREA`
+
+A JDex area that has been used multiple times, e.g.
+
+```text
+jdex
+├── 00-09 An Area           <-- 00-09 has been used twice!
+│   └── 01 A Category
+│       └── 01.00 An ID
+└── 00-09 A Reuse           <-- 00-09 has been used twice!
+    └── 02 Another Category
+        └── 02.00 An ID
 ```
 
 ## Why Doesn't This Check For-
