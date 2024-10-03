@@ -863,3 +863,110 @@ def _process_flat_jdex_structure(
             jdex.errors.append(
                 JDexError(error=JDexInvalidIDName(), files=[file]),
             )
+
+
+def _process_nested_jdex_structure(
+    path: Path,
+    jdex: _JDexAccumulator,
+    root_level_files: list[os.DirEntry],
+    *,
+    ignored: list[str] | None,
+) -> None:
+    for area in os.scandir(path):
+        if _entry_is_ignored(ignored, [], area):
+            continue
+        if area.is_file():
+            # Maybe we have a flat structure
+            root_level_files.append(area)
+            continue
+
+        # Otherwise, a directory, so nested structure
+        area_file = File(name=area.name, full_path=area.path, nested_under=[])
+        area_match = valid_area_re.fullmatch(area.name)
+        if not area_match:
+            jdex.errors.append(
+                JDexError(error=JDexInvalidAreaName(), files=[area_file]),
+            )
+            continue
+        _insert_append(
+            area_match.group(1),
+            (area_match.group(2), area_file),
+            jdex.areas,
+        )
+        cat_re = _valid_category_re(area_match.group(1))
+        with os.scandir(area.path) as cats_it:
+            for cat in cats_it:
+                if _entry_is_ignored(ignored, [area.name], cat):
+                    continue
+                cat_file = File(
+                    name=cat.name,
+                    full_path=cat.path,
+                    nested_under=[area.name],
+                )
+                if cat.is_file():
+                    jdex.errors.append(
+                        JDexError(
+                            error=JDexFileOutsideCategory(),
+                            files=[cat_file],
+                        ),
+                    )
+                    continue
+
+                if cat_match := cat_re.fullmatch(cat.name):
+                    _insert_append(
+                        cat_match.group(1),
+                        (cat_match.group(2), cat_file),
+                        jdex.categories,
+                    )
+                    id_re = _jdex_note_id_re(cat_match.group(1))
+                    with os.scandir(cat.path) as ids_it:
+                        nested_under = [area.name, cat.name]
+                        for jid in ids_it:
+                            if _entry_is_ignored(ignored, nested_under, jid):
+                                continue
+                            id_file = File(
+                                name=jid.name,
+                                full_path=jid.path,
+                                nested_under=nested_under,
+                            )
+                            id_match = id_re.fullmatch(jid.name)
+                            if id_match:
+                                _insert_append(
+                                    id_match.group(1),
+                                    (id_match.group(2), id_file),
+                                    jdex.ids,
+                                )
+                                continue
+                            gen_match = jdex_note_generic_id_re.fullmatch(
+                                jid.name,
+                            )
+                            if gen_match:
+                                jdex.errors.append(
+                                    JDexError(
+                                        error=JDexIdInWrongCategory(
+                                            id_ac=gen_match.group(1),
+                                            file_ac=cat_match.group(1),
+                                        ),
+                                        files=[id_file],
+                                    ),
+                                )
+                                continue
+                            jdex.errors.append(
+                                JDexError(error=JDexInvalidIDName(), files=[id_file]),
+                            )
+                    continue
+
+                if gen_match := generic_category_re.fullmatch(cat.name):
+                    jdex.errors.append(
+                        JDexError(
+                            error=JDexCategoryInWrongArea(
+                                category_area=gen_match.group(1),
+                                file_area=area_match.group(1),
+                            ),
+                            files=[cat_file],
+                        ),
+                    )
+                    continue
+                jdex.errors.append(
+                    JDexError(error=JDexInvalidCategoryName(), files=[cat_file]),
+                )
