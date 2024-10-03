@@ -970,3 +970,82 @@ def _process_nested_jdex_structure(
                 jdex.errors.append(
                     JDexError(error=JDexInvalidCategoryName(), files=[cat_file]),
                 )
+
+
+def _get_jdex_entries(
+    jdex_dir: Path,
+    *,
+    ignored: list[str] | None,
+    alt_zeros: bool = False,
+) -> _JDexResults | list[JDexError]:
+    """Return canonical JDex information or a list of errors for it."""
+    if jdex_dir.is_file():
+        # Single file JDex
+        return _process_single_file_jdex(jdex_dir)
+
+    jdex: _JDexAccumulator = _JDexAccumulator()
+    root_level_files: list[os.DirEntry] = []
+
+    _process_nested_jdex_structure(jdex_dir, jdex, root_level_files, ignored=ignored)
+
+    if jdex.ids or jdex.errors:
+        # Not a flat structure, so we need to add all root level files as invalid
+        jdex.errors.extend(
+            [
+                JDexError(
+                    error=JDexFileOutsideCategory(),
+                    files=[
+                        File(
+                            name=f.name,
+                            full_path=f.path,
+                            nested_under=[],
+                        ),
+                    ],
+                )
+                for f in root_level_files
+            ],
+        )
+
+    else:
+        # Nothing nested, and not a file, so assume a flat structure
+        _process_flat_jdex_structure(
+            root_level_files,
+            jdex,
+            ignored=ignored,
+            alt_zeros=alt_zeros,
+        )
+
+    # These duplicate errors apply regardless of JDex type
+    jdex.errors.extend(_error_if_dups(JDexDuplicateArea, JDexError, jdex.areas))
+    jdex.errors.extend(
+        _error_if_dups(JDexDuplicateCategory, JDexError, jdex.categories),
+    )
+    jdex.errors.extend(_error_if_dups(JDexDuplicateId, JDexError, jdex.ids))
+    jdex.errors.extend(_error_if_dups(JDexDuplicateAreaHeader, JDexError, jdex.headers))
+
+    for header, files in jdex.headers.items():
+        if header not in jdex.areas:
+            jdex.errors.append(
+                JDexError(
+                    error=JDexAreaHeaderWithoutArea(area=header),
+                    files=[f for (_, f) in files],
+                ),
+            )
+        elif len(files) == 1 and files[0][0] != jdex.areas[header][0][0]:
+            jdex.errors.append(
+                JDexError(
+                    error=JDexAreaHeaderDifferentFromArea(
+                        area=header,
+                        jdex_name=f"{_print_area(header)} {jdex.areas[header][0][0]}",
+                    ),
+                    files=[f for (_, f) in files],
+                ),
+            )
+
+    if jdex.errors:
+        return jdex.errors
+    return _JDexResults(
+        jdex_areas={k: f"{_print_area(k)} {v[0][0]}" for k, v in jdex.areas.items()},
+        jdex_categories={k: f"{k} {v[0][0]}" for k, v in jdex.categories.items()},
+        jdex_ids={k: f"{k} {v[0][0]}" for k, v in jdex.ids.items()},
+    )
