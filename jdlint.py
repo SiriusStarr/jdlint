@@ -392,7 +392,7 @@ class JDexCategoryInWrongArea:
 
 @dataclass(frozen=True)
 class JDexDuplicateArea:
-    """An area that has been used multiple times."""
+    """A JDex area that has been used multiple times."""
 
     area: str
     type: Literal["JDEX_DUPLICATE_AREA"] = "JDEX_DUPLICATE_AREA"
@@ -434,7 +434,7 @@ class JDexDuplicateAreaHeader:
 
 @dataclass(frozen=True)
 class JDexDuplicateCategory:
-    """An category that has been used multiple times."""
+    """A JDex category that has been used multiple times."""
 
     category: str
     type: Literal["JDEX_DUPLICATE_CATEGORY"] = "JDEX_DUPLICATE_CATEGORY"
@@ -450,4 +450,23 @@ class JDexDuplicateCategory:
         return _Explanation(
             explanation="Duplicate categories were used in the JDex.",
             fix="Assign a new category to one of them.",
+        )
+
+
+@dataclass(frozen=True)
+class JDexDuplicateId:
+    """A JDex ID that has been used multiple times."""
+
+    id: str
+    type: Literal["JDEX_DUPLICATE_ID"] = "JDEX_DUPLICATE_ID"
+
+    def display(self, files: list[File]) -> str:
+        """Display this particular instance of an error."""
+        return self.id + ":\n    " + "\n    ".join([_print_nest(f) for f in files])
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="Duplicate IDs were used in the JDex.",
+            fix="Assign a new ID to one of them.",
         )

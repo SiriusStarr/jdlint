@@ -34,6 +34,7 @@ clean.
     * [`JDEX_DUPLICATE_AREA`](#jdex_duplicate_area)
     * [`JDEX_DUPLICATE_AREA_HEADER`](#jdex_duplicate_area_header)
     * [`JDEX_DUPLICATE_CATEGORY`](#jdex_duplicate_category)
+    * [`JDEX_DUPLICATE_ID`](#jdex_duplicate_id)
   * [Why Doesn't This Check For-](#why-doesnt-this-check-for-)
   * [Acknowledgements](#acknowledgements)
 
@@ -435,6 +436,18 @@ jdex
     │   └── 01.00 An ID
     └── 01 A Reuse           <-- 01 has been used twice!
         └── 01.02 Another ID
+```
+
+### `JDEX_DUPLICATE_ID`
+
+A JDex ID that has been used multiple times, e.g.
+
+```text
+jdex
+└── 00-09 System
+    └── 01 System Stuff
+        ├── 01.11 An ID   <-- 01.11 has been used twice!
+        └── 01.11 A Reuse <-- 01.11 has been used twice!
 ```
 
 ## Why Doesn't This Check For-
