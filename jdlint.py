@@ -7,7 +7,6 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import json
-import logging
 import os
 import re
 import sys
@@ -665,8 +664,28 @@ class LintResults:
     used_ids: dict[str, list[tuple[str, File]]]
 
 
+@dataclass
+class _JDexAccumulator:
+    """Accumulator used by _get_jdex_entries to gather information about the JDex."""
+
+    errors: list[JDexError]
+    areas: dict[str, list[tuple[str, File]]]
+    categories: dict[str, list[tuple[str, File]]]
+    ids: dict[str, list[tuple[str, File]]]
+    headers: dict[str, list[tuple[str, File]]]
+
+    def __init__(self) -> None:
+        self.errors = []
+        self.areas = {}
+        self.categories = {}
+        self.ids = {}
+        self.headers = {}
+
+
 @dataclass(frozen=True)
 class _JDexResults:
+    """Canonical results from the JDex, featuring the ID and name of each area/category/ID."""
+
     jdex_areas: dict[str, str]
     jdex_categories: dict[str, str]
     jdex_ids: dict[str, str]
