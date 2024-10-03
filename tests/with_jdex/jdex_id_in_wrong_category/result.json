@@ -1,0 +1,21 @@
+{
+   "errors": [],
+   "jdex_errors": [
+      {
+         "error": {
+            "type": "JDEX_ID_IN_WRONG_CATEGORY",
+            "id_ac": "02",
+            "file_ac": "01"
+         },
+         "files": [
+            {
+               "name": "02.00 Whoops.md",
+               "nested_under": [
+                  "00-09 System",
+                  "01 System Stuff"
+               ]
+            }
+         ]
+      }
+   ]
+}

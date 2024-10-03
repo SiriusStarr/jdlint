@@ -36,6 +36,7 @@ clean.
     * [`JDEX_DUPLICATE_CATEGORY`](#jdex_duplicate_category)
     * [`JDEX_DUPLICATE_ID`](#jdex_duplicate_id)
     * [`JDEX_FILE_OUTSIDE_CATEGORY`](#jdex_file_outside_category)
+    * [`JDEX_ID_IN_WRONG_CATEGORY`](#jdex_id_in_wrong_category)
   * [Why Doesn't This Check For-](#why-doesnt-this-check-for-)
   * [Acknowledgements](#acknowledgements)
 
@@ -463,6 +464,19 @@ jdex
 │   │   └── 01.03 Another ID.md
 │   └── Nor here                <-- Both of these should only be in categories
 └── Not here                    <--
+```
+
+### `JDEX_ID_IN_WRONG_CATEGORY`
+
+A JDex ID that, by its number, has been put in the wrong category in a nested
+structure, e.g.
+
+```text
+jdex
+└── 00-09 System
+    └── 01 System Stuff
+        ├── 01.00 An ID
+        └── 02.01 Whoops <-- This is in the wrong category
 ```
 
 ## Why Doesn't This Check For-

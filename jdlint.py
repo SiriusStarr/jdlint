@@ -488,3 +488,25 @@ class JDexFileOutsideCategory:
             explanation="JDex files were found outside of categories in a nested structure.",
             fix="JDex files should be entirely flat, or nested under area then category.",
         )
+
+
+@dataclass(frozen=True)
+class JDexIdInWrongCategory:
+    """A JDex ID that, by its number, has been put in the wrong category."""
+
+    id_ac: str
+    file_ac: str
+    type: Literal["JDEX_ID_IN_WRONG_CATEGORY"] = "JDEX_ID_IN_WRONG_CATEGORY"
+
+    def display(self, files: list[File]) -> str:
+        """Display this particular instance of an error."""
+        return (
+            f"{_print_nest(files[0])} [in {self.file_ac} but should be in {self.id_ac}]"
+        )
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="Some JDex IDs are in the wrong category.",
+            fix="Move them into the correct category folder, or use a flat JDex structure",
+        )
