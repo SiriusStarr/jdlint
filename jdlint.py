@@ -693,3 +693,69 @@ def _sort_error(e: Error | JDexError) -> tuple[str, list[tuple[list[str], str]]]
 def _sort_file(f: File) -> tuple[list[str], str]:
     # Sort files first by degree of nesting, then alphabetically
     return (f.nested_under, f.name)
+
+
+# Any valid area folder name
+valid_area_re = re.compile("([0-9])0-(?:\\1)9 (.+)")
+# Any valid category folder name
+generic_category_re = re.compile("([0-9])[0-9] .+")
+# Any valid ID folder name
+generic_id_re = re.compile("([0-9][0-9])\\.([0-9][0-9]) (.+)")
+# Matches only IDs that are inboxes
+inbox_re = re.compile("[0-9][0-9]\\.01 .+")
+
+
+def _valid_category_re(a: str) -> re.Pattern:
+    """Match only valid categories for a given area."""
+    return re.compile("(" + a + "[0-9]) (.+)")
+
+
+def _valid_id_re(ac: str) -> re.Pattern:
+    """Match only valid IDs for a given area and category."""
+    return re.compile("(" + ac + "\\.[0-9][0-9]) (.+)")
+
+
+def _jdex_note_area_re(*, alt_zeros: bool = False) -> re.Pattern:
+    """Match JDex IDs that should be an area name."""
+    if alt_zeros:
+        return re.compile(
+            "0([0-9])\\.00 (.+?)( area management)?( index)?(\\.md)?",
+            flags=re.IGNORECASE,
+        )
+    return re.compile(
+        "([0-9])0\\.00 (.+?)( area management)?( index)?(\\.md)?",
+        flags=re.IGNORECASE,
+    )
+
+
+def _jdex_note_category_re(*, alt_zeros: bool = False) -> re.Pattern:
+    """Match JDex IDs that should be category name."""
+    if alt_zeros:
+        # We need to tolerate the "area management" suffix for a category as well, to create categories from e.g. `01.00 Life Admin Area Management`
+        return re.compile(
+            "([0-9][0-9])\\.00 (.+?)( (category|area) management)?( index)?(\\.md)?",
+            flags=re.IGNORECASE,
+        )
+    return re.compile(
+        "([0-9][1-9])\\.00 (.+?)( category management)?( index)?(\\.md)?",
+        flags=re.IGNORECASE,
+    )
+
+
+def _jdex_note_id_re(ac: str) -> re.Pattern:
+    """Match only valid JDex note IDs for a given area and category."""
+    return re.compile("(" + ac + "\\.[0-9][0-9]) (.+?)(\\.md)?")
+
+
+# Match area header JDex notes
+jdex_note_header_re = re.compile("([0-9])0\\. (.+?)(\\.md)?")
+# Match any valid ID JDex note
+jdex_note_generic_id_re = re.compile("([0-9][0-9])\\.([0-9][0-9]) (.+?)(\\.md)?")
+
+
+# Matches JDex areas in a single-file format
+jdex_line_area_re = re.compile("([0-9])0-(?:\\1)9 (.+?)\\s*(//.*)?")
+# Matches JDex categories in a single-file format
+jdex_line_category_re = re.compile("([0-9][0-9]) (.+?)\\s*(//.*)?")
+# Matches JDex ids in a single-file format
+jdex_line_id_re = re.compile("([0-9][0-9].[0-9][0-9]) (.+?)\\s*(//.*)?")
