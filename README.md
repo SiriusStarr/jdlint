@@ -7,6 +7,8 @@ clean.
   * [Installation/Requirements](#installationrequirements)
   * [Usage](#usage)
     * [With a JDex/Index](#with-a-jdexindex)
+      * [JDex Formats](#jdex-formats)
+      * [Alternative Layout for the Standard Zeros](#alternative-layout-for-the-standard-zeros)
     * [Ignoring Files](#ignoring-files)
     * [Disabling Specific Rules](#disabling-specific-rules)
     * [I Am A Robot And Want Something Machine-Readable](#i-am-a-robot-and-want-something-machine-readable)
@@ -71,6 +73,81 @@ detected issues by passing that root path along as well, e.g.
 ./jdlint.py --jdex ~/"Knowledge/00.00 📇 System Index" ~/Documents
 ```
 
+#### JDex Formats
+
+This supports three possible JDex formats:
+
+* Single file, as specified [here](https://github.com/johnnydecimal/index-spec).
+  Note that strict adherence to the spec is not checked, because I personally do
+  not use this method and am lazy, so don't expect linter errors for your JDex
+  if you use this format.
+* Nested files in folders, e.g.
+
+```text
+.
+└── 00-09 System
+    └── 01 System Stuff
+        ├── 01.02 A Name.md
+        └── 01.03 Another ID.md
+```
+
+* Flat files, e.g.
+
+```tree
+.
+├── 00.00 System Area Management.md
+├── 01.00 System Stuff Category Management.md
+├── 01.02 A Name.md
+└── 01.03 Another ID.md
+```
+
+Note that in the flat case, `N0.00` is taken as the JDex entry for area `N0-N9`,
+and `AC.00` is taken as the JDex entry for category `AC`.
+
+In all cases, any `.md` file extension will be stripped, should one exist.
+
+A trailing `area management` or `category management` or `index` will also be
+stripped, if one exists, to derive the "canonical" name for the area/category.
+
+For example:
+
+* `10.00 Life Admin`
+* `10.00 Life Admin.md`
+* `10.00 Life Admin Area Management`
+* `10.00 Life Admin Index`
+* `10.00 Life Admin Area Management Index.md`
+
+are all equivalent, and will lead to `jdlint` expecting an area named
+`10-19 Life Admin` in your files.
+
+#### Alternative Layout for the Standard Zeros
+
+For a more complete treatment of this topic, see the original post
+[here](https://forum.johnnydecimal.com/t/the-standard-zeros/1558/12).
+
+This moves the expected area management zeros into the system management area.
+For example, the management category for area `10-19` will be category `01`,
+instead of the typical `10`. This increases the available number of categories
+per area and makes greater use of the reserved `00-09` area.
+
+To specify that you're using this format, pass `jdlint` the `--altzeros` flag.
+
+This causes two changes in behavior if you are using the flat files JDex
+structure:
+
+* The linter will treat `10.00` as the note for category `10`, and `01.00` as
+  the note for area `10-19`, etc.
+* The area management notes (`0N.00`) will additionally create categories in the
+  `00-09` area, for those standard zeros.
+* The linter will check for optional "header" files. This is not an official
+  Johnny Decimal thing, just something I use to visually separate notes in the
+  JDex. They are named e.g. `10. Life Admin` for the `10-19 Life Admin` area.
+
+  ![An image showing how `40. Improvement` nicely shows `20.00 Education` as nested under it.](images/header_note.png)
+
+  If you don't use them, there will be no complaints from the linter; it just
+  ensures their names stay in sync with the area if they do already exist.
+
 ### Ignoring Files
 
 You may have files outside of IDs that have to be there; if so, you can ignore
@@ -99,7 +176,7 @@ Ask nicely for JSON output instead!
 
 ## File Errors
 
-These are errors that can be generated for your files.  Some of them require you
+These are errors that can be generated for your files. Some of them require you
 passing your JDex via the `--jdex` argument to be detected.
 
 ### `AREA_DIFFERENT_FROM_JDEX`
