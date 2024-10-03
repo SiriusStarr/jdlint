@@ -470,3 +470,21 @@ class JDexDuplicateId:
             explanation="Duplicate IDs were used in the JDex.",
             fix="Assign a new ID to one of them.",
         )
+
+
+@dataclass(frozen=True)
+class JDexFileOutsideCategory:
+    """A JDex file was encountered not in a terminal category folder."""
+
+    type: Literal["JDEX_FILE_OUTSIDE_CATEGORY"] = "JDEX_FILE_OUTSIDE_CATEGORY"
+
+    def display(self, files: list[File]) -> str:
+        """Display this particular instance of an error."""
+        return _print_nest(files[0])
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="JDex files were found outside of categories in a nested structure.",
+            fix="JDex files should be entirely flat, or nested under area then category.",
+        )

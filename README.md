@@ -35,6 +35,7 @@ clean.
     * [`JDEX_DUPLICATE_AREA_HEADER`](#jdex_duplicate_area_header)
     * [`JDEX_DUPLICATE_CATEGORY`](#jdex_duplicate_category)
     * [`JDEX_DUPLICATE_ID`](#jdex_duplicate_id)
+    * [`JDEX_FILE_OUTSIDE_CATEGORY`](#jdex_file_outside_category)
   * [Why Doesn't This Check For-](#why-doesnt-this-check-for-)
   * [Acknowledgements](#acknowledgements)
 
@@ -448,6 +449,20 @@ jdex
     └── 01 System Stuff
         ├── 01.11 An ID   <-- 01.11 has been used twice!
         └── 01.11 A Reuse <-- 01.11 has been used twice!
+```
+
+### `JDEX_FILE_OUTSIDE_CATEGORY`
+
+A file that is located at the area or category level in a nested JDex, e.g.
+
+```text
+jdex
+├── 00-09 System
+│   ├── 01 System Stuff
+│   │   ├── 01.02 A Name.md
+│   │   └── 01.03 Another ID.md
+│   └── Nor here                <-- Both of these should only be in categories
+└── Not here                    <--
 ```
 
 ## Why Doesn't This Check For-
