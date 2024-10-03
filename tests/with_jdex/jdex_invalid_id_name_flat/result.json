@@ -1,0 +1,27 @@
+{
+   "errors": [],
+   "jdex_errors": [
+      {
+         "error": {
+            "type": "JDEX_INVALID_ID_NAME"
+         },
+         "files": [
+            {
+               "name": "01.5 Malformed Numbers.md",
+               "nested_under": []
+            }
+         ]
+      },
+      {
+         "error": {
+            "type": "JDEX_INVALID_ID_NAME"
+         },
+         "files": [
+            {
+               "name": "No Numbers.md",
+               "nested_under": []
+            }
+         ]
+      }
+   ]
+}

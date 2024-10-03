@@ -250,7 +250,7 @@ class InvalidAreaName:
         """Explain what this error is."""
         return _Explanation(
             explanation="Some areas have invalid names.",
-            fix='Valid area names look like "10-19 Life Admin", so edit the names to match that format',
+            fix='Valid area names look like "10-19 Life Admin", so edit the names to match that format.',
         )
 
 
@@ -268,7 +268,7 @@ class InvalidCategoryName:
         """Explain what this error is."""
         return _Explanation(
             explanation="Some categories have invalid names.",
-            fix='Valid category names look like "11 Me, Myself, & I", so edit the names to match that format',
+            fix='Valid category names look like "11 Me, Myself, & I", so edit the names to match that format.',
         )
 
 
@@ -286,7 +286,7 @@ class InvalidIDName:
         """Explain what this error is."""
         return _Explanation(
             explanation="Some IDs have invalid names.",
-            fix='Valid ID names look like "11.11 A Cool Project", so edit then names to match that format',
+            fix='Valid ID names look like "11.11 A Cool Project", so edit the names to match that format.',
         )
 
 
@@ -305,7 +305,7 @@ class NonemptyInbox:
         """Explain what this error is."""
         return _Explanation(
             explanation="Files were found in an inbox.",
-            fix="Go sort them into the appropriate IDs",
+            fix="Go sort them into the appropriate IDs.",
         )
 
 
@@ -508,5 +508,75 @@ class JDexIdInWrongCategory:
         """Explain what this error is."""
         return _Explanation(
             explanation="Some JDex IDs are in the wrong category.",
-            fix="Move them into the correct category folder, or use a flat JDex structure",
+            fix="Move them into the correct category folder, or use a flat JDex structure.",
         )
+
+
+@dataclass(frozen=True)
+class JDexInvalidAreaName:
+    """A folder at the JDex area level that doesn't match the normal format."""
+
+    type: Literal["JDEX_INVALID_AREA_NAME"] = "JDEX_INVALID_AREA_NAME"
+
+    def display(self, files: list[File]) -> str:
+        """Display this particular instance of an error."""
+        return _print_nest(files[0])
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="Some JDex areas have invalid names.",
+            fix='Valid area names look like "10-19 Life Admin", so edit the names to match that format.',
+        )
+
+
+@dataclass(frozen=True)
+class JDexInvalidCategoryName:
+    """A folder at the JDex category level that doesn't match the normal format."""
+
+    type: Literal["JDEX_INVALID_CATEGORY_NAME"] = "JDEX_INVALID_CATEGORY_NAME"
+
+    def display(self, files: list[File]) -> str:
+        """Display this particular instance of an error."""
+        return _print_nest(files[0])
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="Some JDex categories have invalid names.",
+            fix='Valid category names look like "11 Me, Myself, & I", so edit the names to match that format.',
+        )
+
+
+@dataclass(frozen=True)
+class JDexInvalidIDName:
+    """A JDex note that doesn't match the normal format."""
+
+    type: Literal["JDEX_INVALID_ID_NAME"] = "JDEX_INVALID_ID_NAME"
+
+    def display(self, files: list[File]) -> str:
+        """Display this particular instance of an error."""
+        return _print_nest(files[0])
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="Some JDex IDs have invalid names.",
+            fix='Valid ID names look like "11.11 A Cool Project", so edit the names to match that format.',
+        )
+
+
+JDexErrorType = (
+    JDexAreaHeaderDifferentFromArea
+    | JDexAreaHeaderWithoutArea
+    | JDexCategoryInWrongArea
+    | JDexDuplicateArea
+    | JDexDuplicateAreaHeader
+    | JDexDuplicateCategory
+    | JDexDuplicateId
+    | JDexFileOutsideCategory
+    | JDexIdInWrongCategory
+    | JDexInvalidAreaName
+    | JDexInvalidCategoryName
+    | JDexInvalidIDName
+)

@@ -1,0 +1,27 @@
+{
+   "errors": [],
+   "jdex_errors": [
+      {
+         "error": {
+            "type": "JDEX_INVALID_AREA_NAME"
+         },
+         "files": [
+            {
+               "name": "10-18 Malformed Numbers",
+               "nested_under": []
+            }
+         ]
+      },
+      {
+         "error": {
+            "type": "JDEX_INVALID_AREA_NAME"
+         },
+         "files": [
+            {
+               "name": "No Numbers",
+               "nested_under": []
+            }
+         ]
+      }
+   ]
+}

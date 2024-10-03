@@ -37,6 +37,9 @@ clean.
     * [`JDEX_DUPLICATE_ID`](#jdex_duplicate_id)
     * [`JDEX_FILE_OUTSIDE_CATEGORY`](#jdex_file_outside_category)
     * [`JDEX_ID_IN_WRONG_CATEGORY`](#jdex_id_in_wrong_category)
+    * [`JDEX_INVALID_AREA_NAME`](#jdex_invalid_area_name)
+    * [`JDEX_INVALID_CATEGORY_NAME`](#jdex_invalid_category_name)
+    * [`JDEX_INVALID_ID_NAME`](#jdex_invalid_id_name)
   * [Why Doesn't This Check For-](#why-doesnt-this-check-for-)
   * [Acknowledgements](#acknowledgements)
 
@@ -477,6 +480,48 @@ jdex
     └── 01 System Stuff
         ├── 01.00 An ID
         └── 02.01 Whoops <-- This is in the wrong category
+```
+
+### `JDEX_INVALID_AREA_NAME`
+
+A directory was found at the area level in the JDex that doesn't begin with
+`00-09` or the like, e.g.
+
+```text
+jdex
+├── 00-09 System
+│   └── 01 System Stuff
+│       └── 01.02 An ID
+├── 10-18 Malformed     <-- This has numbers that were typo'd.
+└── No ID               <-- This doesn't have numbers at all
+```
+
+### `JDEX_INVALID_CATEGORY_NAME`
+
+A directory was found at the category level in the JDex that doesn't begin with
+`11` or the like, e.g.
+
+```text
+jdex
+└── 00-09 System
+    ├── 01 System Stuff
+    │   └── 01.02 An ID
+    ├── 2 Malformed     <-- This has numbers that were typo'd.
+    └── No ID           <-- This doesn't have numbers at all
+```
+
+### `JDEX_INVALID_ID_NAME`
+
+A JDEx note was found at the ID level that doesn't begin with `11.12` or the
+like, e.g.
+
+```text
+.
+└── 00-09 System
+    └── 01 System Stuff
+        ├── 01.00 An ID
+        ├── 01.1 Malformed <-- This has numbers that were typo'd.
+        └── No ID          <-- This doesn't have numbers at all
 ```
 
 ## Why Doesn't This Check For-
