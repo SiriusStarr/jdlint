@@ -759,3 +759,15 @@ jdex_line_area_re = re.compile("([0-9])0-(?:\\1)9 (.+?)\\s*(//.*)?")
 jdex_line_category_re = re.compile("([0-9][0-9]) (.+?)\\s*(//.*)?")
 # Matches JDex ids in a single-file format
 jdex_line_id_re = re.compile("([0-9][0-9].[0-9][0-9]) (.+?)\\s*(//.*)?")
+
+
+def _entry_is_ignored(
+    ignored: list[str] | None,
+    nested_under: list[str],
+    f: os.DirEntry,
+) -> bool:
+    """Check if a given file/directory should be ignored."""
+    if not ignored:
+        return False
+    p = PurePath(*nested_under, f.name)
+    return any(p.match(pattern) for pattern in ignored)

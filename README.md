@@ -154,8 +154,11 @@ You may have files outside of IDs that have to be there; if so, you can ignore
 them, e.g.
 
 ```bash
-./jdlint.py ~/Documents --ignore .stfolder .stignore
+./jdlint.py ~/Documents --ignore .st*
 ```
+
+This option supports some basic glob-style patterns. (It uses
+[`PurePath.match()`](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.match).)
 
 ### Disabling Specific Rules
 
