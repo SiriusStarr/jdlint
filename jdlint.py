@@ -680,3 +680,16 @@ class _EnhancedJSONEncoder(json.JSONEncoder):
         if isinstance(o, PurePath):
             return str(o)
         return super().default(o)
+
+
+def _sort_error(e: Error | JDexError) -> tuple[str, list[tuple[list[str], str]]]:
+    # Sort errors alphabetically by type, then by file/s affected
+    return (
+        e.error.type,
+        [_sort_file(f) for f in e.files],
+    )
+
+
+def _sort_file(f: File) -> tuple[list[str], str]:
+    # Sort files first by degree of nesting, then alphabetically
+    return (f.nested_under, f.name)
