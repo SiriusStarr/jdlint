@@ -1,3 +1,21 @@
+#!/usr/bin/env python3
+
+"""Script to check for common issues with a Johnny Decimal system."""
+
+from __future__ import annotations
+
+import argparse
+import dataclasses
+import json
+import logging
+import os
+import re
+import sys
+from dataclasses import dataclass
+from pathlib import Path, PurePath
+from typing import Any, Callable, Literal, TypeVar
+
+
 @dataclass(frozen=True)
 class AreaDifferentFromJDex:
     """An area with a differently-named JDex entry."""
@@ -580,3 +598,85 @@ JDexErrorType = (
     | JDexInvalidCategoryName
     | JDexInvalidIDName
 )
+
+
+@dataclass(frozen=True)
+class File:
+    """A file or folder that has been detected by jdlint."""
+
+    name: str
+    full_path: str
+    nested_under: list[str]
+
+
+@dataclass(frozen=True)
+class _Explanation:
+    explanation: str
+    fix: str
+
+
+@dataclass(frozen=True)
+class Error:
+    """A single error detected."""
+
+    error: ErrorType
+    files: list[File]
+
+    def type(self) -> str:
+        """Return the name (type) of the error."""
+        return self.error.type
+
+    def display(self) -> str:
+        """Display this particular instance of an error."""
+        return self.error.display(self.files)
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return self.error.explain()
+
+
+@dataclass(frozen=True)
+class JDexError:
+    """A single error detected in the JDex."""
+
+    error: JDexErrorType
+    files: list[File]
+
+    def type(self) -> str:
+        """Return the name (type) of the error."""
+        return self.error.type
+
+    def display(self) -> str:
+        """Display this particular instance of an error."""
+        return self.error.display(self.files)
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return self.error.explain()
+
+
+@dataclass(frozen=True)
+class LintResults:
+    """All errors returned from linting files, as well as dictionaries of all areas, categories, and IDs used (and their names)."""
+
+    errors: list[Error]
+    used_areas: dict[str, list[tuple[str, File]]]
+    used_categories: dict[str, list[tuple[str, File]]]
+    used_ids: dict[str, list[tuple[str, File]]]
+
+
+@dataclass(frozen=True)
+class _JDexResults:
+    jdex_areas: dict[str, str]
+    jdex_categories: dict[str, str]
+    jdex_ids: dict[str, str]
+
+
+class _EnhancedJSONEncoder(json.JSONEncoder):
+    def default(self, o: object) -> object:
+        # Add JSON encoding for dataclasses and paths
+        if dataclasses.is_dataclass(o):
+            return dataclasses.asdict(o)  # type: ignore[arg-type]
+        if isinstance(o, PurePath):
+            return str(o)
+        return super().default(o)
