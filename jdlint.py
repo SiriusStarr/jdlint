@@ -734,50 +734,15 @@ def _valid_id_re(ac: str) -> re.Pattern:
     return re.compile("(" + ac + "\\.[0-9][0-9]) (.+)")
 
 
-def _jdex_note_area_re(*, alt_zeros: bool = False) -> re.Pattern:
-    """Match JDex IDs that should be an area name."""
-    if alt_zeros:
-        return re.compile(
-            "0([0-9])\\.00 (.+?)( area management)?( index)?(\\.md)?",
-            flags=re.IGNORECASE,
-        )
-    return re.compile(
-        "([0-9])0\\.00 (.+?)( area management)?( index)?(\\.md)?",
-        flags=re.IGNORECASE,
-    )
-
-
-def _jdex_note_category_re(*, alt_zeros: bool = False) -> re.Pattern:
-    """Match JDex IDs that should be category name."""
-    if alt_zeros:
-        # We need to tolerate the "area management" suffix for a category as well, to create categories from e.g. `01.00 Life Admin Area Management`
-        return re.compile(
-            "([0-9][0-9])\\.00 (.+?)( (category|area) management)?( index)?(\\.md)?",
-            flags=re.IGNORECASE,
-        )
-    return re.compile(
-        "([0-9][1-9])\\.00 (.+?)( category management)?( index)?(\\.md)?",
-        flags=re.IGNORECASE,
-    )
-
-
-def _jdex_note_id_re(ac: str) -> re.Pattern:
-    """Match only valid JDex note IDs for a given area and category."""
-    return re.compile("(" + ac + "\\.[0-9][0-9]) (.+?)(\\.md)?")
-
-
 # Match area header JDex notes
 jdex_note_header_re = re.compile("([0-9])0\\. (.+?)(\\.md)?")
 # Match any valid ID JDex note
 jdex_note_generic_id_re = re.compile("([0-9][0-9])\\.([0-9][0-9]) (.+?)(\\.md)?")
 
 
-# Matches JDex areas in a single-file format
-jdex_line_area_re = re.compile("([0-9])0-(?:\\1)9 (.+?)\\s*(//.*)?")
-# Matches JDex categories in a single-file format
-jdex_line_category_re = re.compile("([0-9][0-9]) (.+?)\\s*(//.*)?")
-# Matches JDex ids in a single-file format
-jdex_line_id_re = re.compile("([0-9][0-9].[0-9][0-9]) (.+?)\\s*(//.*)?")
+def _jdex_note_id_re(ac: str) -> re.Pattern:
+    """Match only valid JDex note IDs for a given area and category."""
+    return re.compile("(" + ac + "\\.[0-9][0-9]) (.+?)(\\.md)?")
 
 
 def _entry_is_ignored(
@@ -790,3 +755,111 @@ def _entry_is_ignored(
         return False
     p = PurePath(*nested_under, f.name)
     return any(p.match(pattern) for pattern in ignored)
+
+
+def _process_single_file_jdex(path: Path) -> _JDexResults:
+    """Process a JDex located in a single file."""
+    # Matches JDex areas in a single-file format
+    jdex_line_area_re = re.compile("([0-9])0-(?:\\1)9 (.+?)\\s*(//.*)?")
+    # Matches JDex categories in a single-file format
+    jdex_line_category_re = re.compile("([0-9][0-9]) (.+?)\\s*(//.*)?")
+    # Matches JDex ids in a single-file format
+    jdex_line_id_re = re.compile("([0-9][0-9].[0-9][0-9]) (.+?)\\s*(//.*)?")
+
+    file_areas = {}
+    file_categories = {}
+    file_ids = {}
+
+    with path.open() as jdex_it:
+        for entry in jdex_it:
+            area_match = jdex_line_area_re.fullmatch(entry.strip())
+            if area_match:
+                file_areas[area_match.group(1)] = (
+                    f"{area_match.group(1)}0-09 {area_match.group(2)}"
+                )
+                continue
+            category_match = jdex_line_category_re.fullmatch(entry.strip())
+            if category_match:
+                file_categories[category_match.group(1)] = (
+                    f"{category_match.group(1)} {category_match.group(2)}"
+                )
+                continue
+            id_match = jdex_line_id_re.fullmatch(entry.strip())
+            if id_match:
+                file_ids[id_match.group(1)] = f"{id_match.group(1)} {id_match.group(2)}"
+                continue
+    return _JDexResults(
+        jdex_areas=file_areas,
+        jdex_categories=file_categories,
+        jdex_ids=file_ids,
+    )
+
+
+def _process_flat_jdex_structure(
+    files: list[os.DirEntry],
+    jdex: _JDexAccumulator,
+    *,
+    ignored: list[str] | None,
+    alt_zeros: bool = False,
+) -> None:
+    """Process a JDex that is a series of flat files."""
+    area_re = re.compile(
+        "0([0-9])\\.00 (.+?)( area management)?( index)?(\\.md)?"
+        if alt_zeros
+        else "([0-9])0\\.00 (.+?)( area management)?( index)?(\\.md)?",
+        flags=re.IGNORECASE,
+    )
+    category_re = re.compile(
+        # We need to tolerate the "area management" suffix for a category as well, to create categories from e.g. `01.00 Life Admin Area Management`
+        "([0-9][0-9])\\.00 (.+?)( (category|area) management)?( index)?(\\.md)?"
+        if alt_zeros
+        else "([0-9][1-9])\\.00 (.+?)( category management)?( index)?(\\.md)?",
+        flags=re.IGNORECASE,
+    )
+
+    for jid in files:
+        if _entry_is_ignored(ignored, [], jid):
+            continue
+
+        file = File(name=jid.name, full_path=jid.path, nested_under=[])
+
+        # Check if the file matches an area
+        area_match = area_re.fullmatch(jid.name)
+        if area_match:
+            _insert_append(
+                area_match.group(1),
+                (area_match.group(2), file),
+                jdex.areas,
+            )
+
+        # Check if the file matches a category
+        cat_match = category_re.fullmatch(jid.name)
+        if cat_match:
+            _insert_append(
+                cat_match.group(1),
+                (cat_match.group(2), file),
+                jdex.categories,
+            )
+
+        # Check if it's a header match for alt zeros
+        header_match = jdex_note_header_re.fullmatch(jid.name)
+        if header_match:
+            _insert_append(
+                header_match.group(1),
+                (header_match.group(2), file),
+                jdex.headers,
+            )
+            continue
+
+        # The file should also be a valid ID (or is bad)
+        id_match = jdex_note_generic_id_re.fullmatch(jid.name)
+        if id_match:
+            _insert_append(
+                f"{id_match.group(1)}.{id_match.group(2)}",
+                (id_match.group(3), file),
+                jdex.ids,
+            )
+        else:
+            jdex.errors.append(
+                JDexError(error=JDexInvalidIDName(), files=[file]),
+            )
