@@ -686,9 +686,9 @@ class _JDexAccumulator:
 class _JDexResults:
     """Canonical results from the JDex, featuring the ID and name of each area/category/ID."""
 
-    jdex_areas: dict[str, str]
-    jdex_categories: dict[str, str]
-    jdex_ids: dict[str, str]
+    areas: dict[str, str]
+    categories: dict[str, str]
+    ids: dict[str, str]
 
 
 class _EnhancedJSONEncoder(json.JSONEncoder):
@@ -815,9 +815,9 @@ def _process_single_file_jdex(path: Path) -> _JDexResults:
                 file_ids[id_match.group(1)] = f"{id_match.group(1)} {id_match.group(2)}"
                 continue
     return _JDexResults(
-        jdex_areas=file_areas,
-        jdex_categories=file_categories,
-        jdex_ids=file_ids,
+        areas=file_areas,
+        categories=file_categories,
+        ids=file_ids,
     )
 
 
@@ -1070,9 +1070,9 @@ def _get_jdex_entries(
     if jdex.errors:
         return jdex.errors
     return _JDexResults(
-        jdex_areas={k: f"{_print_area(k)} {v[0][0]}" for k, v in jdex.areas.items()},
-        jdex_categories={k: f"{k} {v[0][0]}" for k, v in jdex.categories.items()},
-        jdex_ids={k: f"{k} {v[0][0]}" for k, v in jdex.ids.items()},
+        areas={k: f"{_print_area(k)} {v[0][0]}" for k, v in jdex.areas.items()},
+        categories={k: f"{k} {v[0][0]}" for k, v in jdex.categories.items()},
+        ids={k: f"{k} {v[0][0]}" for k, v in jdex.ids.items()},
     )
 
 
@@ -1249,65 +1249,61 @@ def lint_dir_and_jdex(
 ) -> tuple[list[Error], list[JDexError]]:
     """Check a root of a JD system and its JDex for issues."""
     results = lint_dir(path, ignored)
-    match _get_jdex_entries(jdex_path, ignored=ignored, alt_zeros=alt_zeros):
-        case _JDexResults(jdex_areas, jdex_categories, jdex_ids):
-            errors = results.errors
+    jdex = _get_jdex_entries(jdex_path, ignored=ignored, alt_zeros=alt_zeros)
+    if isinstance(jdex, list):
+        return (results.errors, sorted(jdex, key=_sort_error))
 
-            for area, files in results.used_areas.items():
-                if area not in jdex_areas:
-                    errors.append(
-                        Error(
-                            error=AreaNotInJDex(area=area),
-                            files=[f for (_, f) in files],
-                        ),
-                    )
-                elif len(files) == 1 and files[0][1].name != jdex_areas[area]:
-                    errors.append(
-                        Error(
-                            error=AreaDifferentFromJDex(
-                                area=area,
-                                jdex_name=jdex_areas[area],
-                            ),
-                            files=[f for (_, f) in files],
-                        ),
-                    )
-            for category, files in results.used_categories.items():
-                if category not in jdex_categories:
-                    errors.append(
-                        Error(
-                            error=CategoryNotInJDex(category=category),
-                            files=[f for (_, f) in files],
-                        ),
-                    )
-                elif len(files) == 1 and files[0][1].name != jdex_categories[category]:
-                    errors.append(
-                        Error(
-                            error=CategoryDifferentFromJDex(
-                                category=category,
-                                jdex_name=jdex_categories[category],
-                            ),
-                            files=[f for (_, f) in files],
-                        ),
-                    )
-            for jid, files in results.used_ids.items():
-                if jid not in jdex_ids:
-                    errors.append(
-                        Error(error=IdNotInJDex(id=jid), files=[f for (_, f) in files]),
-                    )
-                elif len(files) == 1 and files[0][1].name != jdex_ids[jid]:
-                    errors.append(
-                        Error(
-                            error=IdDifferentFromJDex(id=jid, jdex_name=jdex_ids[jid]),
-                            files=[f for (_, f) in files],
-                        ),
-                    )
-            return (sorted(errors, key=_sort_error), [])
-        case [*jdex_errors]:
-            # mypy can't do type narrowing
-            # results.errors is already sorted
-            return (results.errors, sorted(jdex_errors, key=_sort_error))
-    # This is unreachable, but mypy can't do the type narrowing in the case properly
-    return (results.errors, [])
+    errors = results.errors
+
+    for area, files in results.used_areas.items():
+        if area not in jdex.areas:
+            errors.append(
+                Error(
+                    error=AreaNotInJDex(area=area),
+                    files=[f for (_, f) in files],
+                ),
+            )
+        elif len(files) == 1 and files[0][1].name != jdex.areas[area]:
+            errors.append(
+                Error(
+                    error=AreaDifferentFromJDex(
+                        area=area,
+                        jdex_name=jdex.areas[area],
+                    ),
+                    files=[f for (_, f) in files],
+                ),
+            )
+    for category, files in results.used_categories.items():
+        if category not in jdex.categories:
+            errors.append(
+                Error(
+                    error=CategoryNotInJDex(category=category),
+                    files=[f for (_, f) in files],
+                ),
+            )
+        elif len(files) == 1 and files[0][1].name != jdex.categories[category]:
+            errors.append(
+                Error(
+                    error=CategoryDifferentFromJDex(
+                        category=category,
+                        jdex_name=jdex.categories[category],
+                    ),
+                    files=[f for (_, f) in files],
+                ),
+            )
+    for jid, files in results.used_ids.items():
+        if jid not in jdex.ids:
+            errors.append(
+                Error(error=IdNotInJDex(id=jid), files=[f for (_, f) in files]),
+            )
+        elif len(files) == 1 and files[0][1].name != jdex.ids[jid]:
+            errors.append(
+                Error(
+                    error=IdDifferentFromJDex(id=jid, jdex_name=jdex.ids[jid]),
+                    files=[f for (_, f) in files],
+                ),
+            )
+    return (sorted(errors, key=_sort_error), [])
 
 
 def _print_area(d: str) -> str:
