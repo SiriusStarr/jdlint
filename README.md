@@ -53,6 +53,8 @@ Python 3.10 and up. Python 3.9 and earlier is not supported.
 
 That's it! There are no other dependencies.
 
+`jdlint` should work on Linux, OS X, or Windows.
+
 ## Usage
 
 The script itself is executable (you should be able to just run `./jdlint.py`),
