@@ -1043,7 +1043,7 @@ def _get_jdex_entries(
     # These duplicate errors apply regardless of JDex type
     jdex.errors.extend(_error_if_dups(JDexDuplicateArea, JDexError, jdex.areas))
     jdex.errors.extend(
-        _error_if_dups(JDexDuplicateCategory, JDexError, jdex.categories)
+        _error_if_dups(JDexDuplicateCategory, JDexError, jdex.categories),
     )
     jdex.errors.extend(_error_if_dups(JDexDuplicateId, JDexError, jdex.ids))
     jdex.errors.extend(_error_if_dups(JDexDuplicateAreaHeader, JDexError, jdex.headers))
@@ -1308,3 +1308,15 @@ def lint_dir_and_jdex(
             return (results.errors, sorted(jdex_errors, key=_sort_error))
     # This is unreachable, but mypy can't do the type narrowing in the case properly
     return (results.errors, [])
+
+
+def _print_area(d: str) -> str:
+    """Given the number of an area, pretty-print it."""
+    return f"{d}0-{d}9"
+
+
+def _print_nest(f: File) -> str:
+    """Pretty-print a nested file."""
+    if f.nested_under:
+        return str(PurePath(*f.nested_under, f.name))
+    return f.name
