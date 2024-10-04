@@ -1373,3 +1373,68 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+
+    # Get all errors
+    if args.jdex:
+        (errors, jdex_errors) = lint_dir_and_jdex(
+            path=Path(args.path),
+            jdex_path=Path(args.jdex),
+            ignored=args.ignored,
+            alt_zeros=args.altzeros,
+        )
+    else:
+        errors = (lint_dir(args.path, args.ignored)).errors
+        jdex_errors = []
+
+    # Filter disabled errors
+    errors = [e for e in errors if e.type() not in args.disable]
+    jdex_errors = [e for e in jdex_errors if e.type() not in args.disable]
+
+    # If there were issues
+    if errors or jdex_errors:
+        # Dump to JSON if asked
+        if args.json:
+            json.dump(
+                {"errors": errors, "jdex_errors": jdex_errors},
+                sys.stdout,
+                cls=_EnhancedJSONEncoder,
+            )
+
+        # Or print them out
+        else:
+            # Group errors by type
+            jdex_errs_by_type: dict[JDexErrorType, list[JDexError]] = {}
+            for je in jdex_errors:
+                _insert_append(je.error, je, jdex_errs_by_type)
+
+            errs_by_type: dict[ErrorType, list[Error]] = {}
+            for e in errors:
+                _insert_append(e.error, e, errs_by_type)
+
+            # Print JDex errors if any
+            if jdex_errors:
+                print("JDex errors found:")
+                for jes in jdex_errs_by_type.values():
+                    explanation = jes[0].explain()
+                    print(f"\n{explanation.explanation} ({jes[0].type()})")
+                    print("\n".join(["  " + e.display() for e in jes]))
+                    print(explanation.fix)
+                    print("\n")
+
+            # Print file errors if any
+            if errors:
+                print("Errors found:")
+                for es in errs_by_type.values():
+                    explanation = es[0].explain()
+                    print(f"\n{explanation.explanation} ({es[0].type()})")
+                    print("\n".join(["  " + e.display() for e in es]))
+                    print(explanation.fix)
+                    print("\n")
+
+        # Exit unhappily
+        sys.exit(1)
+
+    # If we're here, there were no issues
+    print("Everything looks good!")
+
+    sys.exit(0)
