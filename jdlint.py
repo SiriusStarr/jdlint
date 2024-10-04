@@ -775,6 +775,14 @@ def _error_if_dups(  # Python's types are horrid and it just is awful to try to 
     ]
 
 
+def _insert_append(k, v, d) -> None:  # noqa: ANN001
+    """Add value as a singleton if it's not already in the dict, else append it to the list."""
+    if k not in d:
+        d.update({k: []})
+
+    d[k].append(v)
+
+
 def _process_single_file_jdex(path: Path) -> _JDexResults:
     """Process a JDex located in a single file."""
     # Matches JDex areas in a single-file format
