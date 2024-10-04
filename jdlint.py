@@ -1238,3 +1238,73 @@ def lint_dir(
         used_categories=used_categories,
         used_ids=used_ids,
     )
+
+
+def lint_dir_and_jdex(
+    *,
+    path: Path,
+    jdex_path: Path,
+    ignored: list[str] | None = None,
+    alt_zeros: bool = False,
+) -> tuple[list[Error], list[JDexError]]:
+    """Check a root of a JD system and its JDex for issues."""
+    results = lint_dir(path, ignored)
+    match _get_jdex_entries(jdex_path, ignored=ignored, alt_zeros=alt_zeros):
+        case _JDexResults(jdex_areas, jdex_categories, jdex_ids):
+            errors = results.errors
+
+            for area, files in results.used_areas.items():
+                if area not in jdex_areas:
+                    errors.append(
+                        Error(
+                            error=AreaNotInJDex(area=area),
+                            files=[f for (_, f) in files],
+                        ),
+                    )
+                elif len(files) == 1 and files[0][1].name != jdex_areas[area]:
+                    errors.append(
+                        Error(
+                            error=AreaDifferentFromJDex(
+                                area=area,
+                                jdex_name=jdex_areas[area],
+                            ),
+                            files=[f for (_, f) in files],
+                        ),
+                    )
+            for category, files in results.used_categories.items():
+                if category not in jdex_categories:
+                    errors.append(
+                        Error(
+                            error=CategoryNotInJDex(category=category),
+                            files=[f for (_, f) in files],
+                        ),
+                    )
+                elif len(files) == 1 and files[0][1].name != jdex_categories[category]:
+                    errors.append(
+                        Error(
+                            error=CategoryDifferentFromJDex(
+                                category=category,
+                                jdex_name=jdex_categories[category],
+                            ),
+                            files=[f for (_, f) in files],
+                        ),
+                    )
+            for jid, files in results.used_ids.items():
+                if jid not in jdex_ids:
+                    errors.append(
+                        Error(error=IdNotInJDex(id=jid), files=[f for (_, f) in files]),
+                    )
+                elif len(files) == 1 and files[0][1].name != jdex_ids[jid]:
+                    errors.append(
+                        Error(
+                            error=IdDifferentFromJDex(id=jid, jdex_name=jdex_ids[jid]),
+                            files=[f for (_, f) in files],
+                        ),
+                    )
+            return (sorted(errors, key=_sort_error), [])
+        case [*jdex_errors]:
+            # mypy can't do type narrowing
+            # results.errors is already sorted
+            return (results.errors, sorted(jdex_errors, key=_sort_error))
+    # This is unreachable, but mypy can't do the type narrowing in the case properly
+    return (results.errors, [])
