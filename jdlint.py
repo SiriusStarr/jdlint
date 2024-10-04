@@ -757,6 +757,24 @@ def _entry_is_ignored(
     return any(p.match(pattern) for pattern in ignored)
 
 
+E = TypeVar("E")
+
+
+def _error_if_dups(  # Python's types are horrid and it just is awful to try to type this better
+    make_error_type: Callable[[str], Any],
+    make_error: Callable[[Any, list[File]], E],
+    d: dict[str, list[tuple[Any, File]]],
+) -> list[E]:
+    return [
+        make_error(
+            make_error_type(k),
+            sorted([file for (_, file) in v], key=_sort_file),
+        )
+        for k, v in d.items()
+        if len(v) > 1
+    ]
+
+
 def _process_single_file_jdex(path: Path) -> _JDexResults:
     """Process a JDex located in a single file."""
     # Matches JDex areas in a single-file format
