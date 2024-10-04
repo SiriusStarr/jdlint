@@ -1320,3 +1320,56 @@ def _print_nest(f: File) -> str:
     if f.nested_under:
         return str(PurePath(*f.nested_under, f.name))
     return f.name
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        prog="jdlint",
+        description="Ensure that your Johnny Decimal system is neat and clean",
+    )
+    parser.add_argument(
+        "path",
+        metavar="ROOT_PATH",
+        help='The root of a JD file structure; should contain folders called e.g. "10-19 Life Admin"',
+    )
+    parser.add_argument(
+        "--jdex",
+        "--index",
+        metavar="JDEX_FILES",
+        help="Folder containing your JDex/index notes",
+    )
+    parser.add_argument(
+        "-i",
+        "--ignore",
+        dest="ignored",
+        action="append",
+        metavar="IGNORED_FILE",
+        default=[],
+        help="A file/directory name/pattern to ignore if it is encountered",
+    )
+    parser.add_argument(
+        "-d",
+        "--disable",
+        dest="disable",
+        action="append",
+        metavar="RULE_TO_DISABLE",
+        default=[],
+        help="A rule to disable by name, e.g. NONEMPTY_INBOX",
+    )
+    parser.add_argument(
+        "-j",
+        "--json",
+        dest="json",
+        action="store_const",
+        const=True,
+        help="Output as machine-readable JSON",
+    )
+    parser.add_argument(
+        "--altzeros",
+        dest="altzeros",
+        action="store_const",
+        const=True,
+        help="Specify use of the alternative standard zeros layout; see the README for more info",
+    )
+
+    args = parser.parse_args()
