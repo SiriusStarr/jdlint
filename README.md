@@ -47,8 +47,9 @@ clean.
 
 ## Installation/Requirements
 
-Install a fairly recent version of [Python 3](https://www.python.org/downloads/)
-(`jdlint` was developed using `3.11.8`).
+Install a fairly recent version of
+[Python 3](https://www.python.org/downloads/); `jdlint` is tested to work on
+Python 3.10 and up. Python 3.9 and earlier is not supported.
 
 That's it! There are no other dependencies.
 
