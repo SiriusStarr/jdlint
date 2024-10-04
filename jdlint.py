@@ -929,18 +929,15 @@ def _process_nested_jdex_structure(
                                 full_path=jid.path,
                                 nested_under=nested_under,
                             )
-                            id_match = id_re.fullmatch(jid.name)
-                            if id_match:
+                            if id_match := id_re.fullmatch(jid.name):
                                 _insert_append(
                                     id_match.group(1),
                                     (id_match.group(2), id_file),
                                     jdex.ids,
                                 )
-                                continue
-                            gen_match = jdex_note_generic_id_re.fullmatch(
+                            elif gen_match := jdex_note_generic_id_re.fullmatch(
                                 jid.name,
-                            )
-                            if gen_match:
+                            ):
                                 jdex.errors.append(
                                     JDexError(
                                         error=JDexIdInWrongCategory(
@@ -950,13 +947,15 @@ def _process_nested_jdex_structure(
                                         files=[id_file],
                                     ),
                                 )
-                                continue
-                            jdex.errors.append(
-                                JDexError(error=JDexInvalidIDName(), files=[id_file]),
-                            )
-                    continue
+                            else:
+                                jdex.errors.append(
+                                    JDexError(
+                                        error=JDexInvalidIDName(),
+                                        files=[id_file],
+                                    ),
+                                )
 
-                if gen_match := generic_category_re.fullmatch(cat.name):
+                elif gen_match := generic_category_re.fullmatch(cat.name):
                     jdex.errors.append(
                         JDexError(
                             error=JDexCategoryInWrongArea(
@@ -966,10 +965,10 @@ def _process_nested_jdex_structure(
                             files=[cat_file],
                         ),
                     )
-                    continue
-                jdex.errors.append(
-                    JDexError(error=JDexInvalidCategoryName(), files=[cat_file]),
-                )
+                else:
+                    jdex.errors.append(
+                        JDexError(error=JDexInvalidCategoryName(), files=[cat_file]),
+                    )
 
 
 def _get_jdex_entries(
@@ -1018,7 +1017,7 @@ def _get_jdex_entries(
     # These duplicate errors apply regardless of JDex type
     jdex.errors.extend(_error_if_dups(JDexDuplicateArea, JDexError, jdex.areas))
     jdex.errors.extend(
-        _error_if_dups(JDexDuplicateCategory, JDexError, jdex.categories),
+        _error_if_dups(JDexDuplicateCategory, JDexError, jdex.categories)
     )
     jdex.errors.extend(_error_if_dups(JDexDuplicateId, JDexError, jdex.ids))
     jdex.errors.extend(_error_if_dups(JDexDuplicateAreaHeader, JDexError, jdex.headers))
@@ -1048,4 +1047,168 @@ def _get_jdex_entries(
         jdex_areas={k: f"{_print_area(k)} {v[0][0]}" for k, v in jdex.areas.items()},
         jdex_categories={k: f"{k} {v[0][0]}" for k, v in jdex.categories.items()},
         jdex_ids={k: f"{k} {v[0][0]}" for k, v in jdex.ids.items()},
+    )
+
+
+def lint_dir(
+    path: Path,
+    ignored: list[str] | None = None,
+) -> LintResults:
+    """Check a root of a JD system for issues."""
+    errors: list[Error] = []
+    used_areas: dict[str, list[tuple[str, File]]] = {}
+    used_categories: dict[str, list[tuple[str, File]]] = {}
+    used_ids: dict[str, list[tuple[str, File]]] = {}
+
+    def check_inbox(nested_under: list[str], f: os.DirEntry) -> None:
+        if inbox_re.fullmatch(f.name):
+            entries = len(os.listdir(f.path))
+            if entries:
+                errors.append(
+                    Error(
+                        error=NonemptyInbox(num_items=entries),
+                        files=[
+                            File(
+                                name=f.name,
+                                full_path=f.path,
+                                nested_under=nested_under,
+                            ),
+                        ],
+                    ),
+                )
+
+    def check_if_out_of_id(file: os.DirEntry, nested_under: list[str]) -> bool:
+        if file.is_file():
+            errors.append(
+                Error(
+                    error=FileOutsideId(),
+                    files=[
+                        File(
+                            name=file.name,
+                            full_path=file.path,
+                            nested_under=nested_under,
+                        ),
+                    ],
+                ),
+            )
+            return True
+        return False
+
+    with os.scandir(path) as areas_it:
+        for area in areas_it:
+            if _entry_is_ignored(ignored, [], area) or check_if_out_of_id(area, []):
+                continue
+            area_file = File(
+                name=area.name,
+                full_path=area.path,
+                nested_under=[],
+            )
+            area_match = valid_area_re.fullmatch(area.name)
+            if not area_match:
+                errors.append(
+                    Error(
+                        error=InvalidAreaName(),
+                        files=[area_file],
+                    ),
+                )
+                continue
+            # Valid area
+            _insert_append(
+                area_match.group(1),
+                (area_match.group(2), area_file),
+                used_areas,
+            )
+            cat_re = _valid_category_re(area_match.group(1))
+            with os.scandir(area.path) as cats_it:
+                for cat in cats_it:
+                    if _entry_is_ignored(
+                        ignored,
+                        [area.name],
+                        cat,
+                    ) or check_if_out_of_id(cat, [area.name]):
+                        continue
+                    cat_file = File(
+                        name=cat.name,
+                        full_path=cat.path,
+                        nested_under=[area.name],
+                    )
+                    if cat_match := cat_re.fullmatch(cat.name):
+                        _insert_append(
+                            cat_match.group(1),
+                            (cat_match.group(2), cat_file),
+                            used_categories,
+                        )
+                        id_re = _valid_id_re(cat_match.group(1))
+                        with os.scandir(cat.path) as ids_it:
+                            nested_under = [area.name, cat.name]
+
+                            for jid in ids_it:
+                                if _entry_is_ignored(
+                                    ignored,
+                                    nested_under,
+                                    jid,
+                                ) or check_if_out_of_id(jid, nested_under):
+                                    continue
+                                id_file = File(
+                                    name=jid.name,
+                                    full_path=jid.path,
+                                    nested_under=nested_under,
+                                )
+                                if id_match := id_re.fullmatch(jid.name):
+                                    _insert_append(
+                                        id_match.group(1),
+                                        (id_match.group(2), id_file),
+                                        used_ids,
+                                    )
+
+                                    check_inbox(nested_under, jid)
+                                elif gen_match := generic_id_re.fullmatch(jid.name):
+                                    errors.append(
+                                        Error(
+                                            error=IdInWrongCategory(
+                                                id_ac=gen_match.group(
+                                                    1,
+                                                ),
+                                                file_ac=cat_match.group(
+                                                    1,
+                                                ),
+                                            ),
+                                            files=[id_file],
+                                        ),
+                                    )
+
+                                else:
+                                    errors.append(
+                                        Error(
+                                            error=InvalidIDName(),
+                                            files=[id_file],
+                                        ),
+                                    )
+                    elif gen_match := generic_category_re.fullmatch(cat.name):
+                        errors.append(
+                            Error(
+                                error=CategoryInWrongArea(
+                                    category_area=gen_match.group(1),
+                                    file_area=area_match.group(1),
+                                ),
+                                files=[cat_file],
+                            ),
+                        )
+                    else:
+                        errors.append(
+                            Error(
+                                error=InvalidCategoryName(),
+                                files=[cat_file],
+                            ),
+                        )
+
+        errors.extend(_error_if_dups(DuplicateArea, Error, used_areas))
+        errors.extend(_error_if_dups(DuplicateCategory, Error, used_categories))
+        errors.extend(_error_if_dups(DuplicateId, Error, used_ids))
+
+    return LintResults(
+        errors=sorted(errors, key=_sort_error),
+        used_areas=used_areas,
+        used_categories=used_categories,
+        used_ids=used_ids,
     )
