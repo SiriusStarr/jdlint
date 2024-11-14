@@ -1398,32 +1398,51 @@ if __name__ == "__main__":
 
         # Or print them out
         else:
-            # Group errors by type
-            jdex_errs_by_type: dict[JDexErrorType, list[JDexError]] = {}
+            # Group errors by type and then by type details
+            # Since all explanations are identical, there's no reason to print them multiple times
+            jdex_errs_by_type: dict[str, dict[JDexErrorType, list[JDexError]]] = {}
             for je in jdex_errors:
-                _insert_append(je.error, je, jdex_errs_by_type)
+                if je.error.type not in jdex_errs_by_type:
+                    jdex_errs_by_type.update({je.error.type: {}})
+                _insert_append(je.error, je, jdex_errs_by_type[je.error.type])
 
-            errs_by_type: dict[ErrorType, list[Error]] = {}
+            errs_by_type: dict[str, dict[ErrorType, list[Error]]] = {}
             for e in errors:
-                _insert_append(e.error, e, errs_by_type)
+                if e.error.type not in errs_by_type:
+                    errs_by_type.update({e.error.type: {}})
+                _insert_append(e.error, e, errs_by_type[e.error.type])
 
             # Print JDex errors if any
             if jdex_errors:
                 print("JDex errors found:")
-                for jes in jdex_errs_by_type.values():
-                    explanation = jes[0].explain()
-                    print(f"\n{explanation.explanation} ({jes[0].type()})")
-                    print("\n".join(["  " + e.display() for e in jes]))
+                for je_type in jdex_errs_by_type.values():
+                    first_j_err = next(iter(je_type.keys()))  # Just get the first error
+                    explanation = first_j_err.explain()
+                    print(f"\n{explanation.explanation} ({first_j_err.type})")
+                    print(
+                        "\n".join(
+                            [
+                                "  " + e.display()
+                                for jes in je_type.values()
+                                for e in jes
+                            ],
+                        ),
+                    )
                     print(explanation.fix)
                     print("\n")
 
             # Print file errors if any
             if errors:
                 print("Errors found:")
-                for es in errs_by_type.values():
-                    explanation = es[0].explain()
-                    print(f"\n{explanation.explanation} ({es[0].type()})")
-                    print("\n".join(["  " + e.display() for e in es]))
+                for e_type in errs_by_type.values():
+                    first_err = next(iter(e_type.keys()))  # Just get the first error
+                    explanation = first_err.explain()
+                    print(f"\n{explanation.explanation} ({first_err.type})")
+                    print(
+                        "\n".join(
+                            ["  " + e.display() for es in e_type.values() for e in es],
+                        ),
+                    )
                     print(explanation.fix)
                     print("\n")
 
