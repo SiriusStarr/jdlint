@@ -1,4 +1,4 @@
-# jdlint
+# jdlint [23.10]
 
 Ensure that your [Johnny Decimal](https://johnnydecimal.com/) system is neat and
 clean.
