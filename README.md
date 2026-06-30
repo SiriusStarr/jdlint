@@ -1,9 +1,9 @@
-# jdlint [23.10]
+# jdlint [N14.0001]
 
 Ensure that your [Johnny Decimal](https://johnnydecimal.com/) system is neat and
 clean.
 
-* [jdlint](#jdlint)
+* [jdlint \[N14.0001\]](#jdlint-n140001)
   * [Installation/Requirements](#installationrequirements)
   * [Usage](#usage)
     * [With a JDex/Index](#with-a-jdexindex)
@@ -11,7 +11,7 @@ clean.
       * [Alternative Layout for the Standard Zeros](#alternative-layout-for-the-standard-zeros)
     * [Ignoring Files](#ignoring-files)
     * [Disabling Specific Rules](#disabling-specific-rules)
-    * [I Am A Robot And Want Something Machine-Readable](#i-am-a-robot-and-want-something-machine-readable)
+    * [I Am a Robot and Want Something Machine-Readable](#i-am-a-robot-and-want-something-machine-readable)
   * [File Errors](#file-errors)
     * [`AREA_DIFFERENT_FROM_JDEX`](#area_different_from_jdex)
     * [`AREA_NOT_IN_JDEX`](#area_not_in_jdex)
@@ -43,7 +43,7 @@ clean.
     * [`JDEX_INVALID_CATEGORY_NAME`](#jdex_invalid_category_name)
     * [`JDEX_INVALID_ID_NAME`](#jdex_invalid_id_name)
   * [Why Doesn't This Check For-](#why-doesnt-this-check-for-)
-  * [Acknowledgements](#acknowledgements)
+  * [Acknowledgments](#acknowledgments)
 
 ## Installation/Requirements
 
@@ -53,14 +53,14 @@ Python 3.10 and up. Python 3.9 and earlier is not supported.
 
 That's it! There are no other dependencies.
 
-`jdlint` should work on Linux, OS X, or Windows.
+`jdlint` should work on Linux, macOS, or Windows.
 
 ## Usage
 
 The script itself is executable (you should be able to just run `./jdlint.py`),
 or you can explicitly point python at it, like `python3 jdlint.py`.
 
-You'll need to pass the script the root folder of your JD-organized file system,
+You'll need to pass the script the root folder of your JD-organized filesystem,
 e.g.
 
 ```bash
@@ -172,7 +172,7 @@ to break the rules. If so, you can disable a rule, e.g.
 ./jdlint.py ~/Documents --disable NONEMPTY_INBOX
 ```
 
-### I Am A Robot And Want Something Machine-Readable
+### I Am a Robot and Want Something Machine-Readable
 
 Ask nicely for JSON output instead!
 
@@ -595,7 +595,7 @@ jdex
 
 ### `JDEX_INVALID_ID_NAME`
 
-A JDEx note was found at the ID level that doesn't begin with `11.12` or the
+A JDex note was found at the ID level that doesn't begin with `11.12` or the
 like, e.g.
 
 ```text
@@ -611,8 +611,8 @@ like, e.g.
 
 Because I didn't think of it. Open an issue and maybe it will get added!
 
-## Acknowledgements
+## Acknowledgments
 
 This project has no formal affiliation with the Johnny Decimal system. The
 license for said system may be found
-[here](https://johnnydecimal.com/00-09-site-administration/01-about/01.02-licence/).
+[here](https://johnnydecimal.com/support/about-legal/licence/).
