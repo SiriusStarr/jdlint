@@ -9,10 +9,453 @@ import dataclasses
 import json
 import os
 import re
-import sys
+import typing
 from dataclasses import dataclass
 from pathlib import Path, PurePath
-from typing import Any, Callable, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, TypeVar
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+import tomllib
+
+
+class ConfigError(Exception):
+    """An error in the jdlint config."""
+
+    def __init__(self, key: str, message: str) -> None:
+        """Create a config error, given the key it occurs at and a message."""
+        super().__init__(f"Error in config at key: {key}.  {message}")
+
+
+class ConfigKeyError(ConfigError):
+    """An unexpected key in the jdlint config."""
+
+    def __init__(self, key: str, valid: list[str]) -> None:
+        """Create a key error, given the extra key and a list of valid keys."""
+        super().__init__(
+            key,
+            f"Not an expected key.  Valid keys are: [{', '.join(valid)}]",
+        )
+
+
+class ConfigTypeError(ConfigError):
+    """A value with the wrong type in the jdlint config."""
+
+    def __init__(self, key: str, expected: str, got: str) -> None:
+        """Create a type error, given the key it occurs at, the expected type, and the actual type."""
+        super().__init__(key, f"Wrong type.  Expected: {expected}  Got: {got}")
+
+
+class ConfigValueError(ConfigError):
+    """A bad value in the jdlint config."""
+
+    def __init__(self, key, issue, got):
+        """Create a value error, given the key it occurs at, the issue with the value, and the actual value."""
+        super().__init__(key, f"Bad value.  Got: {got}  Issue: {issue}")
+
+
+class ConfigConflictError(ConfigError):
+    """A conflict in the jdlint config."""
+
+    def __init__(self, key, issue):
+        """Create a conflict error, given the key it occurs at and the issue."""
+        super().__init__(key, f"Conflict in config.  Issue: {issue}")
+
+
+class ConfigSystemRoot:
+    """A root (base folder) of a JD system to check for correctness, e.g. ~/Documents."""
+
+    def __init__(self, at: str, from_file: dict) -> None:
+        """Create a valid configuration given a loaded section of a config file."""
+        # Acquire and set defaults
+        self.name = from_file.pop("name")
+        self.path = Path(from_file.pop("path"))
+        self.ignore = from_file.pop("ignore", [])
+
+        if not isinstance(self.name, str):
+            raise ConfigTypeError(
+                f"{at}.name",
+                "str",
+                type(self.name).__name__,
+            )
+
+        # Validate path is good
+        if not self.path.is_dir():
+            ConfigValueError(
+                f"{at}.path",
+                "Root path isn't a folder that exists!",
+                self.path,
+            )
+        if not isinstance(self.ignore, list):
+            raise ConfigTypeError(
+                f"{at}.ignore",
+                "list",
+                type(self.ignore).__name__,
+            )
+        for r in self.ignore:
+            if not isinstance(r, str):
+                raise ConfigTypeError(f"{at}.ignore", "str", type(r).__name__)
+
+        # Ensure no extra fields
+        for key in from_file:
+            raise ConfigKeyError(f"{at}.{key}", list(self.__dict__.keys()))
+
+
+class ConfigSystemJDex:
+    """Valid configuration for the JDex of a system."""
+
+    def __init__(self, at: str, from_file: dict) -> None:
+        """Create a valid configuration given a loaded section of a config file."""
+        # Acquire and set defaults
+        self.path = Path(from_file.pop("path"))
+
+        # Validate path is good
+        if not self.path.is_dir():
+            ConfigValueError(
+                f"{at}.path",
+                "JDex path isn't a folder that exists!",
+                self.path,
+            )
+
+        self.children = [
+            ConfigJDexTier(
+                f"{at}.children[{i}]",
+                [],
+                v,
+            )
+            for i, v in enumerate(from_file.pop("children", []))
+        ]
+        self.notes = [
+            ConfigJDexNotes(
+                f"{at}.notes[{i}]",
+                [],
+                v,
+            )
+            for i, v in enumerate(from_file.pop("notes", []))
+        ]
+        if self.notes and self.children:
+            raise ConfigConflictError(
+                at,
+                "Only one of notes and children may be specified.",
+            )
+
+        # Ensure no extra fields
+        for key in from_file:
+            raise ConfigKeyError(f"{at}.{key}", list(self.__dict__.keys()))
+
+
+class ConfigLinter:
+    """Valid configuration for the linter."""
+
+    def __init__(self, from_file: dict) -> None:
+        """Create a valid configuration given a loaded linter section of a config file."""
+        # Acquire and set defaults
+        self.disable_rules = from_file.pop("disable_rules", [])
+        self.json_output = from_file.pop("json_output", False)
+        self.ignore = from_file.pop("ignore", [])
+
+        # Validate
+        if not isinstance(self.disable_rules, list):
+            raise ConfigTypeError(
+                "linter.disable_rules",
+                "list",
+                type(self.disable_rules).__name__,
+            )
+        for r in self.disable_rules:
+            if r in [e.type for e in typing.get_args(ErrorType)]:
+                continue
+            raise ConfigValueError("linter.disable_rules", "not a valid rule name", r)
+
+        if not isinstance(self.json_output, bool):
+            raise ConfigTypeError(
+                "linter.json_output",
+                "bool",
+                type(self.json_output).__name__,
+            )
+
+        if not isinstance(self.ignore, list):
+            raise ConfigTypeError(
+                "linter.ignore",
+                "list",
+                type(self.ignore).__name__,
+            )
+        for r in self.ignore:
+            if not isinstance(r, str):
+                raise ConfigTypeError("linter.ignore", "str", type(r).__name__)
+
+        # Ensure no extra fields
+        for key in from_file:
+            raise ConfigKeyError(f"linter.{key}", list(self.__dict__.keys()))
+
+
+class ConfigSystem:
+    """Valid configuration for the JD system."""
+
+    def __init__(self, from_file: dict) -> None:
+        """Create a valid configuration given a loaded system section of a config file."""
+        self.roots = [
+            ConfigSystemRoot(
+                f"system.roots[{i}]",
+                v,
+            )
+            for i, v in enumerate(from_file.pop("roots", []))
+        ]
+
+        if "jdex" in from_file:
+            self.jdex = ConfigSystemJDex("system.jdex", from_file.pop("jdex"))
+        else:
+            self.jdex = None
+
+        self.children = [
+            ConfigSystemTier(
+                f"system.children[{i}]",
+                [],
+                v,
+            )
+            for i, v in enumerate(from_file.pop("children", []))
+        ]
+        # Ensure no extra fields
+        for key in from_file:
+            raise ConfigKeyError(f"system.{key}", list(self.__dict__.keys()))
+
+
+class ConfigJDexNotes:
+    """Configuration for how JDex notes are formatted."""
+
+    def __init__(
+        self,
+        at: str,
+        parent_segments: list[str],
+        from_file: dict,
+    ) -> None:
+        """Create a valid note format given a loaded section of a config file."""
+        # Acquire and set defaults
+        self.name = from_file.pop("name")
+
+        # Validate
+        if not isinstance(self.name, str):
+            raise ConfigTypeError(
+                f"{at}.name",
+                "str",
+                type(self.name).__name__,
+            )
+        if not isinstance(from_file["format"], str):
+            raise ConfigTypeError(
+                f"{at}.format",
+                "str",
+                type(from_file["format"]).__name__,
+            )
+        # Compile Format
+        self.format = ConfigFormat(
+            f"{at}.format",
+            parent_segments,
+            from_file.pop("format"),
+        )
+
+        # Ensure no extra fields
+        for key in from_file:
+            raise ConfigKeyError(f"{at}.{key}", list(self.__dict__.keys()))
+
+
+class ConfigFolderTier:
+    """A tier (hierarchical level) of a JD system, e.g. a Category, whether in the JDex or the system itself."""
+
+    def __init__(
+        self,
+        child_class: Callable,
+        at: str,
+        parent_segments: list[str],
+        from_file: dict,
+    ) -> None:
+        """Create a valid tier given a loaded section of a config file."""
+        # Acquire and set defaults
+        self.name = from_file.pop("name")
+        self.allow_arbitrary_contents = from_file.pop("allow_arbitrary_contents", False)
+
+        # Validate
+        if not isinstance(self.name, str):
+            raise ConfigTypeError(
+                f"{at}.name",
+                "str",
+                type(self.name).__name__,
+            )
+        if not isinstance(from_file["format"], str):
+            raise ConfigTypeError(
+                f"{at}.format",
+                "str",
+                type(from_file["format"]).__name__,
+            )
+        if not isinstance(self.allow_arbitrary_contents, bool):
+            raise ConfigTypeError(
+                f"{at}.allow_arbitrary_contents",
+                "bool",
+                type(self.allow_arbitrary_contents).__name__,
+            )
+
+        # Compile Format & Children
+        self.format = ConfigFormat(
+            f"{at}.format",
+            parent_segments,
+            from_file.pop("format"),
+        )
+        self.children = [
+            child_class(
+                f"{at}.children[{i}]",
+                self.format.known_segments,
+                v,
+            )
+            for i, v in enumerate(from_file.pop("children", []))
+        ]
+        if self.children and self.allow_arbitrary_contents:
+            raise ConfigConflictError(
+                at,
+                "If children are specified, allow_arbitrary_contents must be false.",
+            )
+
+
+class ConfigSystemTier(ConfigFolderTier):
+    """A tier (hierarchical level) of a JD system, e.g. a Category, in the system (not the JDex)."""
+
+    def __init__(self, at: str, parent_segments: list[str], from_file: dict) -> None:
+        """Create a valid tier given a loaded section of a config file."""
+        # Acquire and set defaults
+        self.jdex_note = from_file.pop("jdex_note", None)
+        self.can_be_file = from_file.pop("can_be_file", False)
+
+        # Call the folder tier stuff
+        super().__init__(ConfigSystemTier, at, parent_segments, from_file)
+
+        # Validate
+        if self.jdex_note is not None and not isinstance(self.jdex_note, str):
+            raise ConfigTypeError(
+                f"{at}.jdex_note",
+                "str",
+                type(self.jdex_note).__name__,
+            )
+        if not isinstance(self.can_be_file, bool):
+            raise ConfigTypeError(
+                f"{at}.can_be_file",
+                "bool",
+                type(self.can_be_file).__name__,
+            )
+
+        if self.children and (self.can_be_file):
+            raise ConfigConflictError(
+                at,
+                "If children are specified, can_be_file must be false.",
+            )
+        # Ensure no extra fields
+        for key in from_file:
+            raise ConfigKeyError(f"{at}.{key}", list(self.__dict__.keys()))
+
+
+class ConfigJDexTier(ConfigFolderTier):
+    """A tier (hierarchical level) of a JD system, e.g. a Category, in the JDex."""
+
+    def __init__(self, at: str, parent_segments: list[str], from_file: dict) -> None:
+        """Create a valid tier given a loaded section of a config file."""
+        # Call the folder tier stuff
+        super().__init__(ConfigJDexTier, at, parent_segments, from_file)
+
+        self.notes = [
+            ConfigJDexNotes(
+                f"{at}.notes[{i}]",
+                self.format.known_segments,
+                v,
+            )
+            for i, v in enumerate(from_file.pop("notes", []))
+        ]
+
+        if not self.notes and not self.children:
+            raise ConfigConflictError(
+                at,
+                "A JDex tier must specify either notes or children.",
+            )
+
+        if self.notes and self.children:
+            raise ConfigConflictError(
+                at,
+                "Only one of notes and children may be specified.",
+            )
+
+        # Ensure no extra fields
+        for key in from_file:
+            raise ConfigKeyError(f"{at}.{key}", list(self.__dict__.keys()))
+
+
+class ConfigFormat:
+    """A format for a file or folder."""
+
+    # A valid variable segment of a format
+    variable_segment_re = re.compile(r"(=|\*|[#]+)([A-Za-z]+)")
+
+    def __init__(self, at: str, parent_segments: list[str], from_file: str) -> None:
+        """Create a valid format given a string from a config file."""
+        if from_file.count("/") % 2 != 0:
+            raise ConfigValueError(
+                at,
+                "Malfored format; there must be an even number of / characters.  You have an extra one/are missing one.",
+                from_file,
+            )
+        if from_file == "":
+            raise ConfigValueError(
+                at,
+                "Malfored format; must not be empty.",
+                from_file,
+            )
+        regex = []
+        new_segments = []
+        for i, v in enumerate(from_file.split("/")):
+            if i % 2 == 0:
+                # Literal segment
+                regex.append(lambda _, v=v: re.escape(v))
+            else:
+                # Variable segment
+                match = ConfigFormat.variable_segment_re.fullmatch(v)
+                if not match:
+                    raise ConfigValueError(
+                        at,
+                        "Malfored format; variable segment must consist of =, *, or one or more # followed by an alphabetic identifier.",
+                        v,
+                    )
+                if match.group(1) == "=":
+                    if match.group(2) not in parent_segments:
+                        raise ConfigValueError(
+                            at,
+                            "Malfored format; variable segment referenced an identifier not bound in a parent.",
+                            v,
+                        )
+                    p = match.group(2)
+                    regex.append(lambda d, p=p: re.escape(d[p]))
+                else:
+                    if match.group(2) in parent_segments:
+                        raise ConfigValueError(
+                            at,
+                            "Malfored format; variable segment tried to rebind an identifier already bound in a parent.",
+                            v,
+                        )
+                    identifier = match.group(2)
+                    new_segments.append(match.group(2))
+                    if match.group(1) == "*":
+                        regex.append(
+                            lambda _, identifier=identifier: f"(?P<{identifier}>.+)",
+                        )
+                    else:
+                        # Must be a ## type variable
+                        regex.append(
+                            lambda _, identifier=identifier, match_len=len(match.group(1)): (
+                                f"(?P<{identifier}>[0-9]{{{match_len}}})"
+                            ),
+                        )
+
+        self.known_segments = parent_segments + new_segments
+        self.build_regex = lambda d: "".join([f(d) for f in regex])
+
+
+class Config:
+    def __init__(self, from_file):
+        self.linter = ConfigLinter(from_file.get("linter", {}))
+        self.system = ConfigSystem(from_file["system"])
 
 
 @dataclass(frozen=True)
