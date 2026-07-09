@@ -992,12 +992,12 @@ class JDexDuplicateId:
 class JDexIssueFileWhereFolderExpected(JDexIssue):
     """A JDex file that matched an expected folder was found."""
 
-    matched_format: str
+    matched_pattern: ContentPattern
     type: Literal["JDEX_FILE_WHERE_FOLDER_EXPECTED"] = "JDEX_FILE_WHERE_FOLDER_EXPECTED"
 
     def display(self) -> str:
         """Display this particular instance of an error."""
-        return f'{self.file!s} (matched "{self.matched_format}")'
+        return f'{self.file!s} (matched "{self.matched_pattern}")'
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -1011,12 +1011,12 @@ class JDexIssueFileWhereFolderExpected(JDexIssue):
 class JDexIssueFolderWhereNoteExpected(JDexIssue):
     """A JDex folder that matched an expected note was found."""
 
-    matched_format: str
+    matched_pattern: ContentPattern
     type: Literal["JDEX_FOLDER_WHERE_NOTE_EXPECTED"] = "JDEX_FOLDER_WHERE_NOTE_EXPECTED"
 
     def display(self) -> str:
         """Display this particular instance of an error."""
-        return f'{self.file!s} (matched "{self.matched_format}")'
+        return f'{self.file!s} (matched "{self.matched_pattern}")'
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -1027,10 +1027,18 @@ class JDexIssueFolderWhereNoteExpected(JDexIssue):
 
 
 @dataclass(frozen=True)
+class ContentPattern:
+    """A possible pattern that could be matched."""
+
+    name: str
+    format: str
+
+
+@dataclass(frozen=True)
 class JDexIssueArbitraryContentWhereNotAllowed(JDexIssue):
     """Content was found in the JDex that didn't match any expected format."""
 
-    possible_formats: list[str]
+    possible_formats: list[ContentPattern]
     type: Literal["JDEX_ARBITRARY_CONTENT_WHERE_NOT_ALLOWED"] = (
         "JDEX_ARBITRARY_CONTENT_WHERE_NOT_ALLOWED"
     )
@@ -1879,7 +1887,7 @@ def _get_jdex_notes_here_or_children(
                         accumulated_errors.append(
                             JDexIssueFileWhereFolderExpected(
                                 PurePath(x),
-                                child.format.raw_format,
+                                ContentPattern(child.name, child.format.raw_format),
                             ),
                         )
                         break
@@ -1904,7 +1912,10 @@ def _get_jdex_notes_here_or_children(
                             accumulated_errors.append(
                                 JDexIssueFolderWhereNoteExpected(
                                     PurePath(x),
-                                    note.format.raw_format,
+                                    ContentPattern(
+                                        note.name,
+                                        note.format.raw_format,
+                                    ),
                                 ),
                             )
                             break
@@ -1919,8 +1930,14 @@ def _get_jdex_notes_here_or_children(
                         accumulated_errors.append(
                             JDexIssueArbitraryContentWhereNotAllowed(
                                 PurePath(x),
-                                [c.format.raw_format for c in tier.children]
-                                + [n.format.raw_format for n in tier.notes],
+                                [
+                                    ContentPattern(c.name, c.format.raw_format)
+                                    for c in tier.children
+                                ]
+                                + [
+                                    ContentPattern(n.name, n.format.raw_format)
+                                    for n in tier.notes
+                                ],
                             ),
                         )
     return (accumulated_notes, accumulated_errors)

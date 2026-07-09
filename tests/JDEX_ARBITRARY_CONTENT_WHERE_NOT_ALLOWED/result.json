@@ -5,30 +5,48 @@
       "type": "JDEX_ARBITRARY_CONTENT_WHERE_NOT_ALLOWED",
       "file": "files/1/File",
       "possible_formats": [
-        "/*Name//=A/",
-        "/=A//*Name/"
+        {
+          "name": "B1",
+          "format": "/*Name//=A/"
+        },
+        {
+          "name": "B2",
+          "format": "/=A//*Name/"
+        }
       ]
     },
     {
       "type": "JDEX_ARBITRARY_CONTENT_WHERE_NOT_ALLOWED",
       "file": "files/1/Folder",
       "possible_formats": [
-        "/*Name//=A/",
-        "/=A//*Name/"
+        {
+          "name": "B1",
+          "format": "/*Name//=A/"
+        },
+        {
+          "name": "B2",
+          "format": "/=A//*Name/"
+        }
       ]
     },
     {
       "type": "JDEX_ARBITRARY_CONTENT_WHERE_NOT_ALLOWED",
       "file": "files/1/1A/File",
       "possible_formats": [
-        "/=A//=Name/.md"
+        {
+          "name": "C2",
+          "format": "/=A//=Name/.md"
+        }
       ]
     },
     {
       "type": "JDEX_ARBITRARY_CONTENT_WHERE_NOT_ALLOWED",
       "file": "files/1/1A/Folder",
       "possible_formats": [
-        "/=A//=Name/.md"
+        {
+          "name": "C2",
+          "format": "/=A//=Name/.md"
+        }
       ]
     }
   ]

@@ -4,12 +4,18 @@
     {
       "type": "JDEX_FILE_WHERE_FOLDER_EXPECTED",
       "file": "files/3",
-      "matched_format": "/#A/"
+      "matched_pattern": {
+        "name": "A",
+        "format": "/#A/"
+      }
     },
     {
       "type": "JDEX_FILE_WHERE_FOLDER_EXPECTED",
       "file": "files/1/1B",
-      "matched_format": "/=A//*Name/"
+      "matched_pattern": {
+        "name": "B",
+        "format": "/=A//*Name/"
+      }
     }
   ]
 }

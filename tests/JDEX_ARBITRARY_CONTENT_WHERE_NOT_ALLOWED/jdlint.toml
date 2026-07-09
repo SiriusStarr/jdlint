@@ -9,24 +9,24 @@ path = "files"
 path = "files"
 
 [[system.jdex.children]]
-name = "JDex Folder"
+name = "A"
 format = "/#A/"
 
 [[system.jdex.children.children]]
-name = "JDex Folder"
+name = "B1"
 format = "/*Name//=A/"
 allow_arbitrary_contents = true
 
 [[system.jdex.children.children.notes]]
-name = "JDex Note"
+name = "C1"
 format = "X.md"
 
 [[system.jdex.children.children]]
-name = "JDex Folder"
+name = "B2"
 format = "/=A//*Name/"
 
 [[system.jdex.children.children.notes]]
-name = "JDex Note"
+name = "C2"
 format = "/=A//=Name/.md"
 
 ## ###########################################################

@@ -11,15 +11,15 @@ path = "files"
 ignore = [".obsidian"]
 
 [[system.jdex.children]]
-name = "JDex Folder"
+name = "A"
 format = "/#A/"
 
 [[system.jdex.children.children]]
-name = "JDex Folder"
+name = "B"
 format = "/=A//*Name/"
 
 [[system.jdex.children.children.notes]]
-name = "JDex Note"
+name = "C"
 format = "/=A//=Name/.md"
 
 ## ###########################################################
