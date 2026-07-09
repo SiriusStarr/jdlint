@@ -1,0 +1,39 @@
+[linter]
+json_output = true
+
+[[system.roots]]
+name = "JDex"
+path = "files"
+
+[system.jdex]
+path = "files"
+
+[[system.jdex.children]]
+name = "JDex Folder"
+format = "/#A/"
+
+[[system.jdex.children.children]]
+name = "JDex Folder"
+format = "/*Name//=A/"
+allow_arbitrary_contents = true
+
+[[system.jdex.children.children.notes]]
+name = "JDex Note"
+format = "X.md"
+
+[[system.jdex.children.children]]
+name = "JDex Folder"
+format = "/=A//*Name/"
+
+[[system.jdex.children.children.notes]]
+name = "JDex Note"
+format = "/=A//=Name/.md"
+
+## ###########################################################
+# Standard
+## ###########################################################
+[[system.children]]
+name = "Area"
+format = "/#A/0-/=A/9 /*Area/"
+jdex_note = "/=A/0.00 /=Area/.md"
+allow_arbitrary_contents = true
