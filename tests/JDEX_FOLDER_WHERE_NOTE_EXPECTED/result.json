@@ -1,0 +1,10 @@
+{
+  "errors": [],
+  "jdex_errors": [
+    {
+      "type": "JDEX_FOLDER_WHERE_NOTE_EXPECTED",
+      "file": "files/1/1B/1B.md",
+      "matched_format": "/=A//=Name/.md"
+    }
+  ]
+}

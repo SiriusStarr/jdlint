@@ -1008,6 +1008,25 @@ class JDexIssueFileWhereFolderExpected(JDexIssue):
 
 
 @dataclass(frozen=True)
+class JDexIssueFolderWhereNoteExpected(JDexIssue):
+    """A JDex folder that matched an expected note was found."""
+
+    matched_format: str
+    type: Literal["JDEX_FOLDER_WHERE_NOTE_EXPECTED"] = "JDEX_FOLDER_WHERE_NOTE_EXPECTED"
+
+    def display(self) -> str:
+        """Display this particular instance of an error."""
+        return f'{self.file!s} (matched "{self.matched_format}")'
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="A JDex folder was found that matched the format of an expected note.",
+            fix="Your JDex format should not mix folders and notes that share a naming scheme.",
+        )
+
+
+@dataclass(frozen=True)
 class JDexIssueArbitraryContentWhereNotAllowed(JDexIssue):
     """Content was found in the JDex that didn't match any expected format."""
 
@@ -1840,7 +1859,9 @@ def _get_jdex_notes_here_or_children(
     valid_children = [
         (re.compile(c.format.build_regex(bound_segments)), c) for c in tier.children
     ]
-    valid_notes = [re.compile(n.format.build_regex(bound_segments)) for n in tier.notes]
+    valid_notes = [
+        (re.compile(n.format.build_regex(bound_segments)), n) for n in tier.notes
+    ]
 
     accumulated_notes = []
     accumulated_errors = []
@@ -1874,13 +1895,18 @@ def _get_jdex_notes_here_or_children(
                     accumulated_errors.extend(child_errors)
                     break
             else:
-                for note_format in valid_notes:
+                for note_format, note in valid_notes:
                     match = note_format.fullmatch(x.name)
                     if match:
                         # Is a valid JDex note
                         if x.is_dir():
                             # This is an error
-                            # TODO report error
+                            accumulated_errors.append(
+                                JDexIssueFolderWhereNoteExpected(
+                                    PurePath(x),
+                                    note.format.raw_format,
+                                ),
+                            )
                             break
 
                         # Create note entry
