@@ -1,5 +1,6 @@
 [linter]
 json_output = true
+ignore = [".placeholder"]
 
 [[system.roots]]
 name = "JDex"
@@ -15,10 +16,11 @@ format = "/#A/"
 [[system.jdex.children.children]]
 name = "B"
 format = "/=A//*Name/"
+allow_arbitrary_contents = true
 
 [[system.jdex.children.children.notes]]
-name = "C"
-format = "/=A//=Name/.md"
+name = "C1"
+format = "X.md"
 
 ## ###########################################################
 # Standard

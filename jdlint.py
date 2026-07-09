@@ -1056,6 +1056,24 @@ class JDexIssueArbitraryContentWhereNotAllowed(JDexIssue):
 
 
 @dataclass(frozen=True)
+class JDexIssueEmptyFolder(JDexIssue):
+    """A folder in the JDex is completely empty (and is not arbitrary content)."""
+
+    type: Literal["JDEX_EMPTY_FOLDER"] = "JDEX_EMPTY_FOLDER"
+
+    def display(self) -> str:
+        """Display this particular instance of an error."""
+        return f"{self.file!s}"
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="A folder that matched a pattern in the JDex has no contents.",
+            fix="You should ensure that all JDex notes exist; if this folder truly contains no IDs, it shouldn't exist.",
+        )
+
+
+@dataclass(frozen=True)
 class JDexIdInWrongCategory:
     """A JDex ID that, by its number, has been put in the wrong category."""
 
@@ -1874,10 +1892,12 @@ def _get_jdex_notes_here_or_children(
     accumulated_notes = []
     accumulated_errors = []
 
+    has_content = False
     with os.scandir(path) as contents:
         for x in contents:
             if _entry_is_ignored(ignored, [], x):
                 continue
+            has_content = True
             for child_format, child in valid_children:
                 match = child_format.fullmatch(x.name)
                 if match:
@@ -1940,6 +1960,9 @@ def _get_jdex_notes_here_or_children(
                                 ],
                             ),
                         )
+    if not has_content:
+        # We have a fully empty JDex folder; it shouldn't exist if it's doing nothing.
+        accumulated_errors.append(JDexIssueEmptyFolder(PurePath(path)))
     return (accumulated_notes, accumulated_errors)
 
 

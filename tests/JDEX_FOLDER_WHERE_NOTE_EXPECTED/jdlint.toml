@@ -4,11 +4,9 @@ json_output = true
 [[system.roots]]
 name = "JDex"
 path = "files"
-ignore = [".obsidian"]
 
 [system.jdex]
 path = "files"
-ignore = [".obsidian"]
 
 [[system.jdex.children]]
 name = "A"
