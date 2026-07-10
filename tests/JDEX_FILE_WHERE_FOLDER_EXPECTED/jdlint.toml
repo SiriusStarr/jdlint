@@ -19,6 +19,7 @@ format = "/=A//*Name/"
 [[system.jdex.children.children.notes]]
 name = "C"
 format = "/=A//=Name/.md"
+id = "/=A/./=Name/"
 
 ## ###########################################################
 # Standard
@@ -27,4 +28,5 @@ format = "/=A//=Name/.md"
 name = "Area"
 format = "/#A/0-/=A/9 /*Area/"
 jdex_note = "/=A/0.00 /=Area/.md"
+id = "/=A/./=Area/"
 allow_arbitrary_contents = true

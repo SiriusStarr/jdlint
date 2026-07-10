@@ -5,7 +5,11 @@
       "type": "JDEX_FOLDER_WHERE_NOTE_EXPECTED",
       "file": "files/1/1B/1B.md",
       "matched_pattern": {
-        "name": "JDex Note",
+        "name": [
+          "A",
+          "B",
+          "JDex Note"
+        ],
         "format": "/=A//=Name/.md"
       }
     }

@@ -1,0 +1,14 @@
+{
+  "errors": [],
+  "jdex_errors": [
+    {
+      "type": "JDEX_DUPLICATE_ID",
+      "file": "files/1/11 A.md",
+      "files": [
+        "files/1/11 A.md",
+        "files/1/11 B.md"
+      ],
+      "id": "1.1"
+    }
+  ]
+}

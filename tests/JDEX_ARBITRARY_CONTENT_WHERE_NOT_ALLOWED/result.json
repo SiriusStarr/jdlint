@@ -6,11 +6,17 @@
       "file": "files/1/File",
       "possible_formats": [
         {
-          "name": "B1",
+          "name": [
+            "A",
+            "B1"
+          ],
           "format": "/*Name//=A/"
         },
         {
-          "name": "B2",
+          "name": [
+            "A",
+            "B2"
+          ],
           "format": "/=A//*Name/"
         }
       ]
@@ -20,11 +26,17 @@
       "file": "files/1/Folder",
       "possible_formats": [
         {
-          "name": "B1",
+          "name": [
+            "A",
+            "B1"
+          ],
           "format": "/*Name//=A/"
         },
         {
-          "name": "B2",
+          "name": [
+            "A",
+            "B2"
+          ],
           "format": "/=A//*Name/"
         }
       ]
@@ -34,7 +46,11 @@
       "file": "files/1/1A/File",
       "possible_formats": [
         {
-          "name": "C2",
+          "name": [
+            "A",
+            "B2",
+            "C2"
+          ],
           "format": "/=A//=Name/.md"
         }
       ]
@@ -44,7 +60,11 @@
       "file": "files/1/1A/Folder",
       "possible_formats": [
         {
-          "name": "C2",
+          "name": [
+            "A",
+            "B2",
+            "C2"
+          ],
           "format": "/=A//=Name/.md"
         }
       ]

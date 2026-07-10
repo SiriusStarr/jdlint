@@ -20,6 +20,7 @@ allow_arbitrary_contents = true
 [[system.jdex.children.children.notes]]
 name = "C1"
 format = "X.md"
+id = "/=A/./=Name/"
 
 [[system.jdex.children.children]]
 name = "B2"
@@ -28,6 +29,7 @@ format = "/=A//*Name/"
 [[system.jdex.children.children.notes]]
 name = "C2"
 format = "/=A//=Name/.md"
+id = "/=A/./=Name/"
 
 ## ###########################################################
 # Standard
@@ -36,4 +38,5 @@ format = "/=A//=Name/.md"
 name = "Area"
 format = "/#A/0-/=A/9 /*Area/"
 jdex_note = "/=A/0.00 /=Area/.md"
+id = "/=A/./=Area/"
 allow_arbitrary_contents = true

@@ -1,6 +1,5 @@
 [linter]
 json_output = true
-ignore = [".placeholder"]
 
 [[system.roots]]
 name = "JDex"
@@ -13,15 +12,10 @@ path = "files"
 name = "A"
 format = "/#A/"
 
-[[system.jdex.children.children]]
+[[system.jdex.children.notes]]
 name = "B"
-format = "/=A//*Name/"
-allow_arbitrary_contents = true
-
-[[system.jdex.children.children.notes]]
-name = "C1"
-format = "X.md"
-id = "/=A/./=Name/"
+format = "/=A//#ID//*Name/.md"
+id = "/=A/./=ID/"
 
 ## ###########################################################
 # Standard
