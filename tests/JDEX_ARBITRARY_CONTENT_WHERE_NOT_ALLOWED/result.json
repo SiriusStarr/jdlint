@@ -1,5 +1,5 @@
 {
-  "errors": [],
+  "errors": {},
   "jdex_errors": [
     {
       "type": "JDEX_ARBITRARY_CONTENT_WHERE_NOT_ALLOWED",

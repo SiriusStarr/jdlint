@@ -21,12 +21,9 @@ name = "C"
 format = "/=A//=Name/.md"
 id = "/=A/./=Name/"
 
-## ###########################################################
-# Standard
-## ###########################################################
 [[system.children]]
 name = "Area"
-format = "/#A/0-/=A/9 /*Area/"
-jdex_note = "/=A/0.00 /=Area/.md"
-id = "/=A/./=Area/"
+format = "/#A/"
+jdex_note = "/=A/.md"
+id = "/=A/"
 allow_arbitrary_contents = true

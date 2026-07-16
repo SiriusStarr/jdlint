@@ -1,16 +1,6 @@
 {
-  "errors": [],
+  "errors": {},
   "jdex_errors": [
-    {
-      "type": "JDEX_FILE_WHERE_FOLDER_EXPECTED",
-      "file": "files/3",
-      "matched_pattern": {
-        "name": [
-          "A"
-        ],
-        "format": "/#A/"
-      }
-    },
     {
       "type": "JDEX_FILE_WHERE_FOLDER_EXPECTED",
       "file": "files/1/1B",

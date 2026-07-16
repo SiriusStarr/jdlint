@@ -9,16 +9,15 @@ import dataclasses
 import json
 import os
 import re
-import typing
 import sys
+import typing
 from dataclasses import dataclass
 from pathlib import Path, PurePath
-from typing import TYPE_CHECKING, Any, Literal, TypeVar
+from typing import TYPE_CHECKING, Literal, TypeAlias, TypeVar
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 import tomllib
-
 
 ###############################################################################
 # Exceptions
@@ -239,6 +238,20 @@ class ConfigSystem:
             for i, v in enumerate(from_file.pop("roots", []))
         ]
 
+        accum_names = {}
+        accum_paths = {}
+        for root in self.roots:
+            if root.name in accum_names:
+                raise ConfigConflictError(
+                    "system.roots",
+                    f"System root names must be unique. {root.name} occurs multiple times.",
+                )
+            if root.path in accum_paths:
+                raise ConfigConflictError(
+                    "system.roots",
+                    f"System root paths must be unique. {root.path} occurs multiple times.",
+                )
+
         if "jdex" in from_file:
             self.jdex = ConfigSystemJDex("system.jdex", from_file.pop("jdex"))
         else:
@@ -271,7 +284,6 @@ class ConfigStaticFormat:
         from_file: str,
     ) -> None:
         """Create a valid format given a string from a config file."""
-
         # Validate
         if not isinstance(from_file, str):
             raise ConfigTypeError(
@@ -624,6 +636,22 @@ class Config:
 
 
 @dataclass(frozen=True)
+class Issue:
+    """A single error detected in the system."""
+
+    file: PurePath
+    type = None
+
+    def display(self) -> str:
+        """Display this particular instance of an error."""
+        raise NotImplementedError
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        raise NotImplementedError
+
+
+@dataclass(frozen=True)
 class JDexIssue:
     """A single error detected in the JDex."""
 
@@ -637,6 +665,64 @@ class JDexIssue:
     def explain(self) -> _Explanation:
         """Explain what this error is."""
         raise NotImplementedError
+
+
+@dataclass(frozen=True)
+class IssueEmptyFolder(Issue):
+    """A folder is completely empty (and is not arbitrary content)."""
+
+    type: Literal["EMPTY_FOLDER"] = "EMPTY_FOLDER"
+
+    def display(self) -> str:
+        """Display this particular instance of an error."""
+        return f"{self.file!s}"
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="A folder that matched a pattern in the system has no contents.",
+            fix="If this folder is unused, it shouldn't exist. Remove it or explicitly set it ignored if it must exist.",
+        )
+
+
+@dataclass(frozen=True)
+class IssueFileWhereFolderExpected(Issue):
+    """A file that matched an expected folder was found."""
+
+    matched_pattern: ContentPattern
+    type: Literal["FILE_WHERE_FOLDER_EXPECTED"] = "FILE_WHERE_FOLDER_EXPECTED"
+
+    def display(self) -> str:
+        """Display this particular instance of an error."""
+        return f'{self.file!s} (matched "{self.matched_pattern}")'
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="A file was found that matched the format of an expected child folder.",
+            fix="Your format should not mix folders and notes that share a naming scheme.",
+        )
+
+
+@dataclass(frozen=True)
+class IssueArbitraryContentWhereNotAllowed(Issue):
+    """Content was found in the that didn't match any expected format."""
+
+    possible_formats: tuple[ContentPattern, ...]
+    type: Literal["ARBITRARY_CONTENT_WHERE_NOT_ALLOWED"] = (
+        "ARBITRARY_CONTENT_WHERE_NOT_ALLOWED"
+    )
+
+    def display(self) -> str:
+        """Display this particular instance of an error."""
+        return f'{self.file!s} (matched none of "{self.possible_formats}")'
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="Files or folders were found that matched no expected format.",
+            fix="You should either make the content match or set allow_arbitrary_content to true if it is intended for random content to be mixed in.",
+        )
 
 
 @dataclass(frozen=True)
@@ -971,120 +1057,6 @@ ErrorType = (
 
 
 @dataclass(frozen=True)
-class JDexAreaHeaderDifferentFromArea:
-    """An area header with a different name than the correspnoding area."""
-
-    area: str
-    jdex_name: str
-    type: Literal["JDEX_AREA_HEADER_DIFFERENT_FROM_AREA"] = (
-        "JDEX_AREA_HEADER_DIFFERENT_FROM_AREA"
-    )
-
-    def display(self, files: list[File]) -> str:
-        """Display this particular instance of an error."""
-        return f"{_print_nest(files[0])} [JDex name: {self.jdex_name}]"
-
-    def explain(self) -> _Explanation:
-        """Explain what this error is."""
-        return _Explanation(
-            explanation="An area header was found, the name of which is different from its corresponding JDex entry.",
-            fix="Update the one that is incorrect.",
-        )
-
-
-@dataclass(frozen=True)
-class JDexAreaHeaderWithoutArea:
-    """An area header with no corresponding area."""
-
-    area: str
-    type: Literal["JDEX_AREA_HEADER_WITHOUT_AREA"] = "JDEX_AREA_HEADER_WITHOUT_AREA"
-
-    def display(self, files: list[File]) -> str:
-        """Display this particular instance of an error."""
-        return f"{_print_nest(files[0])} [area: {_print_area(self.area)}]"
-
-    def explain(self) -> _Explanation:
-        """Explain what this error is."""
-        return _Explanation(
-            explanation="An area header was found in the JDex with no corresponding area entry.",
-            fix="Go add a corresponding entry to your JDex, or delete this header if it is no longer needed.",
-        )
-
-
-@dataclass(frozen=True)
-class JDexCategoryInWrongArea:
-    """A JDex category that, by its number, has been put in the wrong area."""
-
-    category_area: str
-    file_area: str
-    type: Literal["JDEX_CATEGORY_IN_WRONG_AREA"] = "JDEX_CATEGORY_IN_WRONG_AREA"
-
-    def display(self, files: list[File]) -> str:
-        """Given the file's name, print the error message for it."""
-        return f"{_print_nest(files[0])} [in {_print_area(self.file_area)} but should be in {_print_area(self.category_area)}]"
-
-    def explain(self) -> _Explanation:
-        """Explain what this error is."""
-        return _Explanation(
-            explanation="Some JDex categories are in the wrong area.",
-            fix="Move them into the correct area folder, or use a flat JDex structure.",
-        )
-
-
-@dataclass(frozen=True)
-class JDexDuplicateArea:
-    """A JDex area that has been used multiple times."""
-
-    area: str
-    type: Literal["JDEX_DUPLICATE_AREA"] = "JDEX_DUPLICATE_AREA"
-
-    def display(self, files: list[File]) -> str:
-        """Display this particular instance of an error."""
-        return f"Area {_print_area(self.area)}:\n    " + "\n    ".join(
-            [_print_nest(f) for f in files],
-        )
-
-    def explain(self) -> _Explanation:
-        """Explain what this error is."""
-        return _Explanation(
-            explanation="Duplicate areas were used in the JDex.",
-            fix="Assign a new area to one of them.",
-        )
-
-
-@dataclass(frozen=True)
-class JDexDuplicateAreaHeader:
-    """Multiple headers for the same area."""
-
-    area: str
-    type: Literal["JDEX_DUPLICATE_AREA_HEADER"] = "JDEX_DUPLICATE_AREA_HEADER"
-
-    def display(self, files: list[File]) -> str:
-        """Display this particular instance of an error."""
-        return f"Area {_print_area(self.area)}:\n    " + "\n    ".join(
-            [_print_nest(f) for f in files],
-        )
-
-    def explain(self) -> _Explanation:
-        """Explain what this error is."""
-        return _Explanation(
-            explanation="Duplicate headers were found for the same area in the JDex.",
-            fix="Delete the one that is incorrect or fix the area number.",
-        )
-
-
-@dataclass(frozen=True)
-class JDexDuplicateCategory:
-    """A JDex category that has been used multiple times."""
-
-    category: str
-    type: Literal["JDEX_DUPLICATE_CATEGORY"] = "JDEX_DUPLICATE_CATEGORY"
-
-    def display(self, files: list[File]) -> str:
-        """Display this particular instance of an error."""
-        return (
-            self.category + ":\n    " + "\n    ".join([_print_nest(f) for f in files])
-        )
 class File:
     """A file or folder that has been detected by jdlint."""
 
@@ -1203,41 +1175,17 @@ class _Explanation:
     fix: str
 
 
-@dataclass(frozen=True)
-class Error:
-    """A single error detected."""
-
-    error: ErrorType
-    files: list[File]
-
-    def type(self) -> str:
-        """Return the name (type) of the error."""
-        return self.error.type
-
-    def display(self) -> str:
-        """Display this particular instance of an error."""
-        return self.error.display(self.files)
-
-    def explain(self) -> _Explanation:
-        """Explain what this error is."""
-        return self.error.explain()
-
-
-@dataclass(frozen=True)
-class StructureTree:
-    """A node in the tree of the system."""
-
-    name: str
-    children: list[StructureTree]
+StructureTree: TypeAlias = dict[PurePath, "StructureTree"]
 
 
 @dataclass(frozen=True)
 class LintResults:
-    """All errors returned from linting files, as well as a tree of the structure of the JD system."""
+    """All errors returned from linting files, as well as the JDex and filesystems structures."""
 
-    errors: list[Error]
+    errors: dict[str, list[Issue]]
     jdex_errors: list[JDexIssue]
-    structure: list[StructureTree]
+    jdex: dict[str, list[PurePath]]
+    structure: dict[str, StructureTree]
 
 
 @dataclass
@@ -1277,8 +1225,20 @@ class _EnhancedJSONEncoder(json.JSONEncoder):
         return super().default(o)
 
 
-def _sort_error(e: JDexIssue) -> tuple[str, tuple[tuple[str, ...], str]]:
+def _sort_jdex_error(e: JDexIssue) -> tuple[str, tuple[tuple[str, ...], str]]:
     # Sort errors alphabetically by type, then by file affected
+    # This is split from _sort_error for type-checking nonsense
+    if e.type is None:
+        raise NotImplementedError
+    return (
+        e.type,
+        (e.file.parent.parts, e.file.name),
+    )
+
+
+def _sort_error(e: Issue) -> tuple[str, tuple[tuple[str, ...], str]]:
+    # Sort errors alphabetically by type, then by file affected
+    # This is split from _sort_jdex_error for type-checking nonsense
     if e.type is None:
         raise NotImplementedError
     return (
@@ -1933,7 +1893,8 @@ def _get_jdex_notes_here_or_children(
                             JDexIssueFileWhereFolderExpected(
                                 PurePath(x),
                                 ContentPattern(
-                                    child.format.name, child.format.raw_format
+                                    child.format.name,
+                                    child.format.raw_format,
                                 ),
                             ),
                         )
@@ -2000,14 +1961,13 @@ def _get_jdex_notes_here_or_children(
 
 def _process_jdex(
     ignored: tuple[str],
-    path: os.PathLike,
-    jdex_root: ConfigSystemJDex,
+    jdex: ConfigSystemJDex,
 ) -> tuple[dict[str, list[PurePath]], list[JDexIssue]]:
     (jdex_notes_by_id, jdex_errors) = _get_jdex_notes_here_or_children(
-        ignored,
+        ignored + jdex.ignore,
         {},
-        path,
-        jdex_root,
+        jdex.path,
+        jdex,
     )
 
     # Check for duplicate ids
@@ -2016,18 +1976,124 @@ def _process_jdex(
         for id, ns in jdex_notes_by_id.items()
         if len(ns) != 1
     ]
-    return (jdex_notes_by_id, jdex_errors + duplicate_id_errors)
+    return (
+        jdex_notes_by_id,
+        jdex_errors + duplicate_id_errors,
+    )
+
+
+def _process_system_level_and_children(
+    ignored: tuple[str],
+    bound_segments: dict[str, str],
+    path: os.PathLike,
+    tier: ConfigSystem | ConfigSystemTier,
+    jdex: None | dict[str, list[PurePath]],
+) -> tuple[StructureTree, list[Issue]]:
+    # Compile regexes for children
+    valid_children = [
+        (re.compile(c.format.build_regex(bound_segments)), c) for c in tier.children
+    ]
+
+    accumulated_errors = []
+    accumulated_structure = {}
+
+    has_content = False
+    with os.scandir(path) as contents:
+        for x in contents:
+            if _entry_is_ignored(ignored, [], x):
+                continue
+            has_content = True
+            for child_format, child in valid_children:
+                match = child_format.fullmatch(x.name)
+                if match:
+                    # Is a valid child folder
+                    if x.is_file():
+                        # This is an error
+                        accumulated_errors.append(
+                            IssueFileWhereFolderExpected(
+                                PurePath(x),
+                                ContentPattern(
+                                    child.format.name,
+                                    child.format.raw_format,
+                                ),
+                            ),
+                        )
+                        break
+
+                    # Walk child
+                    (child_structure, child_errors) = (
+                        _process_system_level_and_children(
+                            ignored,
+                            {**bound_segments, **match.groupdict()},
+                            PurePath(x),
+                            child,
+                            jdex,
+                        )
+                    )
+                    accumulated_structure.update({PurePath(x): child_structure})
+                    accumulated_errors.extend(child_errors)
+                    break
+            else:
+                # If we got here, it matched no known child/note
+                if not getattr(tier, "allow_arbitrary_contents", False):
+                    # This is an error
+                    accumulated_errors.append(
+                        IssueArbitraryContentWhereNotAllowed(
+                            PurePath(x),
+                            tuple(
+                                ContentPattern(c.format.name, c.format.raw_format)
+                                for c in tier.children
+                            ),
+                        ),
+                    )
+    if not has_content:
+        # We have a fully empty folder; it shouldn't exist if it's doing nothing.
+        accumulated_errors.append(IssueEmptyFolder(PurePath(path)))
+    return (accumulated_structure, accumulated_errors)
+
+
+def _process_system_root(
+    ignored: tuple[str],
+    root: ConfigSystemRoot,
+    system: ConfigSystem,
+    jdex: None | dict[str, list[PurePath]],
+) -> tuple[StructureTree, list[Issue]]:
+    return _process_system_level_and_children(
+        ignored + root.ignore,
+        {},
+        root.path,
+        system,
+        jdex,
+    )
 
 
 def lint_system(config: Config) -> LintResults:
     jdex_errors = []
+    jdex_notes = {}
     if config.system.jdex:
         (jdex_notes, jdex_errors) = _process_jdex(
-            config.linter.ignore + config.system.jdex.ignore,
-            config.system.jdex.path,
+            config.linter.ignore,
             config.system.jdex,
         )
-    return LintResults([], sorted(jdex_errors, key=_sort_error), [])
+    errors = {}
+    structure = {}
+    for root in config.system.roots:
+        (root_structure, root_errors) = _process_system_root(
+            config.linter.ignore,
+            root,
+            config.system,
+            jdex_notes,
+        )
+        if root_errors:
+            errors[root.name] = sorted(root_errors, key=_sort_error)
+        structure[root.name] = root_structure
+
+    return LintResults(
+        errors,
+        sorted(jdex_errors, key=_sort_jdex_error),
+        jdex_notes,
+        structure,
+    )
 
 
 if __name__ == "__main__":

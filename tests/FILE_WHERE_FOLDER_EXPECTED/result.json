@@ -1,0 +1,30 @@
+{
+  "errors": {
+    "JDex": [
+      {
+        "type": "FILE_WHERE_FOLDER_EXPECTED",
+        "file": "files/1/1B",
+        "matched_pattern": {
+          "name": [
+            "A",
+            "B"
+          ],
+          "format": "/=A//*Name/"
+        }
+      },
+      {
+        "type": "FILE_WHERE_FOLDER_EXPECTED",
+        "file": "files/1/1A/1A",
+        "matched_pattern": {
+          "name": [
+            "A",
+            "B",
+            "C"
+          ],
+          "format": "/=A//=Name/"
+        }
+      }
+    ]
+  },
+  "jdex_errors": []
+}

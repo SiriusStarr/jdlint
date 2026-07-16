@@ -1,0 +1,75 @@
+{
+  "errors": {
+    "JDex": [
+      {
+        "type": "ARBITRARY_CONTENT_WHERE_NOT_ALLOWED",
+        "file": "files/1/File",
+        "possible_formats": [
+          {
+            "name": [
+              "A",
+              "B1"
+            ],
+            "format": "/*Name//=A/"
+          },
+          {
+            "name": [
+              "A",
+              "B2"
+            ],
+            "format": "/=A//*Name/"
+          }
+        ]
+      },
+      {
+        "type": "ARBITRARY_CONTENT_WHERE_NOT_ALLOWED",
+        "file": "files/1/Folder",
+        "possible_formats": [
+          {
+            "name": [
+              "A",
+              "B1"
+            ],
+            "format": "/*Name//=A/"
+          },
+          {
+            "name": [
+              "A",
+              "B2"
+            ],
+            "format": "/=A//*Name/"
+          }
+        ]
+      },
+      {
+        "type": "ARBITRARY_CONTENT_WHERE_NOT_ALLOWED",
+        "file": "files/1/1A/File",
+        "possible_formats": [
+          {
+            "name": [
+              "A",
+              "B2",
+              "C2"
+            ],
+            "format": "/=A//=Name/"
+          }
+        ]
+      },
+      {
+        "type": "ARBITRARY_CONTENT_WHERE_NOT_ALLOWED",
+        "file": "files/1/1A/Folder",
+        "possible_formats": [
+          {
+            "name": [
+              "A",
+              "B2",
+              "C2"
+            ],
+            "format": "/=A//=Name/"
+          }
+        ]
+      }
+    ]
+  },
+  "jdex_errors": []
+}
