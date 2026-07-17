@@ -13,7 +13,7 @@ import sys
 import typing
 from dataclasses import dataclass
 from pathlib import Path, PurePath
-from typing import TYPE_CHECKING, Literal, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Literal, TypeVar
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -199,7 +199,7 @@ class ConfigLinter:
                 type(self.disable_rules).__name__,
             )
         for r in self.disable_rules:
-            if r in [e.type for e in typing.get_args(ErrorType)]:
+            if r in [e.type for e in typing.get_args(AnyIssueType)]:
                 continue
             raise ConfigValueError("linter.disable_rules", "not a valid rule name", r)
 
@@ -304,12 +304,12 @@ class ConfigStaticFormat:
                 from_file,
             )
 
-        build_id = []
+        build = []
 
         for i, v in enumerate(from_file.split("/")):
             if i % 2 == 0:
                 # Literal segment
-                build_id.append(lambda _, v=v: v)
+                build.append(lambda _, v=v: v)
             else:
                 # Variable segment
                 match = ConfigStaticFormat.variable_static_segment_re.fullmatch(v)
@@ -321,7 +321,7 @@ class ConfigStaticFormat:
                     )
                 if match.group(1) in ancestors.segments:
                     p = match.group(1)
-                    build_id.append(lambda d, p=p: d[p])
+                    build.append(lambda d, p=p: d[p])
 
                 else:
                     raise ConfigValueError(
@@ -330,7 +330,7 @@ class ConfigStaticFormat:
                         v,
                     )
 
-        self.build_id = lambda d: "".join([f(d) for f in build_id])
+        self.build = lambda d: "".join([f(d) for f in build])
 
 
 class ConfigJDexNotes:
@@ -351,13 +351,16 @@ class ConfigJDexNotes:
             ancestors,
             from_file,
         )
-        if "id" not in from_file:
-            raise (ConfigMissingKeyError(f"{at}.id"))
-        self.id = ConfigStaticFormat(
-            f"{at}.id",
-            self.format,
-            from_file.pop("id"),
-        )
+        if "ids" not in from_file:
+            raise (ConfigMissingKeyError(f"{at}.ids"))
+        self.ids = [
+            ConfigStaticFormat(
+                f"{at}.ids[{i}]",
+                self.format,
+                v,
+            )
+            for i, v in enumerate(from_file.pop("ids", []))
+        ]
 
         # Ensure no extra fields
         for key in from_file:
@@ -726,7 +729,7 @@ class IssueArbitraryContentWhereNotAllowed(Issue):
 
 
 @dataclass(frozen=True)
-class IssueDuplicateId(Issue):
+class IssueDuplicateID(Issue):
     """An ID that has been used multiple times."""
 
     files: tuple[PurePath, ...]
@@ -742,6 +745,46 @@ class IssueDuplicateId(Issue):
         return _Explanation(
             explanation="Duplicate IDs were used.",
             fix="Assign a new ID to one of them.",
+        )
+
+
+@dataclass(frozen=True)
+class IssueIDNotInJDex(Issue):
+    """An ID without a corresponding JDex entry."""
+
+    id: str
+    type: Literal["ID_NOT_IN_JDEX"] = "ID_NOT_IN_JDEX"
+
+    def display(self) -> str:
+        """Display this particular instance of an error."""
+        return f"{self.file} [ID: {self.id}]"
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="An ID was found in files that is missing from the JDex.",
+            fix="Go add a corresponding entry to your JDex.",
+        )
+
+
+@dataclass(frozen=True)
+class IssueIDDifferentFromJDex(Issue):
+    """An ID with a differently-named JDex entry."""
+
+    id: str
+    expected_jdex_note: str
+    known_jdex_notes: list[PurePath]
+    type: Literal["ID_DIFFERENT_FROM_JDEX"] = "ID_DIFFERENT_FROM_JDEX"
+
+    def display(self) -> str:
+        """Display this particular instance of an error."""
+        return f"{self.id}: {self.file} [Expected JDex: {self.expected_jdex_note}i; actual JDex: {self.known_jdex_notes}]"
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="An ID was found, the name of which is different from its corresponding JDex entry.",
+            fix="Update the one that is incorrect.",
         )
 
 
@@ -844,67 +887,6 @@ class CategoryNotInJDex:
 
 
 @dataclass(frozen=True)
-class DuplicateArea:
-    """An area that has been used multiple times."""
-
-    area: str
-    type: Literal["DUPLICATE_AREA"] = "DUPLICATE_AREA"
-
-    def display(self, files: list[File]) -> str:
-        """Display this particular instance of an error."""
-        return f"Area {_print_area(self.area)}:\n    " + "\n    ".join(
-            [_print_nest(f) for f in files],
-        )
-
-    def explain(self) -> _Explanation:
-        """Explain what this error is."""
-        return _Explanation(
-            explanation="Duplicate areas were used.",
-            fix="Assign a new area to one of them.",
-        )
-
-
-@dataclass(frozen=True)
-class DuplicateCategory:
-    """A category that has been used multiple times."""
-
-    category: str
-    type: Literal["DUPLICATE_CATEGORY"] = "DUPLICATE_CATEGORY"
-
-    def display(self, files: list[File]) -> str:
-        """Display this particular instance of an error."""
-        return f"Category {self.category}:\n    " + "\n    ".join(
-            [_print_nest(f) for f in files],
-        )
-
-    def explain(self) -> _Explanation:
-        """Explain what this error is."""
-        return _Explanation(
-            explanation="Duplicate categories were used.",
-            fix="Assign a new category to one of them.",
-        )
-
-
-@dataclass(frozen=True)
-class DuplicateId:
-    """An ID that has been used multiple times."""
-
-    id: str
-    type: Literal["DUPLICATE_ID"] = "DUPLICATE_ID"
-
-    def display(self, files: list[File]) -> str:
-        """Display this particular instance of an error."""
-        return f"ID {self.id}:\n    " + "\n    ".join([_print_nest(f) for f in files])
-
-    def explain(self) -> _Explanation:
-        """Explain what this error is."""
-        return _Explanation(
-            explanation="Duplicate IDs were used.",
-            fix="Assign a new ID to one of them.",
-        )
-
-
-@dataclass(frozen=True)
 class FileOutsideId:
     """A file was encountered not in a terminal ID folder."""
 
@@ -919,67 +901,6 @@ class FileOutsideId:
         return _Explanation(
             explanation="Files were found outside of IDs.",
             fix="Files should only be kept in IDs and not higher in the hierarchy.",
-        )
-
-
-@dataclass(frozen=True)
-class IdDifferentFromJDex:
-    """An ID with a differently-named JDex entry."""
-
-    id: str
-    jdex_name: str
-    type: Literal["ID_DIFFERENT_FROM_JDEX"] = "ID_DIFFERENT_FROM_JDEX"
-
-    def display(self, files: list[File]) -> str:
-        """Display this particular instance of an error."""
-        return f"{_print_nest(files[0])} [JDex name: {self.jdex_name}]"
-
-    def explain(self) -> _Explanation:
-        """Explain what this error is."""
-        return _Explanation(
-            explanation="An ID was found, the name of which is different from its corresponding JDex entry.",
-            fix="Update the one that is incorrect.",
-        )
-
-
-@dataclass(frozen=True)
-class IdInWrongCategory:
-    """An ID that, by its number, has been put in the wrong category."""
-
-    id_ac: str
-    file_ac: str
-    type: Literal["ID_IN_WRONG_CATEGORY"] = "ID_IN_WRONG_CATEGORY"
-
-    def display(self, files: list[File]) -> str:
-        """Display this particular instance of an error."""
-        return (
-            f"{_print_nest(files[0])} [in {self.file_ac} but should be in {self.id_ac}]"
-        )
-
-    def explain(self) -> _Explanation:
-        """Explain what this error is."""
-        return _Explanation(
-            explanation="Some IDs are in the wrong category.",
-            fix="Move them into the correct category folder.",
-        )
-
-
-@dataclass(frozen=True)
-class IdNotInJDex:
-    """An ID without a corresponding JDex entry."""
-
-    id: str
-    type: Literal["ID_NOT_IN_JDEX"] = "ID_NOT_IN_JDEX"
-
-    def display(self, files: list[File]) -> str:
-        """Display this particular instance of an error."""
-        return f"{_print_nest(files[0])} [ID: {self.id}]"
-
-    def explain(self) -> _Explanation:
-        """Explain what this error is."""
-        return _Explanation(
-            explanation="An ID was found in the files that is missing from the JDex.",
-            fix="Go add a corresponding entry to your JDex.",
         )
 
 
@@ -1056,26 +977,6 @@ class NonemptyInbox:
         )
 
 
-ErrorType = (
-    AreaDifferentFromJDex
-    | AreaNotInJDex
-    | CategoryDifferentFromJDex
-    | CategoryInWrongArea
-    | CategoryNotInJDex
-    | DuplicateArea
-    | DuplicateCategory
-    | DuplicateId
-    | FileOutsideId
-    | IdDifferentFromJDex
-    | IdInWrongCategory
-    | IdNotInJDex
-    | InvalidAreaName
-    | InvalidCategoryName
-    | InvalidIDName
-    | NonemptyInbox
-)
-
-
 @dataclass(frozen=True)
 class File:
     """A file or folder that has been detected by jdlint."""
@@ -1085,7 +986,7 @@ class File:
 
 
 @dataclass(frozen=True)
-class JDexIssueDuplicateId(JDexIssue):
+class JDexIssueDuplicateID(JDexIssue):
     """A JDex ID that has been used multiple times."""
 
     files: tuple[PurePath, ...]
@@ -1189,6 +1090,23 @@ class JDexIssueEmptyFolder(JDexIssue):
         )
 
 
+JDexIssueType = (
+    JDexIssueArbitraryContentWhereNotAllowed
+    | JDexIssueDuplicateID
+    | JDexIssueEmptyFolder
+    | JDexIssueFileWhereFolderExpected
+    | JDexIssueFolderWhereNoteExpected
+)
+IssueType = (
+    IssueArbitraryContentWhereNotAllowed
+    | IssueDuplicateID
+    | IssueEmptyFolder
+    | IssueFileWhereFolderExpected
+)
+
+AnyIssueType = JDexIssueType | IssueType
+
+
 @dataclass(frozen=True)
 class _Explanation:
     explanation: str
@@ -1270,37 +1188,6 @@ def _sort_error(e: Issue) -> tuple[str, tuple[tuple[str, ...], str]]:
         e.type,
         (e.file.parent.parts, e.file.name),
     )
-
-
-# Any valid area folder name
-valid_area_re = re.compile("([0-9])0-(?:\\1)9 (.+)")
-# Any valid category folder name
-generic_category_re = re.compile("([0-9])[0-9] .+")
-# Any valid ID folder name
-generic_id_re = re.compile("([0-9][0-9])\\.([0-9][0-9]) (.+)")
-# Matches only IDs that are inboxes
-inbox_re = re.compile("[0-9][0-9]\\.01 .+")
-
-
-def _valid_category_re(a: str) -> re.Pattern:
-    """Match only valid categories for a given area."""
-    return re.compile("(" + a + "[0-9]) (.+)")
-
-
-def _valid_id_re(ac: str) -> re.Pattern:
-    """Match only valid IDs for a given area and category."""
-    return re.compile("(" + ac + "\\.[0-9][0-9]) (.+)")
-
-
-# Match area header JDex notes
-jdex_note_header_re = re.compile("([0-9])0\\. (.+?)(\\.md)?")
-# Match any valid ID JDex note
-jdex_note_generic_id_re = re.compile("([0-9][0-9])\\.([0-9][0-9]) (.+?)(\\.md)?")
-
-
-def _jdex_note_id_re(ac: str) -> re.Pattern:
-    """Match only valid JDex note IDs for a given area and category."""
-    return re.compile("(" + ac + "\\.[0-9][0-9]) (.+?)(\\.md)?")
 
 
 def _entry_is_ignored(
@@ -1388,503 +1275,6 @@ def _process_single_file_jdex(path: Path) -> _JDexResults:
     )
 
 
-# def _process_flat_jdex_structure(
-#     files: list[os.DirEntry],
-#     jdex: _JDexAccumulator,
-#     *,
-#     ignored: list[str] | None,
-#     alt_zeros: bool = False,
-# ) -> None:
-#     """Process a JDex that is a series of flat files."""
-#     area_re = re.compile(
-#         "0([0-9])\\.00 (.+?)( area management)?( index)?(\\.md)?"
-#         if alt_zeros
-#         else "([0-9])0\\.00 (.+?)( area management)?( index)?(\\.md)?",
-#         flags=re.IGNORECASE,
-#     )
-#     category_re = re.compile(
-#         # We need to tolerate the "area management" suffix for a category as well, to create categories from e.g. `01.00 Life Admin Area Management`
-#         "([0-9][0-9])\\.00 (.+?)( (category|area) management)?( index)?(\\.md)?"
-#         if alt_zeros
-#         else "([0-9][1-9])\\.00 (.+?)( category management)?( index)?(\\.md)?",
-#         flags=re.IGNORECASE,
-#     )
-
-#     for jid in files:
-#         if _entry_is_ignored(ignored, [], jid):
-#             continue
-
-#         file = File(name=jid.name, full_path=jid.path, nested_under=[])
-
-#         # Check if the file matches an area
-#         area_match = area_re.fullmatch(jid.name)
-#         if area_match:
-#             _insert_append(
-#                 area_match.group(1),
-#                 (area_match.group(2), file),
-#                 jdex.areas,
-#             )
-
-#         # Check if the file matches a category
-#         cat_match = category_re.fullmatch(jid.name)
-#         if cat_match:
-#             _insert_append(
-#                 cat_match.group(1),
-#                 (cat_match.group(2), file),
-#                 jdex.categories,
-#             )
-
-#         # Check if it's a header match for alt zeros
-#         header_match = jdex_note_header_re.fullmatch(jid.name)
-#         if header_match:
-#             _insert_append(
-#                 header_match.group(1),
-#                 (header_match.group(2), file),
-#                 jdex.headers,
-#             )
-#             continue
-
-#         # The file should also be a valid ID (or is bad)
-#         id_match = jdex_note_generic_id_re.fullmatch(jid.name)
-#         if id_match:
-#             _insert_append(
-#                 f"{id_match.group(1)}.{id_match.group(2)}",
-#                 (id_match.group(3), file),
-#                 jdex.ids,
-#             )
-#         else:
-#             jdex.errors.append(
-#                 JDexIssue(error=JDexInvalidIDName(), files=[file]),
-#             )
-
-
-# def _process_nested_jdex_structure(
-#     path: Path,
-#     jdex: _JDexAccumulator,
-#     root_level_files: list[os.DirEntry],
-#     *,
-#     ignored: list[str] | None,
-# ) -> None:
-#     for area in os.scandir(path):
-#         if _entry_is_ignored(ignored, [], area):
-#             continue
-#         if area.is_file():
-#             # Maybe we have a flat structure
-#             root_level_files.append(area)
-#             continue
-
-#         # Otherwise, a directory, so nested structure
-#         area_file = File(name=area.name, full_path=area.path, nested_under=[])
-#         area_match = valid_area_re.fullmatch(area.name)
-#         if not area_match:
-#             jdex.errors.append(
-#                 JDexIssue(error=JDexInvalidAreaName(), files=[area_file]),
-#             )
-#             continue
-#         _insert_append(
-#             area_match.group(1),
-#             (area_match.group(2), area_file),
-#             jdex.areas,
-#         )
-#         cat_re = _valid_category_re(area_match.group(1))
-#         with os.scandir(area.path) as cats_it:
-#             for cat in cats_it:
-#                 if _entry_is_ignored(ignored, [area.name], cat):
-#                     continue
-#                 cat_file = File(
-#                     name=cat.name,
-#                     full_path=cat.path,
-#                     nested_under=[area.name],
-#                 )
-#                 if cat.is_file():
-#                     jdex.errors.append(
-#                         JDexIssue(
-#                             error=JDexFileOutsideCategory(),
-#                             files=[cat_file],
-#                         ),
-#                     )
-#                     continue
-
-#                 if cat_match := cat_re.fullmatch(cat.name):
-#                     _insert_append(
-#                         cat_match.group(1),
-#                         (cat_match.group(2), cat_file),
-#                         jdex.categories,
-#                     )
-#                     id_re = _jdex_note_id_re(cat_match.group(1))
-#                     with os.scandir(cat.path) as ids_it:
-#                         nested_under = [area.name, cat.name]
-#                         for jid in ids_it:
-#                             if _entry_is_ignored(ignored, nested_under, jid):
-#                                 continue
-#                             id_file = File(
-#                                 name=jid.name,
-#                                 full_path=jid.path,
-#                                 nested_under=nested_under,
-#                             )
-#                             if id_match := id_re.fullmatch(jid.name):
-#                                 _insert_append(
-#                                     id_match.group(1),
-#                                     (id_match.group(2), id_file),
-#                                     jdex.ids,
-#                                 )
-#                             elif gen_match := jdex_note_generic_id_re.fullmatch(
-#                                 jid.name,
-#                             ):
-#                                 jdex.errors.append(
-#                                     JDexIssue(
-#                                         error=JDexIdInWrongCategory(
-#                                             id_ac=gen_match.group(1),
-#                                             file_ac=cat_match.group(1),
-#                                         ),
-#                                         files=[id_file],
-#                                     ),
-#                                 )
-#                             else:
-#                                 jdex.errors.append(
-#                                     JDexIssue(
-#                                         error=JDexInvalidIDName(),
-#                                         files=[id_file],
-#                                     ),
-#                                 )
-
-#                 elif gen_match := generic_category_re.fullmatch(cat.name):
-#                     jdex.errors.append(
-#                         JDexIssue(
-#                             error=JDexCategoryInWrongArea(
-#                                 category_area=gen_match.group(1),
-#                                 file_area=area_match.group(1),
-#                             ),
-#                             files=[cat_file],
-#                         ),
-#                     )
-#                 else:
-#                     jdex.errors.append(
-#                         JDexIssue(error=JDexInvalidCategoryName(), files=[cat_file]),
-#                     )
-
-
-# def _get_jdex_entries(
-#     jdex_dir: Path,
-#     *,
-#     ignored: list[str] | None,
-#     alt_zeros: bool = False,
-# ) -> _JDexResults | list[JDexIssue]:
-#     """Return canonical JDex information or a list of errors for it."""
-#     if jdex_dir.is_file():
-#         # Single file JDex
-#         return _process_single_file_jdex(jdex_dir)
-
-#     jdex: _JDexAccumulator = _JDexAccumulator()
-#     root_level_files: list[os.DirEntry] = []
-
-#     _process_nested_jdex_structure(jdex_dir, jdex, root_level_files, ignored=ignored)
-
-#     if jdex.ids or jdex.errors:
-#         # Not a flat structure, so we need to add all root level files as invalid
-#         jdex.errors.extend(
-#             [
-#                 JDexIssue(
-#                     error=JDexFileOutsideCategory(),
-#                     files=[
-#                         File(
-#                             name=f.name,
-#                             full_path=f.path,
-#                             nested_under=[],
-#                         ),
-#                     ],
-#                 )
-#                 for f in root_level_files
-#             ],
-#         )
-
-#     else:
-#         # Nothing nested, and not a file, so assume a flat structure
-#         _process_flat_jdex_structure(
-#             root_level_files,
-#             jdex,
-#             ignored=ignored,
-#             alt_zeros=alt_zeros,
-#         )
-
-#     # These duplicate errors apply regardless of JDex type
-#     jdex.errors.extend(_error_if_dups(JDexDuplicateArea, JDexIssue, jdex.areas))
-#     jdex.errors.extend(
-#         _error_if_dups(JDexDuplicateCategory, JDexIssue, jdex.categories),
-#     )
-#     jdex.errors.extend(_error_if_dups(JDexDuplicateId, JDexIssue, jdex.ids))
-#     jdex.errors.extend(_error_if_dups(JDexDuplicateAreaHeader, JDexIssue, jdex.headers))
-
-#     for header, files in jdex.headers.items():
-#         if header not in jdex.areas:
-#             jdex.errors.append(
-#                 JDexIssue(
-#                     error=JDexAreaHeaderWithoutArea(area=header),
-#                     files=[f for (_, f) in files],
-#                 ),
-#             )
-#         elif len(files) == 1 and files[0][0] != jdex.areas[header][0][0]:
-#             jdex.errors.append(
-#                 JDexIssue(
-#                     error=JDexAreaHeaderDifferentFromArea(
-#                         area=header,
-#                         jdex_name=f"{_print_area(header)} {jdex.areas[header][0][0]}",
-#                     ),
-#                     files=[f for (_, f) in files],
-#                 ),
-#             )
-
-#     if jdex.errors:
-#         return jdex.errors
-#     return _JDexResults(
-#         areas={k: f"{_print_area(k)} {v[0][0]}" for k, v in jdex.areas.items()},
-#         categories={k: f"{k} {v[0][0]}" for k, v in jdex.categories.items()},
-#         ids={k: f"{k} {v[0][0]}" for k, v in jdex.ids.items()},
-#     )
-
-
-# def lint_dir(
-#     path: Path,
-#     ignored: list[str] | None = None,
-# ) -> LintResults:
-#     """Check a root of a JD system for issues."""
-#     errors: list[Error] = []
-#     used_areas: dict[str, list[tuple[str, File]]] = {}
-#     used_categories: dict[str, list[tuple[str, File]]] = {}
-#     used_ids: dict[str, list[tuple[str, File]]] = {}
-
-#     def check_inbox(nested_under: list[str], f: os.DirEntry) -> None:
-#         if inbox_re.fullmatch(f.name):
-#             entries = len(os.listdir(f.path))
-#             if entries:
-#                 errors.append(
-#                     Error(
-#                         error=NonemptyInbox(num_items=entries),
-#                         files=[
-#                             File(
-#                                 name=f.name,
-#                                 full_path=f.path,
-#                                 nested_under=nested_under,
-#                             ),
-#                         ],
-#                     ),
-#                 )
-
-#     def check_if_out_of_id(file: os.DirEntry, nested_under: list[str]) -> bool:
-#         if file.is_file():
-#             errors.append(
-#                 Error(
-#                     error=FileOutsideId(),
-#                     files=[
-#                         File(
-#                             name=file.name,
-#                             full_path=file.path,
-#                             nested_under=nested_under,
-#                         ),
-#                     ],
-#                 ),
-#             )
-#             return True
-#         return False
-
-#     with os.scandir(path) as areas_it:
-#         for area in areas_it:
-#             if _entry_is_ignored(ignored, [], area) or check_if_out_of_id(area, []):
-#                 continue
-#             area_file = File(
-#                 name=area.name,
-#                 full_path=area.path,
-#                 nested_under=[],
-#             )
-#             area_match = valid_area_re.fullmatch(area.name)
-#             if not area_match:
-#                 errors.append(
-#                     Error(
-#                         error=InvalidAreaName(),
-#                         files=[area_file],
-#                     ),
-#                 )
-#                 continue
-#             # Valid area
-#             _insert_append(
-#                 area_match.group(1),
-#                 (area_match.group(2), area_file),
-#                 used_areas,
-#             )
-#             cat_re = _valid_category_re(area_match.group(1))
-#             with os.scandir(area.path) as cats_it:
-#                 for cat in cats_it:
-#                     if _entry_is_ignored(
-#                         ignored,
-#                         [area.name],
-#                         cat,
-#                     ) or check_if_out_of_id(cat, [area.name]):
-#                         continue
-#                     cat_file = File(
-#                         name=cat.name,
-#                         full_path=cat.path,
-#                         nested_under=[area.name],
-#                     )
-#                     if cat_match := cat_re.fullmatch(cat.name):
-#                         _insert_append(
-#                             cat_match.group(1),
-#                             (cat_match.group(2), cat_file),
-#                             used_categories,
-#                         )
-#                         id_re = _valid_id_re(cat_match.group(1))
-#                         with os.scandir(cat.path) as ids_it:
-#                             nested_under = [area.name, cat.name]
-
-#                             for jid in ids_it:
-#                                 if _entry_is_ignored(
-#                                     ignored,
-#                                     nested_under,
-#                                     jid,
-#                                 ) or check_if_out_of_id(jid, nested_under):
-#                                     continue
-#                                 id_file = File(
-#                                     name=jid.name,
-#                                     full_path=jid.path,
-#                                     nested_under=nested_under,
-#                                 )
-#                                 if id_match := id_re.fullmatch(jid.name):
-#                                     _insert_append(
-#                                         id_match.group(1),
-#                                         (id_match.group(2), id_file),
-#                                         used_ids,
-#                                     )
-
-#                                     check_inbox(nested_under, jid)
-#                                 elif gen_match := generic_id_re.fullmatch(jid.name):
-#                                     errors.append(
-#                                         Error(
-#                                             error=IdInWrongCategory(
-#                                                 id_ac=gen_match.group(
-#                                                     1,
-#                                                 ),
-#                                                 file_ac=cat_match.group(
-#                                                     1,
-#                                                 ),
-#                                             ),
-#                                             files=[id_file],
-#                                         ),
-#                                     )
-
-#                                 else:
-#                                     errors.append(
-#                                         Error(
-#                                             error=InvalidIDName(),
-#                                             files=[id_file],
-#                                         ),
-#                                     )
-#                     elif gen_match := generic_category_re.fullmatch(cat.name):
-#                         errors.append(
-#                             Error(
-#                                 error=CategoryInWrongArea(
-#                                     category_area=gen_match.group(1),
-#                                     file_area=area_match.group(1),
-#                                 ),
-#                                 files=[cat_file],
-#                             ),
-#                         )
-#                     else:
-#                         errors.append(
-#                             Error(
-#                                 error=InvalidCategoryName(),
-#                                 files=[cat_file],
-#                             ),
-#                         )
-
-#         errors.extend(_error_if_dups(DuplicateArea, Error, used_areas))
-#         errors.extend(_error_if_dups(DuplicateCategory, Error, used_categories))
-#         errors.extend(_error_if_dups(DuplicateId, Error, used_ids))
-
-#     return LintResults(
-#         errors=sorted(errors, key=_sort_error),
-#         used_areas=used_areas,
-#         used_categories=used_categories,
-#         used_ids=used_ids,
-#     )
-
-
-# def lint_dir_and_jdex(
-#     *,
-#     path: Path,
-#     jdex_path: Path,
-#     ignored: list[str] | None = None,
-#     alt_zeros: bool = False,
-# ) -> tuple[list[Error], list[JDexIssue]]:
-#     """Check a root of a JD system and its JDex for issues."""
-#     results = lint_dir(path, ignored)
-#     jdex = _get_jdex_entries(jdex_path, ignored=ignored, alt_zeros=alt_zeros)
-#     if isinstance(jdex, list):
-#         return (results.errors, sorted(jdex, key=_sort_error))
-
-#     errors = results.errors
-
-#     for area, files in results.used_areas.items():
-#         if area not in jdex.areas:
-#             errors.append(
-#                 Error(
-#                     error=AreaNotInJDex(area=area),
-#                     files=[f for (_, f) in files],
-#                 ),
-#             )
-#         elif len(files) == 1 and files[0][1].name != jdex.areas[area]:
-#             errors.append(
-#                 Error(
-#                     error=AreaDifferentFromJDex(
-#                         area=area,
-#                         jdex_name=jdex.areas[area],
-#                     ),
-#                     files=[f for (_, f) in files],
-#                 ),
-#             )
-#     for category, files in results.used_categories.items():
-#         if category not in jdex.categories:
-#             errors.append(
-#                 Error(
-#                     error=CategoryNotInJDex(category=category),
-#                     files=[f for (_, f) in files],
-#                 ),
-#             )
-#         elif len(files) == 1 and files[0][1].name != jdex.categories[category]:
-#             errors.append(
-#                 Error(
-#                     error=CategoryDifferentFromJDex(
-#                         category=category,
-#                         jdex_name=jdex.categories[category],
-#                     ),
-#                     files=[f for (_, f) in files],
-#                 ),
-#             )
-#     for jid, files in results.used_ids.items():
-#         if jid not in jdex.ids:
-#             errors.append(
-#                 Error(error=IdNotInJDex(id=jid), files=[f for (_, f) in files]),
-#             )
-#         elif len(files) == 1 and files[0][1].name != jdex.ids[jid]:
-#             errors.append(
-#                 Error(
-#                     error=IdDifferentFromJDex(id=jid, jdex_name=jdex.ids[jid]),
-#                     files=[f for (_, f) in files],
-#                 ),
-#             )
-#     return (sorted(errors, key=_sort_error), [])
-
-
-def _print_area(d: str) -> str:
-    """Given the number of an area, pretty-print it."""
-    return f"{d}0-{d}9"
-
-
-def _print_nest(f: File) -> str:
-    """Pretty-print a nested file."""
-    if f.nested_under:
-        return str(PurePath(*f.nested_under, f.name))
-    return f.name
-
-
 def _get_jdex_notes_here_or_children(
     ignored: tuple[str],
     bound_segments: dict[str, str],
@@ -1955,11 +1345,12 @@ def _get_jdex_notes_here_or_children(
                             break
 
                         # Create note entry
-                        _insert_append(
-                            note.id.build_id({**bound_segments, **match.groupdict()}),
-                            PurePath(x),
-                            accumulated_notes,
-                        )
+                        for id in note.ids:
+                            _insert_append(
+                                id.build({**bound_segments, **match.groupdict()}),
+                                PurePath(x),
+                                accumulated_notes,
+                            )
                         break
                 else:
                     # If we got here, it matched no known child/note
@@ -1997,7 +1388,7 @@ def _process_jdex(
 
     # Check for duplicate ids
     duplicate_id_errors = [
-        JDexIssueDuplicateId(ns[0], tuple(ns), id)
+        JDexIssueDuplicateID(ns[0], tuple(ns), id)
         for id, ns in jdex_notes_by_id.items()
         if len(ns) != 1
     ]
@@ -2013,6 +1404,7 @@ def _process_system_level_and_children(
     path: os.PathLike,
     tier: ConfigSystem | ConfigSystemTier,
     jdex: None | dict[str, list[PurePath]],
+    by_id_dict: dict[str, list[tuple[str | None, PurePath]]],
 ) -> tuple[dict[str, list[SystemFolder]], list[Issue]]:
     # Compile regexes for children
     valid_children = [
@@ -2053,13 +1445,27 @@ def _process_system_level_and_children(
                             PurePath(x),
                             child,
                             jdex,
+                            by_id_dict,
                         )
                     )
 
+                    child_id = child.id.build({**bound_segments, **match.groupdict()})
                     _insert_append(
-                        child.id.build_id({**bound_segments, **match.groupdict()}),
+                        child_id,
                         SystemFolder(PurePath(x), child_structure),
                         accumulated_structure,
+                    )
+                    _insert_append(
+                        child_id,
+                        (
+                            child.jdex_note.build(
+                                {**bound_segments, **match.groupdict()}
+                            )
+                            if child.jdex_note
+                            else None,
+                            PurePath(x),
+                        ),
+                        by_id_dict,
                     )
                     accumulated_errors.extend(child_errors)
                     break
@@ -2082,39 +1488,41 @@ def _process_system_level_and_children(
     return (accumulated_structure, accumulated_errors)
 
 
-def _flatten_tree(
-    acc: dict[str, list[SystemFolder]], xs: dict[str, list[SystemFolder]]
-) -> None:
-    for id, clashes in xs.items():
-        for folder in clashes:
-            if folder.children:
-                _flatten_tree(acc, folder.children)
-            _insert_append(id, folder, acc)
-
-
 def _process_system_root(
     ignored: tuple[str],
     root: ConfigSystemRoot,
     system: ConfigSystem,
     jdex: None | dict[str, list[PurePath]],
 ) -> tuple[dict[str, list[SystemFolder]], list[Issue]]:
+    by_id: dict[str, list[tuple[str | None, PurePath]]] = {}
     (root_structure, root_errors) = _process_system_level_and_children(
-        ignored + root.ignore,
-        {},
-        root.path,
-        system,
-        jdex,
+        ignored + root.ignore, {}, root.path, system, jdex, by_id
     )
-    # Check for duplicate ids
-    # First, we flatten, in case there are children of IDs with ID clashes (this would be stupid, but someone could set up their system that way)
-    flattened_by_id = {}
-    _flatten_tree(flattened_by_id, root_structure)
+
+    # Check for duplicate IDs
     duplicate_id_errors = [
-        IssueDuplicateId(ns[0].path, tuple([n.path for n in ns]), id)
-        for id, ns in flattened_by_id.items()
-        if len(ns) != 1
+        IssueDuplicateID(fs[0][1], tuple([f[1] for f in fs]), id)
+        for id, fs in by_id.items()
+        if len(fs) != 1
     ]
-    return (root_structure, root_errors + duplicate_id_errors)
+
+    # If we have a JDex, we can do some additional checks
+    id_errors = []
+    if jdex is not None:
+        for id, fs in by_id.items():
+            if id not in jdex:
+                id_errors.append(IssueIDNotInJDex(fs[0][1], id))
+            else:
+                jdex_notes = [n.name for n in jdex[id]]
+                for expected_jdex_note, f in fs:
+                    if expected_jdex_note and expected_jdex_note not in jdex_notes:
+                        id_errors.append(
+                            IssueIDDifferentFromJDex(
+                                f, id, expected_jdex_note, jdex[id]
+                            )
+                        )
+
+    return (root_structure, root_errors + duplicate_id_errors + id_errors)
 
 
 def lint_system(config: Config) -> LintResults:
@@ -2132,7 +1540,7 @@ def lint_system(config: Config) -> LintResults:
             config.linter.ignore,
             root,
             config.system,
-            jdex_notes,
+            jdex_notes if config.system.jdex else None,
         )
         if root_errors:
             errors[root.name] = sorted(root_errors, key=_sort_error)

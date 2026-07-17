@@ -49,6 +49,14 @@
           "name": [
             "A",
             "B2",
+            "C3"
+          ],
+          "format": "/=A/.md"
+        },
+        {
+          "name": [
+            "A",
+            "B2",
             "C2"
           ],
           "format": "/=A//=Name/.md"
@@ -59,6 +67,14 @@
       "type": "JDEX_ARBITRARY_CONTENT_WHERE_NOT_ALLOWED",
       "file": "files/1/1A/Folder",
       "possible_formats": [
+        {
+          "name": [
+            "A",
+            "B2",
+            "C3"
+          ],
+          "format": "/=A/.md"
+        },
         {
           "name": [
             "A",

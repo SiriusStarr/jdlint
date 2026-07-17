@@ -18,8 +18,13 @@ format = "/=A//*Name/"
 
 [[system.jdex.children.children.notes]]
 name = "C"
+format = "/=A/.md"
+ids = ["/=A/"]
+
+[[system.jdex.children.children.notes]]
+name = "C"
 format = "/=A//=Name/.md"
-id = "/=A/./=Name/"
+ids = ["/=A/./=Name/"]
 
 [[system.children]]
 name = "Area"
