@@ -726,6 +726,26 @@ class IssueArbitraryContentWhereNotAllowed(Issue):
 
 
 @dataclass(frozen=True)
+class IssueDuplicateId(Issue):
+    """An ID that has been used multiple times."""
+
+    files: tuple[PurePath, ...]
+    id: str
+    type: Literal["DUPLICATE_ID"] = "DUPLICATE_ID"
+
+    def display(self) -> str:
+        """Display this particular instance of an error."""
+        return f"{self.id}:\n    " + "\n    ".join([str(f.name) for f in self.files])
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="Duplicate IDs were used.",
+            fix="Assign a new ID to one of them.",
+        )
+
+
+@dataclass(frozen=True)
 class AreaDifferentFromJDex:
     """An area with a differently-named JDex entry."""
 
@@ -1175,7 +1195,12 @@ class _Explanation:
     fix: str
 
 
-StructureTree: TypeAlias = dict[PurePath, "StructureTree"]
+@dataclass(frozen=True)
+class SystemFolder:
+    """A folder detected in a JD root, including its path and its children (by ID)"""
+
+    path: PurePath
+    children: dict[str, list[SystemFolder]]
 
 
 @dataclass(frozen=True)
@@ -1185,7 +1210,7 @@ class LintResults:
     errors: dict[str, list[Issue]]
     jdex_errors: list[JDexIssue]
     jdex: dict[str, list[PurePath]]
-    structure: dict[str, StructureTree]
+    structure: dict[str, dict[str, list[SystemFolder]]]
 
 
 @dataclass
@@ -1904,7 +1929,7 @@ def _get_jdex_notes_here_or_children(
                     (child_notes, child_errors) = _get_jdex_notes_here_or_children(
                         ignored,
                         {**bound_segments, **match.groupdict()},
-                        PurePath(x.path),
+                        PurePath(x),
                         child,
                     )
                     for id, notes in child_notes.items():
@@ -1932,7 +1957,7 @@ def _get_jdex_notes_here_or_children(
                         # Create note entry
                         _insert_append(
                             note.id.build_id({**bound_segments, **match.groupdict()}),
-                            PurePath(x.path),
+                            PurePath(x),
                             accumulated_notes,
                         )
                         break
@@ -1988,7 +2013,7 @@ def _process_system_level_and_children(
     path: os.PathLike,
     tier: ConfigSystem | ConfigSystemTier,
     jdex: None | dict[str, list[PurePath]],
-) -> tuple[StructureTree, list[Issue]]:
+) -> tuple[dict[str, list[SystemFolder]], list[Issue]]:
     # Compile regexes for children
     valid_children = [
         (re.compile(c.format.build_regex(bound_segments)), c) for c in tier.children
@@ -2030,7 +2055,12 @@ def _process_system_level_and_children(
                             jdex,
                         )
                     )
-                    accumulated_structure.update({PurePath(x): child_structure})
+
+                    _insert_append(
+                        child.id.build_id({**bound_segments, **match.groupdict()}),
+                        SystemFolder(PurePath(x), child_structure),
+                        accumulated_structure,
+                    )
                     accumulated_errors.extend(child_errors)
                     break
             else:
@@ -2052,19 +2082,39 @@ def _process_system_level_and_children(
     return (accumulated_structure, accumulated_errors)
 
 
+def _flatten_tree(
+    acc: dict[str, list[SystemFolder]], xs: dict[str, list[SystemFolder]]
+) -> None:
+    for id, clashes in xs.items():
+        for folder in clashes:
+            if folder.children:
+                _flatten_tree(acc, folder.children)
+            _insert_append(id, folder, acc)
+
+
 def _process_system_root(
     ignored: tuple[str],
     root: ConfigSystemRoot,
     system: ConfigSystem,
     jdex: None | dict[str, list[PurePath]],
-) -> tuple[StructureTree, list[Issue]]:
-    return _process_system_level_and_children(
+) -> tuple[dict[str, list[SystemFolder]], list[Issue]]:
+    (root_structure, root_errors) = _process_system_level_and_children(
         ignored + root.ignore,
         {},
         root.path,
         system,
         jdex,
     )
+    # Check for duplicate ids
+    # First, we flatten, in case there are children of IDs with ID clashes (this would be stupid, but someone could set up their system that way)
+    flattened_by_id = {}
+    _flatten_tree(flattened_by_id, root_structure)
+    duplicate_id_errors = [
+        IssueDuplicateId(ns[0].path, tuple([n.path for n in ns]), id)
+        for id, ns in flattened_by_id.items()
+        if len(ns) != 1
+    ]
+    return (root_structure, root_errors + duplicate_id_errors)
 
 
 def lint_system(config: Config) -> LintResults:
