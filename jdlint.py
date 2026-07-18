@@ -932,6 +932,9 @@ IssueType = (
     | IssueDuplicateID
     | IssueEmptyFolder
     | IssueFileWhereFolderExpected
+    | IssueFolderShouldBeEmpty
+    | IssueIDDifferentFromJDex
+    | IssueIDNotInJDex
 )
 
 AnyIssueType = JDexIssueType | IssueType
