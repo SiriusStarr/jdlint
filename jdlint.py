@@ -1425,16 +1425,17 @@ def _process_system_level_and_children(
                 if match:
                     # Is a valid child folder
                     if x.is_file():
-                        # This is an error
-                        accumulated_errors.append(
-                            IssueFileWhereFolderExpected(
-                                PurePath(x),
-                                ContentPattern(
-                                    child.format.name,
-                                    child.format.raw_format,
+                        if not child.can_be_file:
+                            # This is an error
+                            accumulated_errors.append(
+                                IssueFileWhereFolderExpected(
+                                    PurePath(x),
+                                    ContentPattern(
+                                        child.format.name,
+                                        child.format.raw_format,
+                                    ),
                                 ),
-                            ),
-                        )
+                            )
                         break
 
                     # Walk child

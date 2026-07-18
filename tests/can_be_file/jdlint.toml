@@ -1,0 +1,22 @@
+[linter]
+json_output = true
+
+[[system.roots]]
+name = "JDex"
+path = "files"
+
+[[system.children]]
+name = "A"
+format = "/#A/"
+id = "/=A/"
+
+[[system.children.children]]
+name = "B"
+format = "/=A//*Name/"
+id = "/=A/./=Name/"
+
+[[system.children.children.children]]
+name = "C"
+format = "/=A//=Name/"
+id = "/=A/./=Name/"
+can_be_file = true
