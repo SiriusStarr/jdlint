@@ -729,6 +729,25 @@ class IssueArbitraryContentWhereNotAllowed(Issue):
 
 
 @dataclass(frozen=True)
+class IssueFolderShouldBeEmpty(Issue):
+    """Content was found in a folder that should be empty."""
+
+    children: tuple[PurePath, ...]
+    type: Literal["FOLDER_SHOULD_BE_EMPTY"] = "FOLDER_SHOULD_BE_EMPTY"
+
+    def display(self) -> str:
+        """Display this particular instance of an error."""
+        return f"{self.file!s} (has {len(self.children)} children)"
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="Files or folders were found in a folder that should be empty.",
+            fix="Either the folder in question should have allow_arbitrary_content set to true, or you should remove the content.",
+        )
+
+
+@dataclass(frozen=True)
 class IssueDuplicateID(Issue):
     """An ID that has been used multiple times."""
 
@@ -785,195 +804,6 @@ class IssueIDDifferentFromJDex(Issue):
         return _Explanation(
             explanation="An ID was found, the name of which is different from its corresponding JDex entry.",
             fix="Update the one that is incorrect.",
-        )
-
-
-@dataclass(frozen=True)
-class AreaDifferentFromJDex:
-    """An area with a differently-named JDex entry."""
-
-    area: str
-    jdex_name: str
-    type: Literal["AREA_DIFFERENT_FROM_JDEX"] = "AREA_DIFFERENT_FROM_JDEX"
-
-    def display(self, files: list[File]) -> str:
-        """Display this particular instance of an error."""
-        return f"{_print_nest(files[0])} [JDex name: {self.jdex_name}]"
-
-    def explain(self) -> _Explanation:
-        """Explain what this error is."""
-        return _Explanation(
-            explanation="An area was found, the name of which is different from its corresponding JDex entry.",
-            fix="Update the one that is incorrect.",
-        )
-
-
-@dataclass(frozen=True)
-class AreaNotInJDex:
-    """An area without a corresponding JDex entry."""
-
-    area: str
-    type: Literal["AREA_NOT_IN_JDEX"] = "AREA_NOT_IN_JDEX"
-
-    def display(self, files: list[File]) -> str:
-        """Display this particular instance of an error."""
-        return f"{_print_nest(files[0])} [area: {_print_area(self.area)}]"
-
-    def explain(self) -> _Explanation:
-        """Explain what this error is."""
-        return _Explanation(
-            explanation="An area was found in your files that is missing from your JDex.",
-            fix="Go add a corresponding entry to your JDex, or delete this if it's unused.",
-        )
-
-
-@dataclass(frozen=True)
-class CategoryDifferentFromJDex:
-    """A category with a differently-named JDex entry."""
-
-    category: str
-    jdex_name: str
-    type: Literal["CATEGORY_DIFFERENT_FROM_JDEX"] = "CATEGORY_DIFFERENT_FROM_JDEX"
-
-    def display(self, files: list[File]) -> str:
-        """Display this particular instance of an error."""
-        return f"{_print_nest(files[0])} [JDex name: {self.jdex_name}]"
-
-    def explain(self) -> _Explanation:
-        """Explain what this error is."""
-        return _Explanation(
-            explanation="A category was found, the name of which is different from its corresponding JDex entry.",
-            fix="Update the one that is incorrect.",
-        )
-
-
-@dataclass(frozen=True)
-class CategoryInWrongArea:
-    """A category that, by its number, has been put in the wrong area."""
-
-    category_area: str
-    file_area: str
-    type: Literal["CATEGORY_IN_WRONG_AREA"] = "CATEGORY_IN_WRONG_AREA"
-
-    def display(self, files: list[File]) -> str:
-        """Given the file's name, print the error message for it."""
-        return f"{_print_nest(files[0])} [in {_print_area(self.file_area)} but should be in {_print_area(self.category_area)}]"
-
-    def explain(self) -> _Explanation:
-        """Explain what this error is."""
-        return _Explanation(
-            explanation="Some categories are in the wrong area.",
-            fix="Move them into the correct area folder.",
-        )
-
-
-@dataclass(frozen=True)
-class CategoryNotInJDex:
-    """An category without a corresponding JDex entry."""
-
-    category: str
-    type: Literal["CATEGORY_NOT_IN_JDEX"] = "CATEGORY_NOT_IN_JDEX"
-
-    def display(self, files: list[File]) -> str:
-        """Display this particular instance of an error."""
-        return f"{_print_nest(files[0])} [category: {self.category}]"
-
-    def explain(self) -> _Explanation:
-        """Explain what this error is."""
-        return _Explanation(
-            explanation="A category was found in the files that is missing from the JDex.",
-            fix="Go add a corresponding entry to your JDex.",
-        )
-
-
-@dataclass(frozen=True)
-class FileOutsideId:
-    """A file was encountered not in a terminal ID folder."""
-
-    type: Literal["FILE_OUTSIDE_ID"] = "FILE_OUTSIDE_ID"
-
-    def display(self, files: list[File]) -> str:
-        """Display this particular instance of an error."""
-        return _print_nest(files[0])
-
-    def explain(self) -> _Explanation:
-        """Explain what this error is."""
-        return _Explanation(
-            explanation="Files were found outside of IDs.",
-            fix="Files should only be kept in IDs and not higher in the hierarchy.",
-        )
-
-
-@dataclass(frozen=True)
-class InvalidAreaName:
-    """A folder at the area level that doesn't match the normal format."""
-
-    type: Literal["INVALID_AREA_NAME"] = "INVALID_AREA_NAME"
-
-    def display(self, files: list[File]) -> str:
-        """Display this particular instance of an error."""
-        return _print_nest(files[0])
-
-    def explain(self) -> _Explanation:
-        """Explain what this error is."""
-        return _Explanation(
-            explanation="Some areas have invalid names.",
-            fix='Valid area names look like "10-19 Life Admin", so edit the names to match that format.',
-        )
-
-
-@dataclass(frozen=True)
-class InvalidCategoryName:
-    """A folder at the category level that doesn't match the normal format."""
-
-    type: Literal["INVALID_CATEGORY_NAME"] = "INVALID_CATEGORY_NAME"
-
-    def display(self, files: list[File]) -> str:
-        """Display this particular instance of an error."""
-        return _print_nest(files[0])
-
-    def explain(self) -> _Explanation:
-        """Explain what this error is."""
-        return _Explanation(
-            explanation="Some categories have invalid names.",
-            fix='Valid category names look like "11 Me, Myself, & I", so edit the names to match that format.',
-        )
-
-
-@dataclass(frozen=True)
-class InvalidIDName:
-    """A folder at the ID level that doesn't match the normal format."""
-
-    type: Literal["INVALID_ID_NAME"] = "INVALID_ID_NAME"
-
-    def display(self, files: list[File]) -> str:
-        """Display this particular instance of an error."""
-        return _print_nest(files[0])
-
-    def explain(self) -> _Explanation:
-        """Explain what this error is."""
-        return _Explanation(
-            explanation="Some IDs have invalid names.",
-            fix='Valid ID names look like "11.11 A Cool Project", so edit the names to match that format.',
-        )
-
-
-@dataclass(frozen=True)
-class NonemptyInbox:
-    """An inbox (AC.01) that contains items."""
-
-    num_items: int
-    type: Literal["NONEMPTY_INBOX"] = "NONEMPTY_INBOX"
-
-    def display(self, files: list[File]) -> str:
-        """Display this particular instance of an error."""
-        return f"{_print_nest(files[0])} [{self.num_items} items]"
-
-    def explain(self) -> _Explanation:
-        """Explain what this error is."""
-        return _Explanation(
-            explanation="Files were found in an inbox.",
-            fix="Go sort them into the appropriate IDs.",
         )
 
 
@@ -1415,6 +1245,8 @@ def _process_system_level_and_children(
     accumulated_structure = {}
 
     has_content = False
+    children_that_should_not_be = []
+
     with os.scandir(path) as contents:
         for x in contents:
             if _entry_is_ignored(ignored, [], x):
@@ -1473,18 +1305,29 @@ def _process_system_level_and_children(
             else:
                 # If we got here, it matched no known child/note
                 if not getattr(tier, "allow_arbitrary_contents", False):
-                    # This is an error
-                    accumulated_errors.append(
-                        IssueArbitraryContentWhereNotAllowed(
-                            PurePath(x),
-                            tuple(
-                                ContentPattern(c.format.name, c.format.raw_format)
-                                for c in tier.children
+                    # If the tier has no children specified, it should be empty
+                    if not tier.children:
+                        children_that_should_not_be.append(PurePath(x))
+                    else:
+                        accumulated_errors.append(
+                            IssueArbitraryContentWhereNotAllowed(
+                                PurePath(x),
+                                tuple(
+                                    ContentPattern(c.format.name, c.format.raw_format)
+                                    for c in tier.children
+                                ),
                             ),
-                        ),
-                    )
-    if not has_content:
-        # We have a fully empty folder; it shouldn't exist if it's doing nothing.
+                        )
+    if children_that_should_not_be:
+        accumulated_errors.append(
+            IssueFolderShouldBeEmpty(
+                PurePath(path), tuple(children_that_should_not_be)
+            ),
+        )
+    if not has_content and (
+        tier.children or getattr(tier, "allow_arbitrary_contents", False)
+    ):
+        # We have a fully empty folder; it shouldn't exist if it's doing nothing (unless it should be empty).
         accumulated_errors.append(IssueEmptyFolder(PurePath(path)))
     return (accumulated_structure, accumulated_errors)
 

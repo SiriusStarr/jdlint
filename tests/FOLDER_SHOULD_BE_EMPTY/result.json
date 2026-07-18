@@ -1,0 +1,21 @@
+{
+  "errors": {
+    "Files": [
+      {
+        "type": "FOLDER_SHOULD_BE_EMPTY",
+        "file": "files/10-19 Life Admin/11 Me, Myself, & I/11.01 Inbox",
+        "children": [
+          "files/10-19 Life Admin/11 Me, Myself, & I/11.01 Inbox/Content"
+        ]
+      },
+      {
+        "type": "FOLDER_SHOULD_BE_EMPTY",
+        "file": "files/10-19 Life Admin/11 Me, Myself, & I/11.10 ■ Selves",
+        "children": [
+          "files/10-19 Life Admin/11 Me, Myself, & I/11.10 ■ Selves/Content"
+        ]
+      }
+    ]
+  },
+  "jdex_errors": []
+}
