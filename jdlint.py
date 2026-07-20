@@ -408,6 +408,16 @@ class ConfigFolderTier:
                 at,
                 "If children are specified, allow_arbitrary_contents must be false.",
             )
+        if self.format.forbidden and self.children:
+            raise ConfigConflictError(
+                at,
+                "If forbidden, children must not be specified.",
+            )
+        if self.format.forbidden and self.allow_arbitrary_contents:
+            raise ConfigConflictError(
+                at,
+                "If forbidden, allow_arbitrary_contents must be false.",
+            )
 
 
 class ConfigSystemTier(ConfigFolderTier):
@@ -451,11 +461,18 @@ class ConfigSystemTier(ConfigFolderTier):
                 type(self.can_be_file).__name__,
             )
 
-        if self.children and (self.can_be_file):
+        if self.children and self.can_be_file:
             raise ConfigConflictError(
                 at,
                 "If children are specified, can_be_file must be false.",
             )
+
+        if self.format.forbidden and self.can_be_file:
+            raise ConfigConflictError(
+                at,
+                "If forbidden, can_be_file must be false.",
+            )
+
         # Ensure no extra fields
         for key in from_file:
             raise ConfigExtraKeyError(f"{at}.{key}", tuple(self.__dict__.keys()))
@@ -483,16 +500,21 @@ class ConfigJDexTier(ConfigFolderTier):
             for i, v in enumerate(from_file.pop("notes", []))
         ]
 
-        if not self.notes and not self.children:
+        if not self.notes and not self.children and not self.format.forbidden:
             raise ConfigConflictError(
                 at,
-                "A JDex tier must specify either notes or children.",
+                "A JDex tier must specify either notes or children, or be forbidden.",
             )
 
         if self.notes and self.children:
             raise ConfigConflictError(
                 at,
                 "Only one of notes and children may be specified.",
+            )
+        if self.notes and self.format.forbidden:
+            raise ConfigConflictError(
+                at,
+                "If forbidden, notes cannot be speciefed.",
             )
 
         # Ensure no extra fields
@@ -523,6 +545,7 @@ class ConfigFormat(ConfigFormatAncestorInfo):
             raise (ConfigMissingKeyError(f"{at}.format"))
 
         self.raw_format = from_file.pop("format")
+        self.forbidden = from_file.pop("forbidden", False)
 
         if "name" not in from_file:
             raise (ConfigMissingKeyError(f"{at}.name"))
@@ -539,6 +562,12 @@ class ConfigFormat(ConfigFormatAncestorInfo):
                 f"{at}.format",
                 "str",
                 type(self.raw_format).__name__,
+            )
+        if not isinstance(self.forbidden, bool):
+            raise ConfigTypeError(
+                f"{at}.forbidden",
+                "bool",
+                type(self.forbidden).__name__,
             )
 
         if from_file["name"] == "":
@@ -808,6 +837,25 @@ class IssueIDDifferentFromJDex(Issue):
 
 
 @dataclass(frozen=True)
+class IssueEncounteredForbiddenFolder(Issue):
+    """A file that matched a forbidden format was found."""
+
+    matched_pattern: ContentPattern
+    type: Literal["ENCOUNTERED_FORBIDDEN_FOLDER"] = "ENCOUNTERED_FORBIDDEN_FOLDER"
+
+    def display(self) -> str:
+        """Display this particular instance of an error."""
+        return f'{self.file!s} (matched "{self.matched_pattern}")'
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="A file was found that matched the format of a forbidden folder.",
+            fix="You should remove/rename the file in question.",
+        )
+
+
+@dataclass(frozen=True)
 class File:
     """A file or folder that has been detected by jdlint."""
 
@@ -920,12 +968,54 @@ class JDexIssueEmptyFolder(JDexIssue):
         )
 
 
+@dataclass(frozen=True)
+class JDexIssueEncounteredForbiddenFolder(JDexIssue):
+    """A JDex file that matched a forbidden format was found."""
+
+    matched_pattern: ContentPattern
+    type: Literal["JDEX_ENCOUNTERED_FORBIDDEN_FOLDER"] = (
+        "JDEX_ENCOUNTERED_FORBIDDEN_FOLDER"
+    )
+
+    def display(self) -> str:
+        """Display this particular instance of an error."""
+        return f'{self.file!s} (matched "{self.matched_pattern}")'
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="A JDex file was found that matched the format of a forbidden folder.",
+            fix="You should remove/rename the file in question.",
+        )
+
+
+@dataclass(frozen=True)
+class JDexIssueEncounteredForbiddenNote(JDexIssue):
+    """A JDex file that matched a forbidden format was found."""
+
+    matched_pattern: ContentPattern
+    type: Literal["JDEX_ENCOUNTERED_FORBIDDEN_NOTE"] = "JDEX_ENCOUNTERED_FORBIDDEN_NOTE"
+
+    def display(self) -> str:
+        """Display this particular instance of an error."""
+        return f'{self.file!s} (matched "{self.matched_pattern}")'
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="A JDex file was found that matched the format of a forbidden note.",
+            fix="You should remove/rename the file in question.",
+        )
+
+
 JDexIssueType = (
     JDexIssueArbitraryContentWhereNotAllowed
     | JDexIssueDuplicateID
     | JDexIssueEmptyFolder
     | JDexIssueFileWhereFolderExpected
     | JDexIssueFolderWhereNoteExpected
+    | JDexIssueEncounteredForbiddenFolder
+    | JDexIssueEncounteredForbiddenNote
 )
 IssueType = (
     IssueArbitraryContentWhereNotAllowed
@@ -935,6 +1025,7 @@ IssueType = (
     | IssueFolderShouldBeEmpty
     | IssueIDDifferentFromJDex
     | IssueIDNotInJDex
+    | IssueEncounteredForbiddenFolder
 )
 
 AnyIssueType = JDexIssueType | IssueType
@@ -1134,6 +1225,17 @@ def _get_jdex_notes_here_or_children(
             for child_format, child in valid_children:
                 match = child_format.fullmatch(x.name)
                 if match:
+                    if child.format.forbidden:
+                        accumulated_errors.append(
+                            JDexIssueEncounteredForbiddenFolder(
+                                PurePath(x),
+                                ContentPattern(
+                                    child.format.name,
+                                    child.format.raw_format,
+                                ),
+                            ),
+                        )
+                        break
                     # Is a valid child folder
                     if x.is_file():
                         # This is an error
@@ -1163,6 +1265,17 @@ def _get_jdex_notes_here_or_children(
                 for note_format, note in valid_notes:
                     match = note_format.fullmatch(x.name)
                     if match:
+                        if note.format.forbidden:
+                            accumulated_errors.append(
+                                JDexIssueEncounteredForbiddenNote(
+                                    PurePath(x),
+                                    ContentPattern(
+                                        note.format.name,
+                                        note.format.raw_format,
+                                    ),
+                                ),
+                            )
+                            break
                         # Is a valid JDex note
                         if x.is_dir():
                             # This is an error
@@ -1258,6 +1371,17 @@ def _process_system_level_and_children(
             for child_format, child in valid_children:
                 match = child_format.fullmatch(x.name)
                 if match:
+                    if child.format.forbidden:
+                        accumulated_errors.append(
+                            IssueEncounteredForbiddenFolder(
+                                PurePath(x),
+                                ContentPattern(
+                                    child.format.name,
+                                    child.format.raw_format,
+                                ),
+                            ),
+                        )
+                        break
                     # Is a valid child folder
                     if x.is_file():
                         if not child.can_be_file:

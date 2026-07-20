@@ -1,0 +1,70 @@
+[linter]
+json_output = true
+ignore = [".placeholder"]
+
+[[system.roots]]
+name = "Files"
+path = "files"
+
+[system.jdex]
+path = "jdex"
+
+## ###########################################################
+# Partially Nested
+## ###########################################################
+[[system.jdex.children]]
+name = "JDex Area Folder"
+format = "/#A/0-/=A/9 /*Area/"
+
+[[system.jdex.children.children]]
+name = "JDex Category Folder"
+format = "/=A//#C/ /*Category/"
+
+[[system.jdex.children.children.notes]]
+name = "JDex Area Note"
+format = "/=A/0.00 /*Name/.md"
+ids = ["/=A/0-/=A/9", "/=A/0.00"]
+
+[[system.jdex.children.children.notes]]
+name = "JDex Category Note"
+format = "/=A//=C/.00 /*Name/.md"
+ids = ["/=A//=C/", "/=A//=C/.00"]
+
+[[system.jdex.children.children.notes]]
+name = "JDex Inbox"
+format = "/=A//=C/.01 Inbox.md"
+ids = ["/=A//=C/.01"]
+
+[[system.jdex.children.children.notes]]
+name = "JDex Bad Inbox"
+format = "/=A//=C/.01 /*Name/"
+ids = ["/=A//=C/.01"]
+forbidden = true
+
+[[system.jdex.children.children.notes]]
+name = "JDex Id Note"
+format = "/=A//=C/./##ID/ /*Name/.md"
+ids = ["/=A//=C/./=ID/"]
+
+## ###########################################################
+# Standard
+## ###########################################################
+[[system.children]]
+name = "Area"
+format = "/#A/0-/=A/9 /*Area/"
+jdex_note = "/=A/0.00 /=Area/.md"
+id = "/=A/0-/=A/9"
+
+[[system.children.children]]
+name = "Category"
+format = "/=A//#C/ /*Category/"
+jdex_note = "/=A//=C/.00 /=Category/.md"
+id = "/=A//=C/"
+
+[[system.children.children.children]]
+name = "ID"
+format = "/=A//=C/./##ID/ /*IDName/"
+jdex_note = "/=A//=C/./=ID/ /=IDName/.md"
+id = "/=A//=C/./=ID/"
+can_be_file = true
+allow_arbitrary_contents = true

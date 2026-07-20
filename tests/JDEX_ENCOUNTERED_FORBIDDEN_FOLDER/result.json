@@ -1,0 +1,16 @@
+{
+  "errors": {},
+  "jdex_errors": [
+    {
+      "type": "JDEX_ENCOUNTERED_FORBIDDEN_FOLDER",
+      "matched_pattern": {
+        "name": [
+          "JDex Area Folder",
+          "JDex Bad Area Management Folder"
+        ],
+        "format": "/=A/0 /*AreaManagement/"
+      },
+      "file": "jdex/10-19 Life Admin/10 Managemnt of area 10-19"
+    }
+  ]
+}

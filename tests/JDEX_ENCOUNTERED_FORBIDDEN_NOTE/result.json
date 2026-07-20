@@ -1,0 +1,17 @@
+{
+  "errors": {},
+  "jdex_errors": [
+    {
+      "type": "JDEX_ENCOUNTERED_FORBIDDEN_NOTE",
+      "matched_pattern": {
+        "name": [
+          "JDex Area Folder",
+          "JDex Category Folder",
+          "JDex Bad Inbox"
+        ],
+        "format": "/=A//=C/.01 /*Name/"
+      },
+      "file": "jdex/10-19 Life Admin/11 Me, Myself, & I/11.01 Inbxo.md"
+    }
+  ]
+}

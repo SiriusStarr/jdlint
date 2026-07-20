@@ -1,0 +1,31 @@
+{
+  "errors": {
+    "Files": [
+      {
+        "type": "ENCOUNTERED_FORBIDDEN_FOLDER",
+        "matched_pattern": {
+          "name": [
+            "Area",
+            "Category",
+            "Bad Inbox"
+          ],
+          "format": "/=A//=C/.01 /*Inbox/"
+        },
+        "file": "files/10-19 Life Admin/11 Me, Myself, & I/11.01 Inbxo"
+      },
+      {
+        "type": "ENCOUNTERED_FORBIDDEN_FOLDER",
+        "matched_pattern": {
+          "name": [
+            "Area",
+            "Category",
+            "Bad Header"
+          ],
+          "format": "/=A//=C/./#I/0 /*Header/"
+        },
+        "file": "files/10-19 Life Admin/11 Me, Myself, & I/11.10 ■Selves.md"
+      }
+    ]
+  },
+  "jdex_errors": []
+}
