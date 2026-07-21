@@ -49,19 +49,19 @@ ids = ["/=A//=C/./=ID/"]
 ## ###########################################################
 # Standard
 ## ###########################################################
-[[system.children]]
+[[system.default.children]]
 name = "Area"
 format = "/#A/0-/=A/9 /*Area/"
 jdex_note = "/=A/0.00 /=Area/.md"
 id = "/=A/0-/=A/9"
 
-[[system.children.children]]
+[[system.default.children.children]]
 name = "Category"
 format = "/=A//#C/ /*Category/"
 jdex_note = "/=A//=C/.00 /=Category/.md"
 id = "/=A//=C/"
 
-[[system.children.children.children]]
+[[system.default.children.children.children]]
 name = "ID"
 format = "/=A//=C/./##ID/ /*IDName/"
 jdex_note = "/=A//=C/./=ID/ /=IDName/.md"

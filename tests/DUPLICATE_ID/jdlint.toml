@@ -5,23 +5,23 @@ json_output = true
 name = "JDex"
 path = "files"
 
-[[system.children]]
+[[system.default.children]]
 name = "A"
 format = "/#A/"
 id = "/=A/"
 
-[[system.children.children]]
+[[system.default.children.children]]
 name = "B"
 format = "/=A//#ID//*Name/"
 id = "/=A/./=ID/"
 allow_arbitrary_contents = true
 
-[[system.children]]
+[[system.default.children]]
 name = "C"
 format = "B/#B/"
 id = "/=B/"
 
-[[system.children.children]]
+[[system.default.children.children]]
 name = "D"
 format = "/=B//#ID//*Name/"
 id = "/=B/./=ID/"

@@ -9,39 +9,39 @@ path = "files"
 ## ###########################################################
 # Standard
 ## ###########################################################
-[[system.children]]
+[[system.default.children]]
 name = "Area"
 format = "/#A/0-/=A/9 /*Area/"
 id = "/=A/0-/=A/9"
 
-[[system.children.children]]
+[[system.default.children.children]]
 name = "Category"
 format = "/=A//#C/ /*Category/"
 id = "/=A//=C/"
 
-[[system.children.children.children]]
+[[system.default.children.children.children]]
 name = "Inbox"
 format = "/=A//=C/.01 Inbox"
 id = "/=A//=C/.01"
 
-[[system.children.children.children]]
+[[system.default.children.children.children]]
 name = "Bad Inbox"
 format = "/=A//=C/.01 /*Inbox/"
 id = "/=A//=C/.01"
 forbidden = true
 
-[[system.children.children.children]]
+[[system.default.children.children.children]]
 name = "Header"
 format = "/=A//=C/./#I/0 ■ /*Header/"
 id = "/=A//=C/./=I/0"
 
-[[system.children.children.children]]
+[[system.default.children.children.children]]
 name = "Bad Header"
 format = "/=A//=C/./#I/0 /*Header/"
 id = "/=A//=C/./=I/0"
 forbidden = true
 
-[[system.children.children.children]]
+[[system.default.children.children.children]]
 name = "ID"
 format = "/=A//=C/./##ID/ /*IDName/"
 id = "/=A//=C/./=ID/"

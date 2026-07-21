@@ -22,7 +22,7 @@ name = "B"
 format = "/=A//#ID//*Name/.md"
 ids = ["/=A/./=ID/"]
 
-[[system.children]]
+[[system.default.children]]
 name = "Area"
 format = "/#A/"
 jdex_note = "/=A/.md"

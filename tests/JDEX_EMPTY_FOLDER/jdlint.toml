@@ -23,7 +23,7 @@ name = "C1"
 format = "X.md"
 ids = ["/=A/"]
 
-[[system.children]]
+[[system.default.children]]
 name = "Area"
 format = "/#A/"
 jdex_note = "X.md"

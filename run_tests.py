@@ -47,8 +47,14 @@ class AllTests(unittest.TestCase):
                     actual = json.loads(
                         json.dumps(
                             {
-                                "errors": results.errors,
-                                "jdex_errors": results.jdex_errors,
+                                "errors": {
+                                    root_name: root.errors
+                                    for root_name, root in results.roots.items()
+                                    if root.errors
+                                },
+                                "jdex_errors": results.jdex.errors
+                                if results.jdex
+                                else [],
                             },
                             cls=jdlint._EnhancedJSONEncoder,
                         )

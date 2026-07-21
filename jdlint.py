@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import json
+import textwrap
 import os
 import re
 import sys
@@ -65,7 +66,7 @@ class ConfigTypeError(ConfigError):
 class ConfigValueError(ConfigError):
     """A bad value in the jdlint config."""
 
-    def __init__(self, key, issue, got):
+    def __init__(self, key: str, issue: str, got: str) -> None:
         """Create a value error, given the key it occurs at, the issue with the value, and the actual value."""
         super().__init__(key, f"Bad value.  Got: {got}  Issue: {issue}")
 
@@ -73,7 +74,7 @@ class ConfigValueError(ConfigError):
 class ConfigConflictError(ConfigError):
     """A conflict in the jdlint config."""
 
-    def __init__(self, key, issue):
+    def __init__(self, key: str, issue: str) -> None:
         """Create a conflict error, given the key it occurs at and the issue."""
         super().__init__(key, f"Conflict in config.  Issue: {issue}")
 
@@ -86,7 +87,9 @@ class ConfigConflictError(ConfigError):
 class ConfigSystemRoot:
     """A root (base folder) of a JD system to check for correctness, e.g. ~/Documents."""
 
-    def __init__(self, at: str, from_file: dict) -> None:
+    def __init__(
+        self, at: str, default_structure: list[ConfigSystemTier], from_file: dict
+    ) -> None:
         """Create a valid configuration given a loaded section of a config file."""
         # Acquire and set defaults
         if "name" not in from_file:
@@ -109,7 +112,7 @@ class ConfigSystemRoot:
             raise ConfigValueError(
                 f"{at}.path",
                 "Root path isn't a folder that exists!",
-                self.path,
+                str(self.path),
             )
         if not isinstance(self.ignore, list):
             raise ConfigTypeError(
@@ -120,6 +123,26 @@ class ConfigSystemRoot:
         for r in self.ignore:
             if not isinstance(r, str):
                 raise ConfigTypeError(f"{at}.ignore", "str", type(r).__name__)
+
+        # Load specialized structure, if any
+        if "children" in from_file:
+            self.children = [
+                ConfigSystemTier(
+                    f"{at}.children[{i}]",
+                    ConfigFormatAncestorInfo((), ()),
+                    v,
+                )
+                for i, v in enumerate(from_file.pop("children", []))
+            ]
+        elif default_structure:
+            self.children = default_structure
+        else:
+            raise (
+                ConfigConflictError(
+                    f"{at}",
+                    "Either system.default.children must be specified or every root must specify its own children.",
+                )
+            )
 
         # Ensure no extra fields
         for key in from_file:
@@ -142,7 +165,7 @@ class ConfigSystemJDex:
             raise ConfigValueError(
                 f"{at}.path",
                 "JDex path isn't a folder that exists!",
-                self.path,
+                str(self.path),
             )
         if not isinstance(self.ignore, list):
             raise ConfigTypeError(
@@ -170,11 +193,6 @@ class ConfigSystemJDex:
             )
             for i, v in enumerate(from_file.pop("notes", []))
         ]
-        if self.notes and self.children:
-            raise ConfigConflictError(
-                at,
-                "Only one of notes and children may be specified.",
-            )
 
         # Ensure no extra fields
         for key in from_file:
@@ -230,9 +248,20 @@ class ConfigSystem:
 
     def __init__(self, from_file: dict) -> None:
         """Create a valid configuration given a loaded system section of a config file."""
+
+        default_structure = [
+            ConfigSystemTier(
+                f"system.default.children[{i}]",
+                ConfigFormatAncestorInfo((), ()),
+                v,
+            )
+            for i, v in enumerate(from_file.pop("default", {}).pop("children", []))
+        ]
+
         self.roots = [
             ConfigSystemRoot(
                 f"system.roots[{i}]",
+                default_structure,
                 v,
             )
             for i, v in enumerate(from_file.pop("roots", []))
@@ -256,15 +285,6 @@ class ConfigSystem:
             self.jdex = ConfigSystemJDex("system.jdex", from_file.pop("jdex"))
         else:
             self.jdex = None
-
-        self.children = [
-            ConfigSystemTier(
-                f"system.children[{i}]",
-                ConfigFormatAncestorInfo((), ()),
-                v,
-            )
-            for i, v in enumerate(from_file.pop("children", []))
-        ]
 
         # Ensure no extra fields
         for key in from_file:
@@ -500,17 +520,6 @@ class ConfigJDexTier(ConfigFolderTier):
             for i, v in enumerate(from_file.pop("notes", []))
         ]
 
-        if not self.notes and not self.children and not self.format.forbidden:
-            raise ConfigConflictError(
-                at,
-                "A JDex tier must specify either notes or children, or be forbidden.",
-            )
-
-        if self.notes and self.children:
-            raise ConfigConflictError(
-                at,
-                "Only one of notes and children may be specified.",
-            )
         if self.notes and self.format.forbidden:
             raise ConfigConflictError(
                 at,
@@ -574,19 +583,19 @@ class ConfigFormat(ConfigFormatAncestorInfo):
             raise ConfigValueError(
                 f"{at}.name",
                 "Malformed name; must not be empty.",
-                from_file,
+                str(from_file),
             )
         if self.raw_format.count("/") % 2 != 0:
             raise ConfigValueError(
                 f"{at}.format",
                 "Malformed format; there must be an even number of / characters.  You have an extra one/are missing one.",
-                from_file,
+                str(from_file),
             )
         if self.raw_format == "":
             raise ConfigValueError(
                 f"{at}.format",
                 "Malformed format; must not be empty.",
-                from_file,
+                str(from_file),
             )
 
         regex = []
@@ -654,7 +663,10 @@ class ConfigFormat(ConfigFormatAncestorInfo):
 
 
 class Config:
-    def __init__(self, from_file):
+    """Valid config for jdlint."""
+
+    def __init__(self, from_file: dict) -> None:
+        """Attempt to create a valid config from loaded TOML."""
         self.linter = ConfigLinter(from_file.get("linter", {}))
 
         if "system" not in from_file:
@@ -674,7 +686,7 @@ class Issue:
     file: PurePath
     type = None
 
-    def display(self) -> str:
+    def display(self, base_path: PurePath) -> str:
         """Display this particular instance of an error."""
         raise NotImplementedError
 
@@ -690,7 +702,7 @@ class JDexIssue:
     file: PurePath
     type = None
 
-    def display(self) -> str:
+    def display(self, base_path: PurePath) -> str:
         """Display this particular instance of an error."""
         raise NotImplementedError
 
@@ -705,9 +717,9 @@ class IssueEmptyFolder(Issue):
 
     type: Literal["EMPTY_FOLDER"] = "EMPTY_FOLDER"
 
-    def display(self) -> str:
+    def display(self, base_path: PurePath) -> str:
         """Display this particular instance of an error."""
-        return f"{self.file!s}"
+        return f"{self.file.relative_to(base_path)!s}"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -724,9 +736,9 @@ class IssueFileWhereFolderExpected(Issue):
     matched_pattern: ContentPattern
     type: Literal["FILE_WHERE_FOLDER_EXPECTED"] = "FILE_WHERE_FOLDER_EXPECTED"
 
-    def display(self) -> str:
+    def display(self, base_path: PurePath) -> str:
         """Display this particular instance of an error."""
-        return f'{self.file!s} (matched "{self.matched_pattern}")'
+        return f"{self.file.relative_to(base_path)!s}\n    (matched {_print_pattern(self.matched_pattern)})"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -745,9 +757,9 @@ class IssueArbitraryContentWhereNotAllowed(Issue):
         "ARBITRARY_CONTENT_WHERE_NOT_ALLOWED"
     )
 
-    def display(self) -> str:
+    def display(self, base_path: PurePath) -> str:
         """Display this particular instance of an error."""
-        return f'{self.file!s} (matched none of "{self.possible_formats}")'
+        return f"{self.file.relative_to(base_path)!s}\n{textwrap.indent(_print_unmatched_patterns(self.possible_formats), '  ')}"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -764,9 +776,11 @@ class IssueFolderShouldBeEmpty(Issue):
     children: tuple[PurePath, ...]
     type: Literal["FOLDER_SHOULD_BE_EMPTY"] = "FOLDER_SHOULD_BE_EMPTY"
 
-    def display(self) -> str:
+    def display(self, base_path: PurePath) -> str:
         """Display this particular instance of an error."""
-        return f"{self.file!s} (has {len(self.children)} children)"
+        return (
+            f"{self.file.relative_to(base_path)!s}\n  has {len(self.children)} children"
+        )
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -784,7 +798,7 @@ class IssueDuplicateID(Issue):
     id: str
     type: Literal["DUPLICATE_ID"] = "DUPLICATE_ID"
 
-    def display(self) -> str:
+    def display(self, base_path: PurePath) -> str:
         """Display this particular instance of an error."""
         return f"{self.id}:\n    " + "\n    ".join([str(f.name) for f in self.files])
 
@@ -803,9 +817,9 @@ class IssueIDNotInJDex(Issue):
     id: str
     type: Literal["ID_NOT_IN_JDEX"] = "ID_NOT_IN_JDEX"
 
-    def display(self) -> str:
+    def display(self, base_path: PurePath) -> str:
         """Display this particular instance of an error."""
-        return f"{self.file} [ID: {self.id}]"
+        return f"{self.file.relative_to(base_path)!s} [ID: {self.id}]"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -824,9 +838,10 @@ class IssueIDDifferentFromJDex(Issue):
     known_jdex_notes: list[PurePath]
     type: Literal["ID_DIFFERENT_FROM_JDEX"] = "ID_DIFFERENT_FROM_JDEX"
 
-    def display(self) -> str:
+    def display(self, base_path: PurePath) -> str:
         """Display this particular instance of an error."""
-        return f"{self.id}: {self.file} [Expected JDex: {self.expected_jdex_note}i; actual JDex: {self.known_jdex_notes}]"
+        known = "\n".join((n.name for n in self.known_jdex_notes))
+        return f"{self.file.relative_to(base_path)!s}\n  ID: {self.id}\n  Expected:\n    {self.expected_jdex_note}\n  Actual:\n{textwrap.indent(known, '    ')}]"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -843,9 +858,11 @@ class IssueEncounteredForbiddenFolder(Issue):
     matched_pattern: ContentPattern
     type: Literal["ENCOUNTERED_FORBIDDEN_FOLDER"] = "ENCOUNTERED_FORBIDDEN_FOLDER"
 
-    def display(self) -> str:
+    def display(self, base_path: PurePath) -> str:
         """Display this particular instance of an error."""
-        return f'{self.file!s} (matched "{self.matched_pattern}")'
+        return (
+            f'{self.file.relative_to(base_path)!s} (matched "{self.matched_pattern}")'
+        )
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -871,7 +888,7 @@ class JDexIssueDuplicateID(JDexIssue):
     id: str
     type: Literal["JDEX_DUPLICATE_ID"] = "JDEX_DUPLICATE_ID"
 
-    def display(self) -> str:
+    def display(self, base_path: PurePath) -> str:
         """Display this particular instance of an error."""
         return f"{self.id}:\n    " + "\n    ".join([str(f.name) for f in self.files])
 
@@ -890,9 +907,11 @@ class JDexIssueFileWhereFolderExpected(JDexIssue):
     matched_pattern: ContentPattern
     type: Literal["JDEX_FILE_WHERE_FOLDER_EXPECTED"] = "JDEX_FILE_WHERE_FOLDER_EXPECTED"
 
-    def display(self) -> str:
+    def display(self, base_path: PurePath) -> str:
         """Display this particular instance of an error."""
-        return f'{self.file!s} (matched "{self.matched_pattern}")'
+        return (
+            f'{self.file.relative_to(base_path)!s} (matched "{self.matched_pattern}")'
+        )
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -909,9 +928,11 @@ class JDexIssueFolderWhereNoteExpected(JDexIssue):
     matched_pattern: ContentPattern
     type: Literal["JDEX_FOLDER_WHERE_NOTE_EXPECTED"] = "JDEX_FOLDER_WHERE_NOTE_EXPECTED"
 
-    def display(self) -> str:
+    def display(self, base_path: PurePath) -> str:
         """Display this particular instance of an error."""
-        return f'{self.file!s} (matched "{self.matched_pattern}")'
+        return (
+            f'{self.file.relative_to(base_path)!s} (matched "{self.matched_pattern}")'
+        )
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -938,9 +959,9 @@ class JDexIssueArbitraryContentWhereNotAllowed(JDexIssue):
         "JDEX_ARBITRARY_CONTENT_WHERE_NOT_ALLOWED"
     )
 
-    def display(self) -> str:
+    def display(self, base_path: PurePath) -> str:
         """Display this particular instance of an error."""
-        return f'{self.file!s} (matched none of "{self.possible_formats}")'
+        return f"{self.file.relative_to(base_path)!s}\n{textwrap.indent(_print_unmatched_patterns(self.possible_formats), '  ')}"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -956,9 +977,9 @@ class JDexIssueEmptyFolder(JDexIssue):
 
     type: Literal["JDEX_EMPTY_FOLDER"] = "JDEX_EMPTY_FOLDER"
 
-    def display(self) -> str:
+    def display(self, base_path: PurePath) -> str:
         """Display this particular instance of an error."""
-        return f"{self.file!s}"
+        return f"{self.file.relative_to(base_path)!s}"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -977,9 +998,11 @@ class JDexIssueEncounteredForbiddenFolder(JDexIssue):
         "JDEX_ENCOUNTERED_FORBIDDEN_FOLDER"
     )
 
-    def display(self) -> str:
+    def display(self, base_path: PurePath) -> str:
         """Display this particular instance of an error."""
-        return f'{self.file!s} (matched "{self.matched_pattern}")'
+        return (
+            f'{self.file.relative_to(base_path)!s} (matched "{self.matched_pattern}")'
+        )
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -996,9 +1019,11 @@ class JDexIssueEncounteredForbiddenNote(JDexIssue):
     matched_pattern: ContentPattern
     type: Literal["JDEX_ENCOUNTERED_FORBIDDEN_NOTE"] = "JDEX_ENCOUNTERED_FORBIDDEN_NOTE"
 
-    def display(self) -> str:
+    def display(self, base_path: PurePath) -> str:
         """Display this particular instance of an error."""
-        return f'{self.file!s} (matched "{self.matched_pattern}")'
+        return (
+            f'{self.file.relative_to(base_path)!s} (matched "{self.matched_pattern}")'
+        )
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -1046,13 +1071,30 @@ class SystemFolder:
 
 
 @dataclass(frozen=True)
+class JDexLintResults:
+    """All errors returned from linting the JDex."""
+
+    errors: list[JDexIssue]
+    path: PurePath
+    entries: dict[str, list[PurePath]]
+
+
+@dataclass(frozen=True)
+class RootLintResults:
+    """All errors returned from linting a system root."""
+
+    errors: list[Issue]
+    path: PurePath
+    structure: dict[str, list[SystemFolder]]
+
+
+@dataclass(frozen=True)
 class LintResults:
     """All errors returned from linting files, as well as the JDex and filesystems structures."""
 
-    errors: dict[str, list[Issue]]
-    jdex_errors: list[JDexIssue]
-    jdex: dict[str, list[PurePath]]
-    structure: dict[str, dict[str, list[SystemFolder]]]
+    jdex: None | JDexLintResults
+    roots: dict[str, RootLintResults]
+    ignored_errs: int
 
 
 @dataclass
@@ -1092,6 +1134,15 @@ class _EnhancedJSONEncoder(json.JSONEncoder):
         return super().default(o)
 
 
+def _print_pattern(p: ContentPattern) -> str:
+    return f"{'/'.join(p.name)}: {p.format}"
+
+
+def _print_unmatched_patterns(ps: tuple[ContentPattern, ...]) -> str:
+    formats = "\n".join(_print_pattern(p) for p in ps)
+    return f"matched none of:\n{textwrap.indent(formats, '  ')}"
+
+
 def _sort_jdex_error(e: JDexIssue) -> tuple[str, tuple[tuple[str, ...], str]]:
     # Sort errors alphabetically by type, then by file affected
     # This is split from _sort_error for type-checking nonsense
@@ -1128,21 +1179,6 @@ def _entry_is_ignored(
 
 
 E = TypeVar("E")
-
-
-# def _error_if_dups(  # Python's types are horrid and it just is awful to try to type this better
-#     make_error_type: Callable[[str], Any],
-#     make_error: Callable[[Any, list[File]], E],
-#     d: dict[str, list[tuple[Any, File]]],
-# ) -> list[E]:
-#     return [
-#         make_error(
-#             make_error_type(k),
-#             sorted([file for (_, file) in v], key=_sort_file),
-#         )
-#         for k, v in d.items()
-#         if len(v) > 1
-#     ]
 
 
 def _insert_append(k, v, d) -> None:  # noqa: ANN001
@@ -1348,7 +1384,7 @@ def _process_system_level_and_children(
     ignored: tuple[str],
     bound_segments: dict[str, str],
     path: os.PathLike,
-    tier: ConfigSystem | ConfigSystemTier,
+    tier: ConfigSystemRoot | ConfigSystemTier,
     jdex: None | dict[str, list[PurePath]],
     by_id_dict: dict[str, list[tuple[str | None, PurePath]]],
 ) -> tuple[dict[str, list[SystemFolder]], list[Issue]]:
@@ -1419,7 +1455,7 @@ def _process_system_level_and_children(
                         child_id,
                         (
                             child.jdex_note.build(
-                                {**bound_segments, **match.groupdict()}
+                                {**bound_segments, **match.groupdict()},
                             )
                             if child.jdex_note
                             else None,
@@ -1448,7 +1484,8 @@ def _process_system_level_and_children(
     if children_that_should_not_be:
         accumulated_errors.append(
             IssueFolderShouldBeEmpty(
-                PurePath(path), tuple(children_that_should_not_be)
+                PurePath(path),
+                tuple(children_that_should_not_be),
             ),
         )
     if not has_content and (
@@ -1467,7 +1504,12 @@ def _process_system_root(
 ) -> tuple[dict[str, list[SystemFolder]], list[Issue]]:
     by_id: dict[str, list[tuple[str | None, PurePath]]] = {}
     (root_structure, root_errors) = _process_system_level_and_children(
-        ignored + root.ignore, {}, root.path, system, jdex, by_id
+        ignored + root.ignore,
+        {},
+        root.path,
+        root,
+        jdex,
+        by_id,
     )
 
     # Check for duplicate IDs
@@ -1489,8 +1531,11 @@ def _process_system_root(
                     if expected_jdex_note and expected_jdex_note not in jdex_notes:
                         id_errors.append(
                             IssueIDDifferentFromJDex(
-                                f, id, expected_jdex_note, jdex[id]
-                            )
+                                f,
+                                id,
+                                expected_jdex_note,
+                                jdex[id],
+                            ),
                         )
 
     return (root_structure, root_errors + duplicate_id_errors + id_errors)
@@ -1504,8 +1549,8 @@ def lint_system(config: Config) -> LintResults:
             config.linter.ignore,
             config.system.jdex,
         )
-    errors = {}
-    structure = {}
+    roots = {}
+    ignored_errors = 0
     for root in config.system.roots:
         (root_structure, root_errors) = _process_system_root(
             config.linter.ignore,
@@ -1513,15 +1558,35 @@ def lint_system(config: Config) -> LintResults:
             config.system,
             jdex_notes if config.system.jdex else None,
         )
-        if root_errors:
-            errors[root.name] = sorted(root_errors, key=_sort_error)
-        structure[root.name] = root_structure
+        ignored_errors += sum(
+            (1 for e in root_errors if e.type in config.linter.disable_rules)
+        )
+        root_errors = [
+            e for e in root_errors if e.type not in config.linter.disable_rules
+        ]
+        roots[root.name] = RootLintResults(
+            sorted(root_errors, key=_sort_error),
+            root.path,
+            root_structure,
+        )
+
+    ignored_jdex_errors = sum(
+        (1 for e in jdex_errors if e.type in config.linter.disable_rules)
+    )
 
     return LintResults(
-        errors,
-        sorted(jdex_errors, key=_sort_jdex_error),
-        jdex_notes,
-        structure,
+        JDexLintResults(
+            sorted(
+                [e for e in jdex_errors if e.type not in config.linter.disable_rules],
+                key=_sort_jdex_error,
+            ),
+            config.system.jdex.path,
+            jdex_notes,
+        )
+        if config.system.jdex
+        else None,
+        roots,
+        ignored_errors + ignored_jdex_errors,
     )
 
 
