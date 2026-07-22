@@ -1167,15 +1167,12 @@ def _sort_error(e: Issue) -> tuple[str, tuple[tuple[str, ...], str]]:
 
 def _entry_is_ignored(
     ignored: tuple[str] | None,
-    nested_under: list[str],
     f: os.DirEntry,
 ) -> bool:
     """Check if a given file/directory should be ignored."""
-    # TODO this is now wrong with the nested under shit and needs fixing
     if not ignored:
         return False
-    p = PurePath(*nested_under, f.name)
-    return any(p.match(pattern) for pattern in ignored)
+    return any(PurePath(f).match(pattern) for pattern in ignored)
 
 
 E = TypeVar("E")
@@ -1255,7 +1252,7 @@ def _get_jdex_notes_here_or_children(
     has_content = False
     with os.scandir(path) as contents:
         for x in contents:
-            if _entry_is_ignored(ignored, [], x):
+            if _entry_is_ignored(ignored, x):
                 continue
             has_content = True
             for child_format, child in valid_children:
@@ -1401,7 +1398,7 @@ def _process_system_level_and_children(
 
     with os.scandir(path) as contents:
         for x in contents:
-            if _entry_is_ignored(ignored, [], x):
+            if _entry_is_ignored(ignored, x):
                 continue
             has_content = True
             for child_format, child in valid_children:
@@ -1596,15 +1593,11 @@ if __name__ == "__main__":
         description="Ensure that your Johnny Decimal system is neat and clean",
     )
     parser.add_argument(
-        "path",
-        metavar="ROOT_PATH",
-        help='The root of a JD file structure; should contain folders called e.g. "10-19 Life Admin"',
-    )
-    parser.add_argument(
-        "--jdex",
-        "--index",
-        metavar="JDEX_FILES",
-        help="Folder containing your JDex/index notes",
+        "-c",
+        "--config",
+        metavar="CONFIG_FILE_PATH",
+        default="./jdlint.toml",
+        help="Path to jdlint config file (default ./jdlint.toml)",
     )
     parser.add_argument(
         "-i",
@@ -1622,7 +1615,7 @@ if __name__ == "__main__":
         action="append",
         metavar="RULE_TO_DISABLE",
         default=[],
-        help="A rule to disable by name, e.g. NONEMPTY_INBOX",
+        help="A rule to disable by name, e.g. DUPLICATE_ID",
     )
     parser.add_argument(
         "-j",
@@ -1630,98 +1623,94 @@ if __name__ == "__main__":
         dest="json",
         action="store_const",
         const=True,
-        help="Output as machine-readable JSON",
-    )
-    parser.add_argument(
-        "--altzeros",
-        dest="altzeros",
-        action="store_const",
-        const=True,
-        help="Specify use of the alternative standard zeros layout; see the README for more info",
+        help="Override config file to output machine-readable JSON",
     )
 
     args = parser.parse_args()
 
-    # Get all errors
-    if args.jdex:
-        (errors, jdex_errors) = lint_dir_and_jdex(
-            path=Path(args.path),
-            jdex_path=Path(args.jdex),
-            ignored=args.ignored,
-            alt_zeros=args.altzeros,
-        )
-    else:
-        errors = (lint_dir(args.path, args.ignored)).errors
-        jdex_errors = []
+    with Path.open(args.config, "rb") as config_file:
+        config = Config(tomllib.load(config_file))
 
-    # Filter disabled errors
-    errors = [e for e in errors if e.type() not in args.disable]
-    jdex_errors = [e for e in jdex_errors if e.type() not in args.disable]
+    if args.json:
+        config.linter.json_output = True
+    config.linter.ignore.extend(args.ignored)
+    for r in args.disable:
+        if r in [e.type for e in typing.get_args(AnyIssueType)]:
+            continue
+        raise ConfigValueError("--disable", "not a valid rule name", r)
+
+    config.linter.disable_rules.extend(args.disable)
+
+    # We have a valid config; now run the linter
+    results = lint_system(config)
+
+    # Dump to JSON if asked
+    if config.linter.json_output:
+        json.dump(
+            results,
+            sys.stdout,
+            cls=_EnhancedJSONEncoder,
+        )
+
+    any_errors = False
 
     # If there were issues
-    if errors or jdex_errors:
-        # Dump to JSON if asked
-        if args.json:
-            json.dump(
-                {"errors": errors, "jdex_errors": jdex_errors},
-                sys.stdout,
-                cls=_EnhancedJSONEncoder,
-            )
-
-        # Or print them out
-        else:
-            # Group errors by type and then by type details
-            # Since all explanations are identical, there's no reason to print them multiple times
-            jdex_errs_by_type: dict[str, dict[JDexErrorType, list[JDexError]]] = {}
-            for je in jdex_errors:
-                if je.error.type not in jdex_errs_by_type:
-                    jdex_errs_by_type.update({je.error.type: {}})
-                _insert_append(je.error, je, jdex_errs_by_type[je.error.type])
-
-            errs_by_type: dict[str, dict[ErrorType, list[Error]]] = {}
-            for e in errors:
-                if e.error.type not in errs_by_type:
-                    errs_by_type.update({e.error.type: {}})
-                _insert_append(e.error, e, errs_by_type[e.error.type])
-
+    if not config.linter.json_output:
+        if results.jdex:
+            jdex_errs_by_type: dict[JDexIssueType, list[JDexIssue]] = {}
+            for je in results.jdex.errors if results.jdex else []:
+                _insert_append(je.type, je, jdex_errs_by_type)
             # Print JDex errors if any
-            if jdex_errors:
-                print("JDex errors found:")
-                for je_type in jdex_errs_by_type.values():
-                    first_j_err = next(iter(je_type.keys()))  # Just get the first error
+            if jdex_errs_by_type:
+                any_errors = True
+                print(f"{'':=^80}\n{'JDex Errors Found':^80}\n{'':=^80}")
+                for errs in jdex_errs_by_type.values():
+                    first_j_err = next(iter(errs))  # Just get the first error
                     explanation = first_j_err.explain()
                     print(f"\n{explanation.explanation} ({first_j_err.type})")
                     print(
-                        "\n".join(
-                            [
-                                "  " + e.display()
-                                for jes in je_type.values()
-                                for e in jes
-                            ],
+                        textwrap.indent(
+                            "\n".join(
+                                [e.display(results.jdex.path) for e in errs],
+                            ),
+                            "  ",
                         ),
                     )
                     print(explanation.fix)
                     print("\n")
 
-            # Print file errors if any
-            if errors:
-                print("Errors found:")
-                for e_type in errs_by_type.values():
-                    first_err = next(iter(e_type.keys()))  # Just get the first error
-                    explanation = first_err.explain()
-                    print(f"\n{explanation.explanation} ({first_err.type})")
-                    print(
-                        "\n".join(
-                            ["  " + e.display() for es in e_type.values() for e in es],
-                        ),
-                    )
-                    print(explanation.fix)
-                    print("\n")
+        # Print file errors if any
+        if any(r.errors for r in results.roots.values()):
+            any_errors = True
+            for location, root in results.roots.items():
+                errs_by_type: dict[IssueType, list[Issue]] = {}
+                if root.errors:
+                    errs_by_type = {}
+                    for e in root.errors:
+                        _insert_append(e.type, e, errs_by_type)
+                    print(f"{'':=^80}\n{location + ' Errors Found:':^80}\n{'':=^80}")
+                    for errs in errs_by_type.values():
+                        first_err = next(iter(errs))  # Just get the first error
+                        explanation = first_err.explain()
+                        print(f"\n{first_err.type:^80}\n{explanation.explanation}\n---")
+                        print(
+                            textwrap.indent(
+                                "\n".join(
+                                    [e.display(root.path) for e in errs],
+                                ),
+                                "  ",
+                            )
+                        )
+                        print(f"---\n{explanation.fix}\n")
 
+        if results.ignored_errs:
+            print(
+                f"{'':=^80}\n{'Ignored Errors: ' + str(results.ignored_errs):^80}\n{'':=^80}"
+            )
+    if any_errors:
         # Exit unhappily
         sys.exit(1)
 
-    # If we're here, there were no issues
-    print("Everything looks good!")
-
+    if not config.linter.json_output:
+        print("Everything looks good!")
     sys.exit(0)
