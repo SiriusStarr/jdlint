@@ -19,16 +19,21 @@ format = "/=A//*Name/"
 [[system.jdex.children.children.notes]]
 name = "JDex Note"
 format = "/=A/.md"
-ids = ["/=A/"]
+
+[[system.jdex.children.children.notes.ids]]
+id = "/=A/"
+entry = "/=A/"
 
 [[system.jdex.children.children.notes]]
 name = "JDex Note"
 format = "/=A//=Name/.md"
-ids = ["/=A/./=Name/"]
+
+[[system.jdex.children.children.notes.ids]]
+id = "/=A/./=Name/"
+entry = "/=A/./=Name/"
 
 [[system.default.children]]
 name = "Area"
 format = "/#A/"
-jdex_note = "/=A/.md"
 id = "/=A/"
 allow_arbitrary_contents = true

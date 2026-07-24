@@ -27,6 +27,7 @@ clean.
     * [`JDEX_ENCOUNTERED_FORBIDDEN_NOTE`](#jdex_encountered_forbidden_note)
     * [`JDEX_FILE_WHERE_FOLDER_EXPECTED`](#jdex_file_where_folder_expected)
     * [`JDEX_FOLDER_WHERE_NOTE_EXPECTED`](#jdex_folder_where_note_expected)
+  * [Does This Modify My Files?](#does-this-modify-my-files)
   * [Why Doesn't This Check For-](#why-doesnt-this-check-for-)
   * [This Doesn't Work with My System Because-](#this-doesnt-work-with-my-system-because-)
   * [Acknowledgments](#acknowledgments)
@@ -60,6 +61,11 @@ Everything the script needs is specified in the config file.
 
 Several config files are provided in this repository, matching the various
 JDex/JD standards. You can of course customize it to your liking.
+
+It's recommended you read the [Config README](./configs/README.md) for
+information on the format, and check out the provided example configs in that
+folder, which are (hopefully) well-documented. If you have questions/need help,
+please feel free to poke me on the JD Discord.
 
 ## Ignoring Files
 
@@ -98,6 +104,10 @@ just once with the flag:
 ```bash
 ./jdlint.py --json
 ```
+
+Note that these JSON results additionally contain complete information about the
+structure of your system that jdlint had to scan, if that information if of use
+to you.
 
 ## Errors
 
@@ -327,9 +337,14 @@ A folder was found with the name of something that should have been a file.
             └── Some file
 ```
 
+## Does This Modify My Files?
+
+No. jdlint makes no changes to your files; you have to fix the problems it finds
+yourself. We also think that's a good thing.
+
 ## Why Doesn't This Check For-
 
-Because I didn't think of it. Open an issue and maybe it will get added.
+Because we didn't think of it. Open an issue and maybe it will get added.
 
 ## This Doesn't Work with My System Because-
 

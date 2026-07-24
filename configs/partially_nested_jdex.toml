@@ -1,0 +1,203 @@
+## #############################################################################
+# The linter section handles global settings
+## #############################################################################
+[linter]
+# Globally disable one or more rules by name, e.g. with `disable_rules = ["ID_DIFFERENT_FROM_JDEX"]`
+disable_rules = []
+# Output machine-readable JSON instead of human-readable terminal output
+json_output = false
+# File patterns to ignore anywhere they appear; these support rudimentary globbing
+ignore = [".stignore", ".stfolder", ".git*"]
+
+## #############################################################################
+# The system section handles defining your system format
+## #############################################################################
+[system]
+## #############################################################################
+# The system.jdex section defines how your JDex is stored on the disk
+## #############################################################################
+[system.jdex]
+# The path to begin JDex structure within.
+path = "~/Obsidian/00-09 System/00 System Management/00.00 System Index"
+# File patterns to ignore just in the JDex
+ignore = [".obsidian"]
+
+# `children` specifies folders on the disk that are expected in the JDex.  These
+# may then define `notes`, which specify files on the disk (generally they are
+# going to be Markdown notes, but they don't have to be) that make up the JDex.
+[[system.jdex.children]]
+# The name to refer to the note type as in errors/JSON output
+name = "JDex Area Folder"
+# The expected format of the note
+format = "/#A/0-/=A/9 /*Area/"
+
+[[system.jdex.children.children]]
+name = "JDex Category Folder"
+format = "/=A//#C/ /*Category/"
+
+# Note that notes are always matched sequentially as they are defined in the
+# config file, meaning you can define a more narrow case first and then a more
+# broad case later, as is done with Area notes before Category notes here (as
+# Area notes would match the Category format).
+[[system.jdex.children.children.notes]]
+name = "JDex Area Note"
+format = "/=A/0.00 /*Name/.md"
+
+# `ids` specifies what IDs a note creates, and what their full "name" is.  Note
+# that a note *can* allow more than one, e.g. 10.00 allows Area 10-19, Category
+# 10, and ID 10.00 to exist. Note that you can use bound segments in this.
+[[system.jdex.children.children.notes.ids]]
+id = "/=A/0-/=A/9"
+entry = "/=A/0-/=A/9 /=Area/"
+
+[[system.jdex.children.children.notes.ids]]
+id = "/=A/0"
+entry = "/=A/0 /=Category/"
+
+[[system.jdex.children.children.notes.ids]]
+id = "/=A/0.00"
+entry = "/=A/0.00 /=Name/"
+
+[[system.jdex.children.children.notes]]
+name = "JDex Category Note"
+format = "/=A//=C/.00 /*Name/.md"
+
+[[system.jdex.children.children.notes.ids]]
+id = "/=A//=C/"
+entry = "/=A//=C/ /=Category/"
+
+[[system.jdex.children.children.notes.ids]]
+id = "/=A//=C/.00"
+entry = "/=A//=C/.00 /=Name/"
+
+[[system.jdex.children.children.notes]]
+name = "JDex Id Note"
+format = "/=A//=C/./##ID/ /*Name/.md"
+
+[[system.jdex.children.children.notes.ids]]
+id = "/=A//=C/./=ID/"
+entry = "/=A//=C/./=ID/ /=Name/"
+
+# Defining a top-level folder for work packages
+[[system.jdex.children]]
+name = "JDex Work Packages Folder"
+format = "W0000-W9999 /*Area/"
+
+[[system.jdex.children.notes]]
+name = "JDex Work Package Id Note"
+format = "W/####WPID/~/##AC/./##ID/ /*WPName/.md"
+
+[[system.jdex.children.notes.ids]]
+id = "W/=WPID/"
+entry = "W/=WPID/~/=AC/./=ID/ /=WPName/"
+
+## #############################################################################
+#  system.default defines the *default* structure used by any roots to check
+## #############################################################################
+[system.default]
+# At any level, we can define ".children" to specify one or more formats of
+# folders to be allowed within the current level; here, we are defining the
+# topmost level.
+#
+# Note that children are always matched sequentially as they are defined in the
+# config file, meaning you can define a more narrow case first and then a more
+# broad case later.
+[[system.default.children]]
+# The name to refer to the folder type as in errors/JSON output
+name = "Area"
+# The expected format of the folder
+format = "/#A/0-/=A/9 /*Area/"
+# The ID of this entry; this will be checked for uniqueness and matched to the
+# JDex. Note that you can use bound segments in this.
+id = "/=A/0-/=A/9"
+
+# Here we are defining the child folders of the top-level area folders
+[[system.default.children.children]]
+name = "Category"
+format = "/=A//#C/ /*Category/"  # Note that we're using bound segments from the parent area
+id = "/=A//=C/"
+
+# Here, we define a folder without any children; that tells jdlint that it
+# should be empty. This is useful for Headers and Inboxes.
+[[system.default.children.children.children]]
+name = "Header"
+format = "/=A//=C/./#I/0 ■ /*Header/"
+id = "/=A//=C/./=I/0"
+
+[[system.default.children.children.children]]
+name = "Inbox"
+format = "00.01 Inbox for the /*System/ System 📥"
+id = "00.01"
+
+[[system.default.children.children.children]]
+name = "Inbox"
+format = "/=A/0.01 Inbox for area /=A/0-/=A/9 📥"
+id = "/=A/0.01"
+
+[[system.default.children.children.children]]
+name = "Inbox"
+format = "/=A//=C/.01 Inbox for category /=A//=C/"
+id = "/=A//=C/.01"
+
+# Here, we're disallowing inboxes (AC.01) that don't match the exact naming scheme above.
+[[system.default.children.children.children]]
+name = "Invalid Inbox"
+format = "/=A//=C/.01 /*Inbox/"
+id = "/=A//=C/.01"
+forbidden = true  # This just causes jdlint to fail anything that matches the format
+
+# Here, we're defining our terminal ID folders
+[[system.default.children.children.children]]
+name = "ID"
+format = "/=A//=C/./##ID/ /*IDName/"
+id = "/=A//=C/./=ID/"
+can_be_file = true  # This allows us to have a file as a terminal folder; you might like this for notes, for example
+allow_arbitrary_contents = true  # This tells jdlint to tolerate absolutely anything in this folder
+
+# Defining a top-level folder for work packages
+[[system.default.children]]
+name = "Work Packages Area"
+format = "W0000-W9999 /*Area/"
+id = "W0000-W9999"
+
+# And terminal work package folders
+[[system.default.children.children]]
+name = "Work Package"
+format = "W/####WPID/~/##AC/./##ID/ /*WPName/"
+id = "W/=WPID/"
+allow_arbitrary_contents = true
+
+## #############################################################################
+# system.roots define folders that should be organized according to your JD
+# system; for example, you might have ~/Documents as one root and ~/Dropbox
+# as another.
+## #############################################################################
+[[system.roots]]
+# The name to refer to the root as in errors/JSON output
+name = "Documents"
+# The path to the files
+path = "~/Documents"
+# Any ignore patterns that apply only to that set of files
+ignore = [".trash"]
+
+[[system.roots]]
+name = "Dropbox"
+path = "~/Dropbox"
+ignore = []
+
+# You can override the default structure for just *one* location if you want,
+# e.g. if you only wanted work packages and nothing else in your dropbox
+[[system.roots.children]]
+name = "Work Packages Area"
+format = "W0000-W9999 /*Area/"
+id = "W0000-W9999"
+# This allows us to not need a JDex entry for something
+no_jdex_entry = true
+
+[[system.roots.children.children]]
+name = "Work Package"
+format = "W/####WPID/~/##AC/./##ID/ /*WPName/"
+# You can override an expected JDex entry with `jdex_entry`
+jdex_entry = "Something wildly arbitrary for /=WPID/; you should change this"
+id = "W/=WPID/"
+allow_arbitrary_contents = true

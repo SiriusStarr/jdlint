@@ -21,11 +21,13 @@ allow_arbitrary_contents = true
 [[system.jdex.children.children.notes]]
 name = "C1"
 format = "X.md"
-ids = ["/=A/"]
+
+[[system.jdex.children.children.notes.ids]]
+id = "/=A/"
+entry = "/=A/"
 
 [[system.default.children]]
 name = "Area"
 format = "/#A/"
-jdex_note = "X.md"
 id = "/=A/"
 allow_arbitrary_contents = true

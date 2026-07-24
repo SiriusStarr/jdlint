@@ -42,19 +42,6 @@ id = "/=A//=C/.00"
 entry = "/=A//=C/.00 /=Name/"
 
 [[system.jdex.children.children.notes]]
-name = "JDex Inbox"
-format = "/=A//=C/.01 Inbox.md"
-
-[[system.jdex.children.children.notes.ids]]
-id = "/=A//=C/.01"
-entry = "/=A//=C/.01 Inbox"
-
-[[system.jdex.children.children.notes]]
-name = "JDex Bad Inbox"
-format = "/=A//=C/.01 /*Name/"
-forbidden = true
-
-[[system.jdex.children.children.notes]]
 name = "JDex Id Note"
 format = "/=A//=C/./##ID/ /*Name/.md"
 
@@ -68,9 +55,23 @@ format = "/#A/0-/=A/9 /*Area/"
 id = "/=A/0-/=A/9"
 
 [[system.default.children.children]]
+name = "10 Category"
+format = "10 /*Category/"
+id = "10"
+no_jdex_entry = true
+
+[[system.default.children.children]]
 name = "Category"
 format = "/=A//#C/ /*Category/"
 id = "/=A//=C/"
+
+[[system.default.children.children.children]]
+name = "ID"
+format = "/=A//=C/.12 Myslef"
+id = "/=A//=C/.12"
+jdex_entry = "/=A//=C/.12 Myself"
+can_be_file = true
+allow_arbitrary_contents = true
 
 [[system.default.children.children.children]]
 name = "ID"

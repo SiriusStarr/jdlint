@@ -7,10 +7,10 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import json
-import textwrap
 import os
 import re
 import sys
+import textwrap
 import typing
 from dataclasses import dataclass
 from pathlib import Path, PurePath
@@ -88,7 +88,10 @@ class ConfigSystemRoot:
     """A root (base folder) of a JD system to check for correctness, e.g. ~/Documents."""
 
     def __init__(
-        self, at: str, default_structure: list[ConfigSystemTier], from_file: dict
+        self,
+        at: str,
+        default_structure: list[ConfigSystemTier],
+        from_file: dict,
     ) -> None:
         """Create a valid configuration given a loaded section of a config file."""
         # Acquire and set defaults
@@ -248,7 +251,6 @@ class ConfigSystem:
 
     def __init__(self, from_file: dict) -> None:
         """Create a valid configuration given a loaded system section of a config file."""
-
         default_structure = [
             ConfigSystemTier(
                 f"system.default.children[{i}]",
@@ -353,6 +355,37 @@ class ConfigStaticFormat:
         self.build = lambda d: "".join([f(d) for f in build])
 
 
+class ConfigJDexID:
+    """Configuration for how a JDex ID is related to a note."""
+
+    def __init__(
+        self,
+        at: str,
+        ancestors: ConfigFormatAncestorInfo,
+        from_file: dict,
+    ) -> None:
+        """Create a valid note format given a loaded section of a config file."""
+        # Compile Format
+        if "id" not in from_file:
+            raise (ConfigMissingKeyError(f"{at}.id"))
+        self.id = ConfigStaticFormat(
+            f"{at}.id",
+            ancestors,
+            from_file.pop("id"),
+        )
+        if "entry" not in from_file:
+            raise (ConfigMissingKeyError(f"{at}.entry"))
+        self.entry = ConfigStaticFormat(
+            f"{at}.entry",
+            ancestors,
+            from_file.pop("entry"),
+        )
+
+        # Ensure no extra fields
+        for key in from_file:
+            raise ConfigExtraKeyError(f"{at}.{key}", tuple(self.__dict__.keys()))
+
+
 class ConfigJDexNotes:
     """Configuration for how JDex notes are formatted."""
 
@@ -371,16 +404,24 @@ class ConfigJDexNotes:
             ancestors,
             from_file,
         )
-        if "ids" not in from_file:
+        if "ids" not in from_file and not self.format.forbidden:
             raise (ConfigMissingKeyError(f"{at}.ids"))
         self.ids = [
-            ConfigStaticFormat(
+            ConfigJDexID(
                 f"{at}.ids[{i}]",
                 self.format,
                 v,
             )
             for i, v in enumerate(from_file.pop("ids", []))
         ]
+        if "jdex_entry" in from_file:
+            self.jdex_entry = ConfigStaticFormat(
+                f"{at}.jdex_entry",
+                self.format,
+                from_file.pop("jdex_entry"),
+            )
+        else:
+            self.jdex_entry = None
 
         # Ensure no extra fields
         for key in from_file:
@@ -453,18 +494,19 @@ class ConfigSystemTier(ConfigFolderTier):
         # Acquire and set defaults
 
         self.can_be_file = from_file.pop("can_be_file", False)
+        self.no_jdex_entry = from_file.pop("no_jdex_entry", False)
 
         # Call the folder tier stuff
         super().__init__(ConfigSystemTier, at, ancestors, from_file)
 
-        if "jdex_note" in from_file:
-            self.jdex_note = ConfigStaticFormat(
-                f"{at}.jdex_note",
+        if "jdex_entry" in from_file:
+            self.jdex_entry = ConfigStaticFormat(
+                f"{at}.jdex_entry",
                 self.format,
-                from_file.pop("jdex_note"),
+                from_file.pop("jdex_entry"),
             )
         else:
-            self.jdex_note = None
+            self.jdex_entry = None
 
         if "id" not in from_file:
             raise (ConfigMissingKeyError(f"{at}.id"))
@@ -491,6 +533,11 @@ class ConfigSystemTier(ConfigFolderTier):
             raise ConfigConflictError(
                 at,
                 "If forbidden, can_be_file must be false.",
+            )
+        if self.no_jdex_entry and self.jdex_entry:
+            raise ConfigConflictError(
+                at,
+                "Only one of no_jdex_entry and jdex_entry may be set.",
             )
 
         # Ensure no extra fields
@@ -834,14 +881,16 @@ class IssueIDDifferentFromJDex(Issue):
     """An ID with a differently-named JDex entry."""
 
     id: str
-    expected_jdex_note: str
-    known_jdex_notes: list[PurePath]
+    expected_jdex_entry: str
+    known_jdex_entries: list[JDexEntry]
     type: Literal["ID_DIFFERENT_FROM_JDEX"] = "ID_DIFFERENT_FROM_JDEX"
 
     def display(self, base_path: PurePath) -> str:
         """Display this particular instance of an error."""
-        known = "\n".join((n.name for n in self.known_jdex_notes))
-        return f"{self.file.relative_to(base_path)!s}\n  ID: {self.id}\n  Expected:\n    {self.expected_jdex_note}\n  Actual:\n{textwrap.indent(known, '    ')}]"
+        known = "\n".join(
+            f"{n.entry}    [from {n.path.name}]" for n in self.known_jdex_entries
+        )
+        return f"{self.file.relative_to(base_path)!s}\n  ID: {self.id}\n  Expected:\n    {self.expected_jdex_entry}\n  Actual:\n{textwrap.indent(known, '    ')}"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -860,9 +909,7 @@ class IssueEncounteredForbiddenFolder(Issue):
 
     def display(self, base_path: PurePath) -> str:
         """Display this particular instance of an error."""
-        return (
-            f'{self.file.relative_to(base_path)!s} (matched "{self.matched_pattern}")'
-        )
+        return f"{self.file.relative_to(base_path)!s}\n    (matched {_print_pattern(self.matched_pattern)})"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -909,9 +956,7 @@ class JDexIssueFileWhereFolderExpected(JDexIssue):
 
     def display(self, base_path: PurePath) -> str:
         """Display this particular instance of an error."""
-        return (
-            f'{self.file.relative_to(base_path)!s} (matched "{self.matched_pattern}")'
-        )
+        return f"{self.file.relative_to(base_path)!s}\n    (matched {_print_pattern(self.matched_pattern)})"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -930,9 +975,7 @@ class JDexIssueFolderWhereNoteExpected(JDexIssue):
 
     def display(self, base_path: PurePath) -> str:
         """Display this particular instance of an error."""
-        return (
-            f'{self.file.relative_to(base_path)!s} (matched "{self.matched_pattern}")'
-        )
+        return f"{self.file.relative_to(base_path)!s}\n    (matched {_print_pattern(self.matched_pattern)})"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -1000,9 +1043,7 @@ class JDexIssueEncounteredForbiddenFolder(JDexIssue):
 
     def display(self, base_path: PurePath) -> str:
         """Display this particular instance of an error."""
-        return (
-            f'{self.file.relative_to(base_path)!s} (matched "{self.matched_pattern}")'
-        )
+        return f"{self.file.relative_to(base_path)!s}\n    (matched {_print_pattern(self.matched_pattern)})"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -1021,9 +1062,7 @@ class JDexIssueEncounteredForbiddenNote(JDexIssue):
 
     def display(self, base_path: PurePath) -> str:
         """Display this particular instance of an error."""
-        return (
-            f'{self.file.relative_to(base_path)!s} (matched "{self.matched_pattern}")'
-        )
+        return f"{self.file.relative_to(base_path)!s}\n    (matched {_print_pattern(self.matched_pattern)})"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -1071,12 +1110,20 @@ class SystemFolder:
 
 
 @dataclass(frozen=True)
+class JDexEntry:
+    """An entry in a JDex, including the path to the note that defined it."""
+
+    entry: str
+    path: PurePath
+
+
+@dataclass(frozen=True)
 class JDexLintResults:
     """All errors returned from linting the JDex."""
 
     errors: list[JDexIssue]
     path: PurePath
-    entries: dict[str, list[PurePath]]
+    entries: dict[str, list[JDexEntry]]
 
 
 @dataclass(frozen=True)
@@ -1232,12 +1279,12 @@ def _process_single_file_jdex(path: Path) -> _JDexResults:
     )
 
 
-def _get_jdex_notes_here_or_children(
+def _get_jdex_entries_here_or_children(
     ignored: tuple[str],
     bound_segments: dict[str, str],
     path: os.PathLike,
     tier: ConfigJDexTier | ConfigSystemJDex,
-) -> tuple[dict[str, list[PurePath]], list[JDexIssue]]:
+) -> tuple[dict[str, list[JDexEntry]], list[JDexIssue]]:
     # Compile regexes for children
     valid_children = [
         (re.compile(c.format.build_regex(bound_segments)), c) for c in tier.children
@@ -1246,8 +1293,8 @@ def _get_jdex_notes_here_or_children(
         (re.compile(n.format.build_regex(bound_segments)), n) for n in tier.notes
     ]
 
-    accumulated_notes = {}
-    accumulated_errors = []
+    accumulated_entries: dict[str, list[JDexEntry]] = {}
+    accumulated_errors: list[JDexIssue] = []
 
     has_content = False
     with os.scandir(path) as contents:
@@ -1284,14 +1331,14 @@ def _get_jdex_notes_here_or_children(
                         break
 
                     # Walk child
-                    (child_notes, child_errors) = _get_jdex_notes_here_or_children(
+                    (child_entries, child_errors) = _get_jdex_entries_here_or_children(
                         ignored,
                         {**bound_segments, **match.groupdict()},
                         PurePath(x),
                         child,
                     )
-                    for id, notes in child_notes.items():
-                        _insert_concat(id, notes, accumulated_notes)
+                    for id, entries in child_entries.items():
+                        _insert_concat(id, entries, accumulated_entries)
                     accumulated_errors.extend(child_errors)
                     break
             else:
@@ -1323,12 +1370,17 @@ def _get_jdex_notes_here_or_children(
                             )
                             break
 
-                        # Create note entry
+                        # Create entry
                         for id in note.ids:
                             _insert_append(
-                                id.build({**bound_segments, **match.groupdict()}),
-                                PurePath(x),
-                                accumulated_notes,
+                                id.id.build({**bound_segments, **match.groupdict()}),
+                                JDexEntry(
+                                    id.entry.build(
+                                        {**bound_segments, **match.groupdict()},
+                                    ),
+                                    PurePath(x),
+                                ),
+                                accumulated_entries,
                             )
                         break
                 else:
@@ -1351,14 +1403,14 @@ def _get_jdex_notes_here_or_children(
     if not has_content:
         # We have a fully empty JDex folder; it shouldn't exist if it's doing nothing.
         accumulated_errors.append(JDexIssueEmptyFolder(PurePath(path)))
-    return (accumulated_notes, accumulated_errors)
+    return (accumulated_entries, accumulated_errors)
 
 
 def _process_jdex(
     ignored: tuple[str],
     jdex: ConfigSystemJDex,
-) -> tuple[dict[str, list[PurePath]], list[JDexIssue]]:
-    (jdex_notes_by_id, jdex_errors) = _get_jdex_notes_here_or_children(
+) -> tuple[dict[str, list[JDexEntry]], list[JDexIssue]]:
+    (jdex_entries_by_id, jdex_errors) = _get_jdex_entries_here_or_children(
         ignored + jdex.ignore,
         {},
         jdex.path,
@@ -1367,12 +1419,12 @@ def _process_jdex(
 
     # Check for duplicate ids
     duplicate_id_errors = [
-        JDexIssueDuplicateID(ns[0], tuple(ns), id)
-        for id, ns in jdex_notes_by_id.items()
+        JDexIssueDuplicateID(ns[0].path, tuple(n.path for n in ns), id)
+        for id, ns in jdex_entries_by_id.items()
         if len(ns) != 1
     ]
     return (
-        jdex_notes_by_id,
+        jdex_entries_by_id,
         jdex_errors + duplicate_id_errors,
     )
 
@@ -1382,7 +1434,7 @@ def _process_system_level_and_children(
     bound_segments: dict[str, str],
     path: os.PathLike,
     tier: ConfigSystemRoot | ConfigSystemTier,
-    jdex: None | dict[str, list[PurePath]],
+    jdex: None | dict[str, list[JDexEntry]],
     by_id_dict: dict[str, list[tuple[str | None, PurePath]]],
 ) -> tuple[dict[str, list[SystemFolder]], list[Issue]]:
     # Compile regexes for children
@@ -1448,18 +1500,19 @@ def _process_system_level_and_children(
                         SystemFolder(PurePath(x), child_structure),
                         accumulated_structure,
                     )
-                    _insert_append(
-                        child_id,
-                        (
-                            child.jdex_note.build(
-                                {**bound_segments, **match.groupdict()},
-                            )
-                            if child.jdex_note
-                            else None,
-                            PurePath(x),
-                        ),
-                        by_id_dict,
-                    )
+                    if not child.no_jdex_entry:
+                        _insert_append(
+                            child_id,
+                            (
+                                child.jdex_entry.build(
+                                    {**bound_segments, **match.groupdict()},
+                                )
+                                if child.jdex_entry
+                                else x.name,
+                                PurePath(x),
+                            ),
+                            by_id_dict,
+                        )
                     accumulated_errors.extend(child_errors)
                     break
             else:
@@ -1497,7 +1550,7 @@ def _process_system_root(
     ignored: tuple[str],
     root: ConfigSystemRoot,
     system: ConfigSystem,
-    jdex: None | dict[str, list[PurePath]],
+    jdex: None | dict[str, list[JDexEntry]],
 ) -> tuple[dict[str, list[SystemFolder]], list[Issue]]:
     by_id: dict[str, list[tuple[str | None, PurePath]]] = {}
     (root_structure, root_errors) = _process_system_level_and_children(
@@ -1523,14 +1576,14 @@ def _process_system_root(
             if id not in jdex:
                 id_errors.append(IssueIDNotInJDex(fs[0][1], id))
             else:
-                jdex_notes = [n.name for n in jdex[id]]
-                for expected_jdex_note, f in fs:
-                    if expected_jdex_note and expected_jdex_note not in jdex_notes:
+                jdex_entries = [n.entry for n in jdex[id]]
+                for expected_jdex_entry, f in fs:
+                    if expected_jdex_entry and expected_jdex_entry not in jdex_entries:
                         id_errors.append(
                             IssueIDDifferentFromJDex(
                                 f,
                                 id,
-                                expected_jdex_note,
+                                expected_jdex_entry,
                                 jdex[id],
                             ),
                         )
@@ -1540,9 +1593,9 @@ def _process_system_root(
 
 def lint_system(config: Config) -> LintResults:
     jdex_errors = []
-    jdex_notes = {}
+    jdex_entries = {}
     if config.system.jdex:
-        (jdex_notes, jdex_errors) = _process_jdex(
+        (jdex_entries, jdex_errors) = _process_jdex(
             config.linter.ignore,
             config.system.jdex,
         )
@@ -1553,10 +1606,10 @@ def lint_system(config: Config) -> LintResults:
             config.linter.ignore,
             root,
             config.system,
-            jdex_notes if config.system.jdex else None,
+            jdex_entries if config.system.jdex else None,
         )
         ignored_errors += sum(
-            (1 for e in root_errors if e.type in config.linter.disable_rules)
+            1 for e in root_errors if e.type in config.linter.disable_rules
         )
         root_errors = [
             e for e in root_errors if e.type not in config.linter.disable_rules
@@ -1568,7 +1621,7 @@ def lint_system(config: Config) -> LintResults:
         )
 
     ignored_jdex_errors = sum(
-        (1 for e in jdex_errors if e.type in config.linter.disable_rules)
+        1 for e in jdex_errors if e.type in config.linter.disable_rules
     )
 
     return LintResults(
@@ -1578,7 +1631,7 @@ def lint_system(config: Config) -> LintResults:
                 key=_sort_jdex_error,
             ),
             config.system.jdex.path,
-            jdex_notes,
+            jdex_entries,
         )
         if config.system.jdex
         else None,
@@ -1699,13 +1752,13 @@ if __name__ == "__main__":
                                     [e.display(root.path) for e in errs],
                                 ),
                                 "  ",
-                            )
+                            ),
                         )
                         print(f"---\n{explanation.fix}\n")
 
         if results.ignored_errs:
             print(
-                f"{'':=^80}\n{'Ignored Errors: ' + str(results.ignored_errs):^80}\n{'':=^80}"
+                f"{'':=^80}\n{'Ignored Errors: ' + str(results.ignored_errs):^80}\n{'':=^80}",
             )
     if any_errors:
         # Exit unhappily

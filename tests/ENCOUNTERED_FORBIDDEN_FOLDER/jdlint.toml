@@ -6,9 +6,6 @@ ignore = [".placeholder"]
 name = "Files"
 path = "files"
 
-## ###########################################################
-# Standard
-## ###########################################################
 [[system.default.children]]
 name = "Area"
 format = "/#A/0-/=A/9 /*Area/"
