@@ -1,11 +1,30 @@
 {
-  "errors": {
-    "JDex": [
-      {
-        "type": "EMPTY_FOLDER",
-        "file": "files/1/1A"
+  "roots": {
+    "Files": {
+      "errors": [
+        {
+          "type": "EMPTY_FOLDER",
+          "file": "1/1A"
+        }
+      ],
+      "path": "files",
+      "structure": {
+        "1": [
+          {
+            "path": "1",
+            "children": {
+              "1.A": [
+                {
+                  "path": "1/1A",
+                  "children": {}
+                }
+              ]
+            }
+          }
+        ]
       }
-    ]
+    }
   },
-  "jdex_errors": []
+  "jdex": null,
+  "ignored_errs": 0
 }

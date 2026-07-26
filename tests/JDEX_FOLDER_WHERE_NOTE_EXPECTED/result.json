@@ -1,17 +1,48 @@
 {
-  "errors": {},
-  "jdex_errors": [
-    {
-      "type": "JDEX_FOLDER_WHERE_NOTE_EXPECTED",
-      "file": "files/1/1B/1B.md",
-      "matched_pattern": {
-        "name": [
-          "A",
-          "B",
-          "JDex Note"
-        ],
-        "format": "/=A//=Name/.md"
+  "roots": {
+    "Files": {
+      "errors": [],
+      "path": "files",
+      "structure": {
+        "1": [
+          {
+            "path": "1",
+            "children": {}
+          }
+        ]
       }
     }
-  ]
+  },
+  "jdex": {
+    "errors": [
+      {
+        "type": "JDEX_FOLDER_WHERE_NOTE_EXPECTED",
+        "file": "1/1B/1B.md",
+        "matched_pattern": {
+          "name": [
+            "A",
+            "B",
+            "JDex Note"
+          ],
+          "format": "/=A//=Name/.md"
+        }
+      }
+    ],
+    "path": "files",
+    "entries": {
+      "1": [
+        {
+          "entry": "1",
+          "path": "1/1A/1.md"
+        }
+      ],
+      "1.A": [
+        {
+          "entry": "1.A",
+          "path": "1/1A/1A.md"
+        }
+      ]
+    }
+  },
+  "ignored_errs": 0
 }

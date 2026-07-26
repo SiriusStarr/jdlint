@@ -46,16 +46,7 @@ class AllTests(unittest.TestCase):
                     # Convert lint results into loaded format
                     actual = json.loads(
                         json.dumps(
-                            {
-                                "errors": {
-                                    root_name: root.errors
-                                    for root_name, root in results.roots.items()
-                                    if root.errors
-                                },
-                                "jdex_errors": results.jdex.errors
-                                if results.jdex
-                                else [],
-                            },
+                            results,
                             cls=jdlint._EnhancedJSONEncoder,
                         )
                     )

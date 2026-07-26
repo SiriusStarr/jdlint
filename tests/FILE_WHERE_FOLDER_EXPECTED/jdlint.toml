@@ -2,7 +2,7 @@
 json_output = true
 
 [[system.roots]]
-name = "JDex"
+name = "Files"
 path = "files"
 
 [[system.default.children]]
@@ -18,4 +18,4 @@ id = "/=A/./=Name/"
 [[system.default.children.children.children]]
 name = "C"
 format = "/=A//=Name/"
-id = "/=A/./=Name/"
+id = "/=A/./=Name/F"

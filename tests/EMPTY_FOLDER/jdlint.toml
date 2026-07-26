@@ -3,7 +3,7 @@ json_output = true
 ignore = [".placeholder"]
 
 [[system.roots]]
-name = "JDex"
+name = "Files"
 path = "files"
 
 [[system.default.children]]

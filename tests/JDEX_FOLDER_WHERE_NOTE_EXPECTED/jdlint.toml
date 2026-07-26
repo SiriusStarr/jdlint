@@ -2,7 +2,7 @@
 json_output = true
 
 [[system.roots]]
-name = "JDex"
+name = "Files"
 path = "files"
 
 [system.jdex]

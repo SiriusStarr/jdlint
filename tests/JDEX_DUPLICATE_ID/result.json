@@ -1,14 +1,49 @@
 {
-  "errors": {},
-  "jdex_errors": [
-    {
-      "type": "JDEX_DUPLICATE_ID",
-      "file": "files/1/11 A.md",
-      "files": [
-        "files/1/11 A.md",
-        "files/1/11 B.md"
-      ],
-      "id": "1.1"
+  "roots": {
+    "Files": {
+      "errors": [],
+      "path": "files",
+      "structure": {
+        "1": [
+          {
+            "path": "1",
+            "children": {}
+          }
+        ]
+      }
     }
-  ]
+  },
+  "jdex": {
+    "errors": [
+      {
+        "type": "JDEX_DUPLICATE_ID",
+        "file": "1/11 A.md",
+        "files": [
+          "1/11 A.md",
+          "1/11 B.md"
+        ],
+        "id": "1.1"
+      }
+    ],
+    "path": "files",
+    "entries": {
+      "1": [
+        {
+          "entry": "1",
+          "path": "1/1.md"
+        }
+      ],
+      "1.1": [
+        {
+          "entry": "1.1 A",
+          "path": "1/11 A.md"
+        },
+        {
+          "entry": "1.1 B",
+          "path": "1/11 B.md"
+        }
+      ]
+    }
+  },
+  "ignored_errs": 0
 }

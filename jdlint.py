@@ -733,7 +733,7 @@ class Issue:
     file: PurePath
     type = None
 
-    def display(self, base_path: PurePath) -> str:
+    def display(self) -> str:
         """Display this particular instance of an error."""
         raise NotImplementedError
 
@@ -749,7 +749,7 @@ class JDexIssue:
     file: PurePath
     type = None
 
-    def display(self, base_path: PurePath) -> str:
+    def display(self) -> str:
         """Display this particular instance of an error."""
         raise NotImplementedError
 
@@ -764,9 +764,9 @@ class IssueEmptyFolder(Issue):
 
     type: Literal["EMPTY_FOLDER"] = "EMPTY_FOLDER"
 
-    def display(self, base_path: PurePath) -> str:
+    def display(self) -> str:
         """Display this particular instance of an error."""
-        return f"{self.file.relative_to(base_path)!s}"
+        return f"{self.file!s}"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -783,9 +783,9 @@ class IssueFileWhereFolderExpected(Issue):
     matched_pattern: ContentPattern
     type: Literal["FILE_WHERE_FOLDER_EXPECTED"] = "FILE_WHERE_FOLDER_EXPECTED"
 
-    def display(self, base_path: PurePath) -> str:
+    def display(self) -> str:
         """Display this particular instance of an error."""
-        return f"{self.file.relative_to(base_path)!s}\n    (matched {_print_pattern(self.matched_pattern)})"
+        return f"{self.file!s}\n    (matched {_print_pattern(self.matched_pattern)})"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -804,9 +804,9 @@ class IssueArbitraryContentWhereNotAllowed(Issue):
         "ARBITRARY_CONTENT_WHERE_NOT_ALLOWED"
     )
 
-    def display(self, base_path: PurePath) -> str:
+    def display(self) -> str:
         """Display this particular instance of an error."""
-        return f"{self.file.relative_to(base_path)!s}\n{textwrap.indent(_print_unmatched_patterns(self.possible_formats), '  ')}"
+        return f"{self.file!s}\n{textwrap.indent(_print_unmatched_patterns(self.possible_formats), '  ')}"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -823,11 +823,9 @@ class IssueFolderShouldBeEmpty(Issue):
     children: tuple[PurePath, ...]
     type: Literal["FOLDER_SHOULD_BE_EMPTY"] = "FOLDER_SHOULD_BE_EMPTY"
 
-    def display(self, base_path: PurePath) -> str:
+    def display(self) -> str:
         """Display this particular instance of an error."""
-        return (
-            f"{self.file.relative_to(base_path)!s}\n  has {len(self.children)} children"
-        )
+        return f"{self.file!s}\n  has {len(self.children)} children"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -845,7 +843,7 @@ class IssueDuplicateID(Issue):
     id: str
     type: Literal["DUPLICATE_ID"] = "DUPLICATE_ID"
 
-    def display(self, base_path: PurePath) -> str:
+    def display(self) -> str:
         """Display this particular instance of an error."""
         return f"{self.id}:\n    " + "\n    ".join([str(f.name) for f in self.files])
 
@@ -864,9 +862,9 @@ class IssueIDNotInJDex(Issue):
     id: str
     type: Literal["ID_NOT_IN_JDEX"] = "ID_NOT_IN_JDEX"
 
-    def display(self, base_path: PurePath) -> str:
+    def display(self) -> str:
         """Display this particular instance of an error."""
-        return f"{self.file.relative_to(base_path)!s} [ID: {self.id}]"
+        return f"{self.file!s} [ID: {self.id}]"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -885,12 +883,12 @@ class IssueIDDifferentFromJDex(Issue):
     known_jdex_entries: list[JDexEntry]
     type: Literal["ID_DIFFERENT_FROM_JDEX"] = "ID_DIFFERENT_FROM_JDEX"
 
-    def display(self, base_path: PurePath) -> str:
+    def display(self) -> str:
         """Display this particular instance of an error."""
         known = "\n".join(
             f"{n.entry}    [from {n.path.name}]" for n in self.known_jdex_entries
         )
-        return f"{self.file.relative_to(base_path)!s}\n  ID: {self.id}\n  Expected:\n    {self.expected_jdex_entry}\n  Actual:\n{textwrap.indent(known, '    ')}"
+        return f"{self.file!s}\n  ID: {self.id}\n  Expected:\n    {self.expected_jdex_entry}\n  Actual:\n{textwrap.indent(known, '    ')}"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -907,9 +905,9 @@ class IssueEncounteredForbiddenFolder(Issue):
     matched_pattern: ContentPattern
     type: Literal["ENCOUNTERED_FORBIDDEN_FOLDER"] = "ENCOUNTERED_FORBIDDEN_FOLDER"
 
-    def display(self, base_path: PurePath) -> str:
+    def display(self) -> str:
         """Display this particular instance of an error."""
-        return f"{self.file.relative_to(base_path)!s}\n    (matched {_print_pattern(self.matched_pattern)})"
+        return f"{self.file!s}\n    (matched {_print_pattern(self.matched_pattern)})"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -935,7 +933,7 @@ class JDexIssueDuplicateID(JDexIssue):
     id: str
     type: Literal["JDEX_DUPLICATE_ID"] = "JDEX_DUPLICATE_ID"
 
-    def display(self, base_path: PurePath) -> str:
+    def display(self) -> str:
         """Display this particular instance of an error."""
         return f"{self.id}:\n    " + "\n    ".join([str(f.name) for f in self.files])
 
@@ -954,9 +952,9 @@ class JDexIssueFileWhereFolderExpected(JDexIssue):
     matched_pattern: ContentPattern
     type: Literal["JDEX_FILE_WHERE_FOLDER_EXPECTED"] = "JDEX_FILE_WHERE_FOLDER_EXPECTED"
 
-    def display(self, base_path: PurePath) -> str:
+    def display(self) -> str:
         """Display this particular instance of an error."""
-        return f"{self.file.relative_to(base_path)!s}\n    (matched {_print_pattern(self.matched_pattern)})"
+        return f"{self.file!s}\n    (matched {_print_pattern(self.matched_pattern)})"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -973,9 +971,9 @@ class JDexIssueFolderWhereNoteExpected(JDexIssue):
     matched_pattern: ContentPattern
     type: Literal["JDEX_FOLDER_WHERE_NOTE_EXPECTED"] = "JDEX_FOLDER_WHERE_NOTE_EXPECTED"
 
-    def display(self, base_path: PurePath) -> str:
+    def display(self) -> str:
         """Display this particular instance of an error."""
-        return f"{self.file.relative_to(base_path)!s}\n    (matched {_print_pattern(self.matched_pattern)})"
+        return f"{self.file!s}\n    (matched {_print_pattern(self.matched_pattern)})"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -1002,9 +1000,9 @@ class JDexIssueArbitraryContentWhereNotAllowed(JDexIssue):
         "JDEX_ARBITRARY_CONTENT_WHERE_NOT_ALLOWED"
     )
 
-    def display(self, base_path: PurePath) -> str:
+    def display(self) -> str:
         """Display this particular instance of an error."""
-        return f"{self.file.relative_to(base_path)!s}\n{textwrap.indent(_print_unmatched_patterns(self.possible_formats), '  ')}"
+        return f"{self.file!s}\n{textwrap.indent(_print_unmatched_patterns(self.possible_formats), '  ')}"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -1020,9 +1018,9 @@ class JDexIssueEmptyFolder(JDexIssue):
 
     type: Literal["JDEX_EMPTY_FOLDER"] = "JDEX_EMPTY_FOLDER"
 
-    def display(self, base_path: PurePath) -> str:
+    def display(self) -> str:
         """Display this particular instance of an error."""
-        return f"{self.file.relative_to(base_path)!s}"
+        return f"{self.file!s}"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -1041,9 +1039,9 @@ class JDexIssueEncounteredForbiddenFolder(JDexIssue):
         "JDEX_ENCOUNTERED_FORBIDDEN_FOLDER"
     )
 
-    def display(self, base_path: PurePath) -> str:
+    def display(self) -> str:
         """Display this particular instance of an error."""
-        return f"{self.file.relative_to(base_path)!s}\n    (matched {_print_pattern(self.matched_pattern)})"
+        return f"{self.file!s}\n    (matched {_print_pattern(self.matched_pattern)})"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -1060,9 +1058,9 @@ class JDexIssueEncounteredForbiddenNote(JDexIssue):
     matched_pattern: ContentPattern
     type: Literal["JDEX_ENCOUNTERED_FORBIDDEN_NOTE"] = "JDEX_ENCOUNTERED_FORBIDDEN_NOTE"
 
-    def display(self, base_path: PurePath) -> str:
+    def display(self) -> str:
         """Display this particular instance of an error."""
-        return f"{self.file.relative_to(base_path)!s}\n    (matched {_print_pattern(self.matched_pattern)})"
+        return f"{self.file!s}\n    (matched {_print_pattern(self.matched_pattern)})"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -1103,10 +1101,17 @@ class _Explanation:
 
 @dataclass(frozen=True)
 class SystemFolder:
-    """A folder detected in a JD root, including its path and its children (by ID)"""
+    """A folder detected in a JD root, including its path and its children (by ID)."""
 
     path: PurePath
-    children: dict[str, list[SystemFolder]]
+    children: dict[str, list[SystemFolder | SystemFile]]
+
+
+@dataclass(frozen=True)
+class SystemFile:
+    """A file detected in a JD root, consisting of its path."""
+
+    path: PurePath
 
 
 @dataclass(frozen=True)
@@ -1132,7 +1137,7 @@ class RootLintResults:
 
     errors: list[Issue]
     path: PurePath
-    structure: dict[str, list[SystemFolder]]
+    structure: dict[str, list[SystemFolder | SystemFile]]
 
 
 @dataclass(frozen=True)
@@ -1212,6 +1217,10 @@ def _sort_error(e: Issue) -> tuple[str, tuple[tuple[str, ...], str]]:
     )
 
 
+def _sort_jdex_entry(e: JDexEntry) -> tuple[str, PurePath]:
+    return (e.entry, e.path)
+
+
 def _entry_is_ignored(
     ignored: tuple[str] | None,
     f: os.DirEntry,
@@ -1225,20 +1234,22 @@ def _entry_is_ignored(
 E = TypeVar("E")
 
 
-def _insert_append(k, v, d) -> None:  # noqa: ANN001
+def _insert_append_sorted(k, v, d, key=None) -> None:  # noqa: ANN001
     """Add value as a singleton if it's not already in the dict, else append it to the list."""
     if k not in d:
         d.update({k: []})
 
     d[k].append(v)
+    d[k].sort(key=key)
 
 
-def _insert_concat(k, vs: list, d) -> None:  # noqa: ANN001
+def _insert_concat_sorted(k, vs: list, d, key=None) -> None:  # noqa: ANN001
     """Add value as a singleton if it's not already in the dict, else append it to the list."""
     if k not in d:
         d.update({k: []})
 
     d[k].extend(vs)
+    d[k].sort(key=key)
 
 
 def _process_single_file_jdex(path: Path) -> _JDexResults:
@@ -1283,6 +1294,7 @@ def _get_jdex_entries_here_or_children(
     ignored: tuple[str],
     bound_segments: dict[str, str],
     path: os.PathLike,
+    relative_to: PurePath,
     tier: ConfigJDexTier | ConfigSystemJDex,
 ) -> tuple[dict[str, list[JDexEntry]], list[JDexIssue]]:
     # Compile regexes for children
@@ -1308,7 +1320,7 @@ def _get_jdex_entries_here_or_children(
                     if child.format.forbidden:
                         accumulated_errors.append(
                             JDexIssueEncounteredForbiddenFolder(
-                                PurePath(x),
+                                PurePath(x).relative_to(relative_to),
                                 ContentPattern(
                                     child.format.name,
                                     child.format.raw_format,
@@ -1321,7 +1333,7 @@ def _get_jdex_entries_here_or_children(
                         # This is an error
                         accumulated_errors.append(
                             JDexIssueFileWhereFolderExpected(
-                                PurePath(x),
+                                PurePath(x).relative_to(relative_to),
                                 ContentPattern(
                                     child.format.name,
                                     child.format.raw_format,
@@ -1335,10 +1347,13 @@ def _get_jdex_entries_here_or_children(
                         ignored,
                         {**bound_segments, **match.groupdict()},
                         PurePath(x),
+                        relative_to,
                         child,
                     )
                     for id, entries in child_entries.items():
-                        _insert_concat(id, entries, accumulated_entries)
+                        _insert_concat_sorted(
+                            id, entries, accumulated_entries, key=_sort_jdex_entry
+                        )
                     accumulated_errors.extend(child_errors)
                     break
             else:
@@ -1348,7 +1363,7 @@ def _get_jdex_entries_here_or_children(
                         if note.format.forbidden:
                             accumulated_errors.append(
                                 JDexIssueEncounteredForbiddenNote(
-                                    PurePath(x),
+                                    PurePath(x).relative_to(relative_to),
                                     ContentPattern(
                                         note.format.name,
                                         note.format.raw_format,
@@ -1361,7 +1376,7 @@ def _get_jdex_entries_here_or_children(
                             # This is an error
                             accumulated_errors.append(
                                 JDexIssueFolderWhereNoteExpected(
-                                    PurePath(x),
+                                    PurePath(x).relative_to(relative_to),
                                     ContentPattern(
                                         note.format.name,
                                         note.format.raw_format,
@@ -1372,15 +1387,16 @@ def _get_jdex_entries_here_or_children(
 
                         # Create entry
                         for id in note.ids:
-                            _insert_append(
+                            _insert_append_sorted(
                                 id.id.build({**bound_segments, **match.groupdict()}),
                                 JDexEntry(
                                     id.entry.build(
                                         {**bound_segments, **match.groupdict()},
                                     ),
-                                    PurePath(x),
+                                    PurePath(x).relative_to(relative_to),
                                 ),
                                 accumulated_entries,
+                                key=_sort_jdex_entry,
                             )
                         break
                 else:
@@ -1389,7 +1405,7 @@ def _get_jdex_entries_here_or_children(
                         # This is an error
                         accumulated_errors.append(
                             JDexIssueArbitraryContentWhereNotAllowed(
-                                PurePath(x),
+                                PurePath(x).relative_to(relative_to),
                                 tuple(
                                     ContentPattern(c.format.name, c.format.raw_format)
                                     for c in tier.children
@@ -1402,7 +1418,9 @@ def _get_jdex_entries_here_or_children(
                         )
     if not has_content:
         # We have a fully empty JDex folder; it shouldn't exist if it's doing nothing.
-        accumulated_errors.append(JDexIssueEmptyFolder(PurePath(path)))
+        accumulated_errors.append(
+            JDexIssueEmptyFolder(PurePath(path).relative_to(relative_to))
+        )
     return (accumulated_entries, accumulated_errors)
 
 
@@ -1414,12 +1432,17 @@ def _process_jdex(
         ignored + jdex.ignore,
         {},
         jdex.path,
+        jdex.path,
         jdex,
     )
 
     # Check for duplicate ids
     duplicate_id_errors = [
-        JDexIssueDuplicateID(ns[0].path, tuple(n.path for n in ns), id)
+        JDexIssueDuplicateID(
+            ns[0].path,
+            tuple(n.path for n in ns),
+            id,
+        )
         for id, ns in jdex_entries_by_id.items()
         if len(ns) != 1
     ]
@@ -1433,10 +1456,11 @@ def _process_system_level_and_children(
     ignored: tuple[str],
     bound_segments: dict[str, str],
     path: os.PathLike,
+    relative_to: PurePath,
     tier: ConfigSystemRoot | ConfigSystemTier,
     jdex: None | dict[str, list[JDexEntry]],
     by_id_dict: dict[str, list[tuple[str | None, PurePath]]],
-) -> tuple[dict[str, list[SystemFolder]], list[Issue]]:
+) -> tuple[dict[str, list[SystemFolder | SystemFile]], list[Issue]]:
     # Compile regexes for children
     valid_children = [
         (re.compile(c.format.build_regex(bound_segments)), c) for c in tier.children
@@ -1459,7 +1483,7 @@ def _process_system_level_and_children(
                     if child.format.forbidden:
                         accumulated_errors.append(
                             IssueEncounteredForbiddenFolder(
-                                PurePath(x),
+                                PurePath(x).relative_to(relative_to),
                                 ContentPattern(
                                     child.format.name,
                                     child.format.raw_format,
@@ -1468,40 +1492,53 @@ def _process_system_level_and_children(
                         )
                         break
                     # Is a valid child folder
+                    child_id = child.id.build({**bound_segments, **match.groupdict()})
                     if x.is_file():
-                        if not child.can_be_file:
+                        if child.can_be_file:
+                            _insert_append_sorted(
+                                child_id,
+                                SystemFile(
+                                    PurePath(x).relative_to(relative_to),
+                                ),
+                                accumulated_structure,
+                                key=lambda e: e.path,
+                            )
+                        else:
                             # This is an error
                             accumulated_errors.append(
                                 IssueFileWhereFolderExpected(
-                                    PurePath(x),
+                                    PurePath(x).relative_to(relative_to),
                                     ContentPattern(
                                         child.format.name,
                                         child.format.raw_format,
                                     ),
                                 ),
                             )
-                        break
 
-                    # Walk child
-                    (child_structure, child_errors) = (
-                        _process_system_level_and_children(
-                            ignored,
-                            {**bound_segments, **match.groupdict()},
-                            PurePath(x),
-                            child,
-                            jdex,
-                            by_id_dict,
+                    else:
+                        # Walk child
+                        (child_structure, child_errors) = (
+                            _process_system_level_and_children(
+                                ignored,
+                                {**bound_segments, **match.groupdict()},
+                                PurePath(x),
+                                relative_to,
+                                child,
+                                jdex,
+                                by_id_dict,
+                            )
                         )
-                    )
-
-                    child_id = child.id.build({**bound_segments, **match.groupdict()})
-                    _insert_append(
-                        child_id,
-                        SystemFolder(PurePath(x), child_structure),
-                        accumulated_structure,
-                    )
+                        _insert_append_sorted(
+                            child_id,
+                            SystemFolder(
+                                PurePath(x).relative_to(relative_to), child_structure
+                            ),
+                            accumulated_structure,
+                            key=lambda e: e.path,
+                        )
+                        accumulated_errors.extend(child_errors)
                     if not child.no_jdex_entry:
-                        _insert_append(
+                        _insert_append_sorted(
                             child_id,
                             (
                                 child.jdex_entry.build(
@@ -1509,22 +1546,25 @@ def _process_system_level_and_children(
                                 )
                                 if child.jdex_entry
                                 else x.name,
-                                PurePath(x),
+                                PurePath(x).relative_to(relative_to),
                             ),
                             by_id_dict,
+                            # Sort duplicates by their path, not their JDex entry
+                            key=lambda e: e[1],
                         )
-                    accumulated_errors.extend(child_errors)
                     break
             else:
                 # If we got here, it matched no known child/note
                 if not getattr(tier, "allow_arbitrary_contents", False):
                     # If the tier has no children specified, it should be empty
                     if not tier.children:
-                        children_that_should_not_be.append(PurePath(x))
+                        children_that_should_not_be.append(
+                            PurePath(x).relative_to(relative_to)
+                        )
                     else:
                         accumulated_errors.append(
                             IssueArbitraryContentWhereNotAllowed(
-                                PurePath(x),
+                                PurePath(x).relative_to(relative_to),
                                 tuple(
                                     ContentPattern(c.format.name, c.format.raw_format)
                                     for c in tier.children
@@ -1534,7 +1574,7 @@ def _process_system_level_and_children(
     if children_that_should_not_be:
         accumulated_errors.append(
             IssueFolderShouldBeEmpty(
-                PurePath(path),
+                PurePath(path).relative_to(relative_to),
                 tuple(children_that_should_not_be),
             ),
         )
@@ -1542,7 +1582,9 @@ def _process_system_level_and_children(
         tier.children or getattr(tier, "allow_arbitrary_contents", False)
     ):
         # We have a fully empty folder; it shouldn't exist if it's doing nothing (unless it should be empty).
-        accumulated_errors.append(IssueEmptyFolder(PurePath(path)))
+        accumulated_errors.append(
+            IssueEmptyFolder(PurePath(path).relative_to(relative_to))
+        )
     return (accumulated_structure, accumulated_errors)
 
 
@@ -1551,11 +1593,12 @@ def _process_system_root(
     root: ConfigSystemRoot,
     system: ConfigSystem,
     jdex: None | dict[str, list[JDexEntry]],
-) -> tuple[dict[str, list[SystemFolder]], list[Issue]]:
+) -> tuple[dict[str, list[SystemFolder | SystemFile]], list[Issue]]:
     by_id: dict[str, list[tuple[str | None, PurePath]]] = {}
     (root_structure, root_errors) = _process_system_level_and_children(
         ignored + root.ignore,
         {},
+        root.path,
         root.path,
         root,
         jdex,
@@ -1712,7 +1755,9 @@ if __name__ == "__main__":
         if results.jdex:
             jdex_errs_by_type: dict[JDexIssueType, list[JDexIssue]] = {}
             for je in results.jdex.errors if results.jdex else []:
-                _insert_append(je.type, je, jdex_errs_by_type)
+                _insert_append_sorted(
+                    je.type, je, jdex_errs_by_type, key=_sort_jdex_error
+                )
             # Print JDex errors if any
             if jdex_errs_by_type:
                 any_errors = True
@@ -1724,7 +1769,7 @@ if __name__ == "__main__":
                     print(
                         textwrap.indent(
                             "\n".join(
-                                [e.display(results.jdex.path) for e in errs],
+                                [e.display() for e in errs],
                             ),
                             "  ",
                         ),
@@ -1740,7 +1785,7 @@ if __name__ == "__main__":
                 if root.errors:
                     errs_by_type = {}
                     for e in root.errors:
-                        _insert_append(e.type, e, errs_by_type)
+                        _insert_append_sorted(e.type, e, errs_by_type, key=_sort_error)
                     print(f"{'':=^80}\n{location + ' Errors Found:':^80}\n{'':=^80}")
                     for errs in errs_by_type.values():
                         first_err = next(iter(errs))  # Just get the first error
@@ -1749,7 +1794,7 @@ if __name__ == "__main__":
                         print(
                             textwrap.indent(
                                 "\n".join(
-                                    [e.display(root.path) for e in errs],
+                                    [e.display() for e in errs],
                                 ),
                                 "  ",
                             ),

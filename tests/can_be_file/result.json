@@ -1,4 +1,41 @@
 {
-  "errors": {},
-  "jdex_errors": []
+  "roots": {
+    "Files": {
+      "errors": [
+        {
+          "type": "DUPLICATE_ID",
+          "file": "1/1A",
+          "files": [
+            "1/1A",
+            "1/1A/1A"
+          ],
+          "id": "1.A"
+        }
+      ],
+      "path": "files",
+      "structure": {
+        "1": [
+          {
+            "path": "1",
+            "children": {
+              "1.A": [
+                {
+                  "path": "1/1A",
+                  "children": {
+                    "1.A": [
+                      {
+                        "path": "1/1A/1A"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "jdex": null,
+  "ignored_errs": 0
 }

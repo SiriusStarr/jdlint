@@ -1,31 +1,61 @@
 {
-  "errors": {
-    "Files": [
-      {
-        "type": "ENCOUNTERED_FORBIDDEN_FOLDER",
-        "matched_pattern": {
-          "name": [
-            "Area",
-            "Category",
-            "Bad Inbox"
-          ],
-          "format": "/=A//=C/.01 /*Inbox/"
+  "roots": {
+    "Files": {
+      "errors": [
+        {
+          "type": "ENCOUNTERED_FORBIDDEN_FOLDER",
+          "matched_pattern": {
+            "name": [
+              "Area",
+              "Category",
+              "Bad Inbox"
+            ],
+            "format": "/=A//=C/.01 /*Inbox/"
+          },
+          "file": "10-19 Life Admin/11 Me, Myself, & I/11.01 Inbxo"
         },
-        "file": "files/10-19 Life Admin/11 Me, Myself, & I/11.01 Inbxo"
-      },
-      {
-        "type": "ENCOUNTERED_FORBIDDEN_FOLDER",
-        "matched_pattern": {
-          "name": [
-            "Area",
-            "Category",
-            "Bad Header"
-          ],
-          "format": "/=A//=C/./#I/0 /*Header/"
-        },
-        "file": "files/10-19 Life Admin/11 Me, Myself, & I/11.10 ■Selves.md"
+        {
+          "type": "ENCOUNTERED_FORBIDDEN_FOLDER",
+          "matched_pattern": {
+            "name": [
+              "Area",
+              "Category",
+              "Bad Header"
+            ],
+            "format": "/=A//=C/./#I/0 /*Header/"
+          },
+          "file": "10-19 Life Admin/11 Me, Myself, & I/11.10 ■Selves.md"
+        }
+      ],
+      "path": "files",
+      "structure": {
+        "10-19": [
+          {
+            "path": "10-19 Life Admin",
+            "children": {
+              "11": [
+                {
+                  "path": "10-19 Life Admin/11 Me, Myself, & I",
+                  "children": {
+                    "11.11": [
+                      {
+                        "path": "10-19 Life Admin/11 Me, Myself, & I/11.11 Me.md"
+                      }
+                    ],
+                    "11.12": [
+                      {
+                        "path": "10-19 Life Admin/11 Me, Myself, & I/11.12 Myself.md"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
       }
-    ]
+    }
   },
-  "jdex_errors": []
+  "jdex": null,
+  "ignored_errs": 0
 }

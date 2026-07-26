@@ -1,27 +1,65 @@
 {
-  "errors": {
-    "JDex": [
-      {
-        "type": "DUPLICATE_ID",
-        "file": "files/1",
-        "files": [
-          "files/1",
-          "files/B1"
-        ],
-        "id": "1"
-      },
-      {
-        "type": "DUPLICATE_ID",
-        "file": "files/1/11 A",
-        "files": [
-          "files/1/11 A",
-          "files/1/11 B",
-          "files/B1/11 A",
-          "files/B1/11 B"
-        ],
-        "id": "1.1"
+  "roots": {
+    "Files": {
+      "errors": [
+        {
+          "type": "DUPLICATE_ID",
+          "file": "1",
+          "files": [
+            "1",
+            "B1"
+          ],
+          "id": "1"
+        },
+        {
+          "type": "DUPLICATE_ID",
+          "file": "1/11 A",
+          "files": [
+            "1/11 A",
+            "1/11 B",
+            "B1/11 A",
+            "B1/11 B"
+          ],
+          "id": "1.1"
+        }
+      ],
+      "path": "files",
+      "structure": {
+        "1": [
+          {
+            "path": "1",
+            "children": {
+              "1.1": [
+                {
+                  "path": "1/11 A",
+                  "children": {}
+                },
+                {
+                  "path": "1/11 B",
+                  "children": {}
+                }
+              ]
+            }
+          },
+          {
+            "path": "B1",
+            "children": {
+              "1.1": [
+                {
+                  "path": "B1/11 A",
+                  "children": {}
+                },
+                {
+                  "path": "B1/11 B",
+                  "children": {}
+                }
+              ]
+            }
+          }
+        ]
       }
-    ]
+    }
   },
-  "jdex_errors": []
+  "jdex": null,
+  "ignored_errs": 0
 }

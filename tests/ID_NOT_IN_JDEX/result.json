@@ -1,12 +1,91 @@
 {
-  "errors": {
-    "Files": [
-      {
-        "type": "ID_NOT_IN_JDEX",
-        "id": "11.13",
-        "file": "files/10-19 Life Admin/11 Me, Myself, & I/11.13 I"
+  "roots": {
+    "Files": {
+      "errors": [
+        {
+          "type": "ID_NOT_IN_JDEX",
+          "id": "11.13",
+          "file": "10-19 Life Admin/11 Me, Myself, & I/11.13 I"
+        }
+      ],
+      "path": "files",
+      "structure": {
+        "10-19": [
+          {
+            "path": "10-19 Life Admin",
+            "children": {
+              "11": [
+                {
+                  "path": "10-19 Life Admin/11 Me, Myself, & I",
+                  "children": {
+                    "11.11": [
+                      {
+                        "path": "10-19 Life Admin/11 Me, Myself, & I/11.11 Me",
+                        "children": {}
+                      }
+                    ],
+                    "11.12": [
+                      {
+                        "path": "10-19 Life Admin/11 Me, Myself, & I/11.12 Myself",
+                        "children": {}
+                      }
+                    ],
+                    "11.13": [
+                      {
+                        "path": "10-19 Life Admin/11 Me, Myself, & I/11.13 I",
+                        "children": {}
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
       }
-    ]
+    }
   },
-  "jdex_errors": []
+  "ignored_errs": 0,
+  "jdex": {
+    "errors": [],
+    "path": "jdex",
+    "entries": {
+      "10-19": [
+        {
+          "entry": "10-19 Life Admin",
+          "path": "10-19 Life Admin/10 Management of area 10-19/10.00 Life Admin.md"
+        }
+      ],
+      "10.00": [
+        {
+          "entry": "10.00 Life Admin",
+          "path": "10-19 Life Admin/10 Management of area 10-19/10.00 Life Admin.md"
+        }
+      ],
+      "11": [
+        {
+          "entry": "11 Me, Myself, & I",
+          "path": "10-19 Life Admin/11 Me, Myself, & I/11.00 Me, Myself, & I.md"
+        }
+      ],
+      "11.00": [
+        {
+          "entry": "11.00 Me, Myself, & I",
+          "path": "10-19 Life Admin/11 Me, Myself, & I/11.00 Me, Myself, & I.md"
+        }
+      ],
+      "11.11": [
+        {
+          "entry": "11.11 Me",
+          "path": "10-19 Life Admin/11 Me, Myself, & I/11.11 Me.md"
+        }
+      ],
+      "11.12": [
+        {
+          "entry": "11.12 Myself",
+          "path": "10-19 Life Admin/11 Me, Myself, & I/11.12 Myself.md"
+        }
+      ]
+    }
+  }
 }
