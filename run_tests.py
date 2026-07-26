@@ -3,15 +3,14 @@
 """Tests for jdlint."""
 
 from __future__ import annotations
-import contextlib
 
-import dataclasses
-import tomllib
+import contextlib
 import json
 import os
 import unittest
 from pathlib import Path, PurePath
-from typing import Any
+
+import tomllib
 
 import jdlint
 
@@ -26,7 +25,7 @@ class AllTests(unittest.TestCase):
         # Find all tests
         with os.scandir(PurePath("tests")) as test_it:
             for f in test_it:
-                # Make a subtest and open result file
+                # Make a sub-test and open result file
                 with (
                     self.subTest(msg=f.name, f=f),
                     Path(
@@ -39,7 +38,7 @@ class AllTests(unittest.TestCase):
                     # Load config
                     config = jdlint.Config(tomllib.load(config_file))
 
-                    # Lint the test dir
+                    # Lint the test directory
                     results = jdlint.lint_system(config)
                     expected = json.load(golden_file)
 
@@ -48,7 +47,7 @@ class AllTests(unittest.TestCase):
                         json.dumps(
                             results,
                             cls=jdlint._EnhancedJSONEncoder,
-                        )
+                        ),
                     )
 
                     # Compare results

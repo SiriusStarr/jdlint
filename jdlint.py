@@ -82,6 +82,11 @@ class ConfigConflictError(ConfigError):
 ###############################################################################
 # Config
 ###############################################################################
+def _report_extra_keys(at: str, from_file: dict, valid: tuple[str, ...]) -> None:
+    # Ensure no extra fields
+    for key in from_file:
+        err = ConfigExtraKeyError(f"{at}.{key}", valid)
+        raise err
 
 
 class ConfigSystemRoot:
@@ -96,36 +101,42 @@ class ConfigSystemRoot:
         """Create a valid configuration given a loaded section of a config file."""
         # Acquire and set defaults
         if "name" not in from_file:
-            raise (ConfigMissingKeyError(f"{at}.name"))
+            err = ConfigMissingKeyError(f"{at}.name")
+            raise err
         self.name = from_file.pop("name")
         if "path" not in from_file:
-            raise (ConfigMissingKeyError(f"{at}.path"))
+            err = ConfigMissingKeyError(f"{at}.path")
+            raise err
         self.path = Path(from_file.pop("path")).expanduser()
         self.ignore = from_file.pop("ignore", [])
 
         if not isinstance(self.name, str):
-            raise ConfigTypeError(
+            err = ConfigTypeError(
                 f"{at}.name",
                 "str",
                 type(self.name).__name__,
             )
+            raise err
 
         # Validate path is good
         if not self.path.is_dir():
-            raise ConfigValueError(
+            err = ConfigValueError(
                 f"{at}.path",
                 "Root path isn't a folder that exists!",
                 str(self.path),
             )
+            raise err
         if not isinstance(self.ignore, list):
-            raise ConfigTypeError(
+            err = ConfigTypeError(
                 f"{at}.ignore",
                 "list",
                 type(self.ignore).__name__,
             )
+            raise err
         for r in self.ignore:
             if not isinstance(r, str):
-                raise ConfigTypeError(f"{at}.ignore", "str", type(r).__name__)
+                err = ConfigTypeError(f"{at}.ignore", "str", type(r).__name__)
+                raise err
 
         # Load specialized structure, if any
         if "children" in from_file:
@@ -140,16 +151,13 @@ class ConfigSystemRoot:
         elif default_structure:
             self.children = default_structure
         else:
-            raise (
-                ConfigConflictError(
-                    f"{at}",
-                    "Either system.default.children must be specified or every root must specify its own children.",
-                )
+            err = ConfigConflictError(
+                f"{at}",
+                "Either system.default.children must be specified or every root must specify its own children.",
             )
+            raise err
 
-        # Ensure no extra fields
-        for key in from_file:
-            raise ConfigExtraKeyError(f"{at}.{key}", tuple(self.__dict__.keys()))
+        _report_extra_keys(at, from_file, tuple(self.__dict__.keys()))
 
 
 class ConfigSystemJDex:
@@ -159,26 +167,30 @@ class ConfigSystemJDex:
         """Create a valid configuration given a loaded section of a config file."""
         # Acquire and set defaults
         if "path" not in from_file:
-            raise (ConfigMissingKeyError(f"{at}.path"))
+            err = ConfigMissingKeyError(f"{at}.path")
+            raise err
         self.path = Path(from_file.pop("path")).expanduser()
         self.ignore = from_file.pop("ignore", [])
 
         # Validate
         if not self.path.is_dir():
-            raise ConfigValueError(
+            err = ConfigValueError(
                 f"{at}.path",
                 "JDex path isn't a folder that exists!",
                 str(self.path),
             )
+            raise err
         if not isinstance(self.ignore, list):
-            raise ConfigTypeError(
+            err = ConfigTypeError(
                 f"{at}.ignore",
                 "list",
                 type(self.ignore).__name__,
             )
+            raise err
         for r in self.ignore:
             if not isinstance(r, str):
-                raise ConfigTypeError(f"{at}.ignore", "str", type(r).__name__)
+                err = ConfigTypeError(f"{at}.ignore", "str", type(r).__name__)
+                raise err
 
         self.children = [
             ConfigJDexTier(
@@ -197,9 +209,7 @@ class ConfigSystemJDex:
             for i, v in enumerate(from_file.pop("notes", []))
         ]
 
-        # Ensure no extra fields
-        for key in from_file:
-            raise ConfigExtraKeyError(f"{at}.{key}", tuple(self.__dict__.keys()))
+        _report_extra_keys(at, from_file, tuple(self.__dict__.keys()))
 
 
 class ConfigLinter:
@@ -214,36 +224,39 @@ class ConfigLinter:
 
         # Validate
         if not isinstance(self.disable_rules, list):
-            raise ConfigTypeError(
+            err = ConfigTypeError(
                 "linter.disable_rules",
                 "list",
                 type(self.disable_rules).__name__,
             )
+            raise err
         for r in self.disable_rules:
             if r in [e.type for e in typing.get_args(AnyIssueType)]:
                 continue
-            raise ConfigValueError("linter.disable_rules", "not a valid rule name", r)
+            err = ConfigValueError("linter.disable_rules", "not a valid rule name", r)
+            raise err
 
         if not isinstance(self.json_output, bool):
-            raise ConfigTypeError(
+            err = ConfigTypeError(
                 "linter.json_output",
                 "bool",
                 type(self.json_output).__name__,
             )
+            raise err
 
         if not isinstance(self.ignore, list):
-            raise ConfigTypeError(
+            err = ConfigTypeError(
                 "linter.ignore",
                 "list",
                 type(self.ignore).__name__,
             )
+            raise err
         for r in self.ignore:
             if not isinstance(r, str):
-                raise ConfigTypeError("linter.ignore", "str", type(r).__name__)
+                err = ConfigTypeError("linter.ignore", "str", type(r).__name__)
+                raise err
 
-        # Ensure no extra fields
-        for key in from_file:
-            raise ConfigExtraKeyError(f"linter.{key}", tuple(self.__dict__.keys()))
+        _report_extra_keys("linter", from_file, tuple(self.__dict__.keys()))
 
 
 class ConfigSystem:
@@ -273,24 +286,24 @@ class ConfigSystem:
         accum_paths = {}
         for root in self.roots:
             if root.name in accum_names:
-                raise ConfigConflictError(
+                err = ConfigConflictError(
                     "system.roots",
                     f"System root names must be unique. {root.name} occurs multiple times.",
                 )
+                raise err
             if root.path in accum_paths:
-                raise ConfigConflictError(
+                err = ConfigConflictError(
                     "system.roots",
                     f"System root paths must be unique. {root.path} occurs multiple times.",
                 )
+                raise err
 
         if "jdex" in from_file:
             self.jdex = ConfigSystemJDex("system.jdex", from_file.pop("jdex"))
         else:
             self.jdex = None
 
-        # Ensure no extra fields
-        for key in from_file:
-            raise ConfigExtraKeyError(f"system.{key}", tuple(self.__dict__.keys()))
+        _report_extra_keys("system", from_file, tuple(self.__dict__.keys()))
 
 
 class ConfigStaticFormat:
@@ -367,23 +380,23 @@ class ConfigJDexID:
         """Create a valid note format given a loaded section of a config file."""
         # Compile Format
         if "id" not in from_file:
-            raise (ConfigMissingKeyError(f"{at}.id"))
+            err = ConfigMissingKeyError(f"{at}.id")
+            raise err
         self.id = ConfigStaticFormat(
             f"{at}.id",
             ancestors,
             from_file.pop("id"),
         )
         if "entry" not in from_file:
-            raise (ConfigMissingKeyError(f"{at}.entry"))
+            err = ConfigMissingKeyError(f"{at}.entry")
+            raise err
         self.entry = ConfigStaticFormat(
             f"{at}.entry",
             ancestors,
             from_file.pop("entry"),
         )
 
-        # Ensure no extra fields
-        for key in from_file:
-            raise ConfigExtraKeyError(f"{at}.{key}", tuple(self.__dict__.keys()))
+        _report_extra_keys(at, from_file, tuple(self.__dict__.keys()))
 
 
 class ConfigJDexNotes:
@@ -398,14 +411,16 @@ class ConfigJDexNotes:
         """Create a valid note format given a loaded section of a config file."""
         # Compile Format
         if "format" not in from_file:
-            raise (ConfigMissingKeyError(f"{at}.format"))
+            err = ConfigMissingKeyError(f"{at}.format")
+            raise err
         self.format = ConfigFormat(
             f"{at}",
             ancestors,
             from_file,
         )
         if "ids" not in from_file and not self.format.forbidden:
-            raise (ConfigMissingKeyError(f"{at}.ids"))
+            err = ConfigMissingKeyError(f"{at}.ids")
+            raise err
         self.ids = [
             ConfigJDexID(
                 f"{at}.ids[{i}]",
@@ -423,9 +438,7 @@ class ConfigJDexNotes:
         else:
             self.jdex_entry = None
 
-        # Ensure no extra fields
-        for key in from_file:
-            raise ConfigExtraKeyError(f"{at}.{key}", tuple(self.__dict__.keys()))
+        _report_extra_keys(at, from_file, tuple(self.__dict__.keys()))
 
 
 class ConfigFolderTier:
@@ -444,11 +457,12 @@ class ConfigFolderTier:
 
         # Validate
         if not isinstance(self.allow_arbitrary_contents, bool):
-            raise ConfigTypeError(
+            err = ConfigTypeError(
                 f"{at}.allow_arbitrary_contents",
                 "bool",
                 type(self.allow_arbitrary_contents).__name__,
             )
+            raise err
 
         # Compile Format & Children
         self.format = ConfigFormat(
@@ -509,7 +523,8 @@ class ConfigSystemTier(ConfigFolderTier):
             self.jdex_entry = None
 
         if "id" not in from_file:
-            raise (ConfigMissingKeyError(f"{at}.id"))
+            err = ConfigMissingKeyError(f"{at}.id")
+            raise err
         self.id = ConfigStaticFormat(
             f"{at}.id",
             self.format,
@@ -517,32 +532,34 @@ class ConfigSystemTier(ConfigFolderTier):
         )
 
         if not isinstance(self.can_be_file, bool):
-            raise ConfigTypeError(
+            err = ConfigTypeError(
                 f"{at}.can_be_file",
                 "bool",
                 type(self.can_be_file).__name__,
             )
+            raise err
 
         if self.children and self.can_be_file:
-            raise ConfigConflictError(
+            err = ConfigConflictError(
                 at,
                 "If children are specified, can_be_file must be false.",
             )
+            raise err
 
         if self.format.forbidden and self.can_be_file:
-            raise ConfigConflictError(
+            err = ConfigConflictError(
                 at,
                 "If forbidden, can_be_file must be false.",
             )
+            raise err
         if self.no_jdex_entry and self.jdex_entry:
-            raise ConfigConflictError(
+            err = ConfigConflictError(
                 at,
                 "Only one of no_jdex_entry and jdex_entry may be set.",
             )
+            raise err
 
-        # Ensure no extra fields
-        for key in from_file:
-            raise ConfigExtraKeyError(f"{at}.{key}", tuple(self.__dict__.keys()))
+        _report_extra_keys(at, from_file, tuple(self.__dict__.keys()))
 
 
 class ConfigJDexTier(ConfigFolderTier):
@@ -573,13 +590,13 @@ class ConfigJDexTier(ConfigFolderTier):
                 "If forbidden, notes cannot be speciefed.",
             )
 
-        # Ensure no extra fields
-        for key in from_file:
-            raise ConfigExtraKeyError(f"{at}.{key}", tuple(self.__dict__.keys()))
+        _report_extra_keys(at, from_file, tuple(self.__dict__.keys()))
 
 
 @dataclass
 class ConfigFormatAncestorInfo:
+    """Information about the ancestors of a format."""
+
     name: tuple[str, ...]
     segments: tuple[str, ...]
 
@@ -598,52 +615,60 @@ class ConfigFormat(ConfigFormatAncestorInfo):
     ) -> None:
         """Create a valid format given a string from a config file."""
         if "format" not in from_file:
-            raise (ConfigMissingKeyError(f"{at}.format"))
+            err = ConfigMissingKeyError(f"{at}.format")
+            raise err
 
         self.raw_format = from_file.pop("format")
         self.forbidden = from_file.pop("forbidden", False)
 
         if "name" not in from_file:
-            raise (ConfigMissingKeyError(f"{at}.name"))
+            err = ConfigMissingKeyError(f"{at}.name")
+            raise err
 
         # Validate
         if not isinstance(from_file["name"], str):
-            raise ConfigTypeError(
+            err = ConfigTypeError(
                 f"{at}.name",
                 "str",
                 type(from_file["name"]).__name__,
             )
+            raise err
         if not isinstance(self.raw_format, str):
-            raise ConfigTypeError(
+            err = ConfigTypeError(
                 f"{at}.format",
                 "str",
                 type(self.raw_format).__name__,
             )
+            raise err
         if not isinstance(self.forbidden, bool):
-            raise ConfigTypeError(
+            err = ConfigTypeError(
                 f"{at}.forbidden",
                 "bool",
                 type(self.forbidden).__name__,
             )
+            raise err
 
         if from_file["name"] == "":
-            raise ConfigValueError(
+            err = ConfigValueError(
                 f"{at}.name",
                 "Malformed name; must not be empty.",
                 str(from_file),
             )
+            raise err
         if self.raw_format.count("/") % 2 != 0:
-            raise ConfigValueError(
+            err = ConfigValueError(
                 f"{at}.format",
                 "Malformed format; there must be an even number of / characters.  You have an extra one/are missing one.",
                 str(from_file),
             )
+            raise err
         if self.raw_format == "":
-            raise ConfigValueError(
+            err = ConfigValueError(
                 f"{at}.format",
                 "Malformed format; must not be empty.",
                 str(from_file),
             )
+            raise err
 
         regex = []
         new_segments = []
@@ -656,11 +681,12 @@ class ConfigFormat(ConfigFormatAncestorInfo):
                 # Variable segment
                 match = ConfigFormat.variable_segment_re.fullmatch(v)
                 if not match:
-                    raise ConfigValueError(
+                    err = ConfigValueError(
                         f"{at}.format",
                         "Malformed format; variable segment must consist of =, *, or one or more # followed by an alphabetic identifier.",
                         v,
                     )
+                    raise err
                 if match.group(1) == "=":
                     if match.group(2) in ancestors.segments:
                         p = match.group(2)
@@ -672,24 +698,27 @@ class ConfigFormat(ConfigFormatAncestorInfo):
                         )
 
                     else:
-                        raise ConfigValueError(
+                        err = ConfigValueError(
                             f"{at}.format",
                             "Malformed format; variable segment referenced an identifier never bound.",
                             v,
                         )
+                        raise err
                 else:
                     if match.group(2) in ancestors.segments:
-                        raise ConfigValueError(
+                        err = ConfigValueError(
                             f"{at}.format",
                             "Malformed format; variable segment tried to rebind an identifier already bound in a parent.",
                             v,
                         )
+                        raise err
                     if match.group(2) in new_segments:
-                        raise ConfigValueError(
+                        err = ConfigValueError(
                             f"{at}.format",
                             "Malformed format; variable segment tried to rebind an identifier already bound.",
                             v,
                         )
+                        raise err
                     identifier = match.group(2)
                     new_segments.append(identifier)
                     if match.group(1) == "*":
@@ -698,8 +727,9 @@ class ConfigFormat(ConfigFormatAncestorInfo):
                         )
                     else:
                         # Must be a ## type variable
+                        match_len = len(match.group(1))
                         regex.append(
-                            lambda _, identifier=identifier, match_len=len(match.group(1)): (
+                            lambda _, identifier=identifier, match_len=match_len: (
                                 f"(?P<{identifier}>[0-9]{{{match_len}}})"
                             ),
                         )
@@ -717,7 +747,8 @@ class Config:
         self.linter = ConfigLinter(from_file.get("linter", {}))
 
         if "system" not in from_file:
-            raise (ConfigMissingKeyError("system"))
+            err = ConfigMissingKeyError("system")
+            raise err
         self.system = ConfigSystem(from_file["system"])
 
 
@@ -797,7 +828,7 @@ class IssueFileWhereFolderExpected(Issue):
 
 @dataclass(frozen=True)
 class IssueArbitraryContentWhereNotAllowed(Issue):
-    """Content was found in the that didn't match any expected format."""
+    """Content was found that didn't match any expected format."""
 
     possible_formats: tuple[ContentPattern, ...]
     type: Literal["ARBITRARY_CONTENT_WHERE_NOT_ALLOWED"] = (
@@ -1350,9 +1381,12 @@ def _get_jdex_entries_here_or_children(
                         relative_to,
                         child,
                     )
-                    for id, entries in child_entries.items():
+                    for jid, entries in child_entries.items():
                         _insert_concat_sorted(
-                            id, entries, accumulated_entries, key=_sort_jdex_entry
+                            jid,
+                            entries,
+                            accumulated_entries,
+                            key=_sort_jdex_entry,
                         )
                     accumulated_errors.extend(child_errors)
                     break
@@ -1386,11 +1420,11 @@ def _get_jdex_entries_here_or_children(
                             break
 
                         # Create entry
-                        for id in note.ids:
+                        for jid in note.ids:
                             _insert_append_sorted(
-                                id.id.build({**bound_segments, **match.groupdict()}),
+                                jid.id.build({**bound_segments, **match.groupdict()}),
                                 JDexEntry(
-                                    id.entry.build(
+                                    jid.entry.build(
                                         {**bound_segments, **match.groupdict()},
                                     ),
                                     PurePath(x).relative_to(relative_to),
@@ -1419,7 +1453,7 @@ def _get_jdex_entries_here_or_children(
     if not has_content:
         # We have a fully empty JDex folder; it shouldn't exist if it's doing nothing.
         accumulated_errors.append(
-            JDexIssueEmptyFolder(PurePath(path).relative_to(relative_to))
+            JDexIssueEmptyFolder(PurePath(path).relative_to(relative_to)),
         )
     return (accumulated_entries, accumulated_errors)
 
@@ -1441,9 +1475,9 @@ def _process_jdex(
         JDexIssueDuplicateID(
             ns[0].path,
             tuple(n.path for n in ns),
-            id,
+            jid,
         )
-        for id, ns in jdex_entries_by_id.items()
+        for jid, ns in jdex_entries_by_id.items()
         if len(ns) != 1
     ]
     return (
@@ -1531,7 +1565,8 @@ def _process_system_level_and_children(
                         _insert_append_sorted(
                             child_id,
                             SystemFolder(
-                                PurePath(x).relative_to(relative_to), child_structure
+                                PurePath(x).relative_to(relative_to),
+                                child_structure,
                             ),
                             accumulated_structure,
                             key=lambda e: e.path,
@@ -1559,7 +1594,7 @@ def _process_system_level_and_children(
                     # If the tier has no children specified, it should be empty
                     if not tier.children:
                         children_that_should_not_be.append(
-                            PurePath(x).relative_to(relative_to)
+                            PurePath(x).relative_to(relative_to),
                         )
                     else:
                         accumulated_errors.append(
@@ -1583,7 +1618,7 @@ def _process_system_level_and_children(
     ):
         # We have a fully empty folder; it shouldn't exist if it's doing nothing (unless it should be empty).
         accumulated_errors.append(
-            IssueEmptyFolder(PurePath(path).relative_to(relative_to))
+            IssueEmptyFolder(PurePath(path).relative_to(relative_to)),
         )
     return (accumulated_structure, accumulated_errors)
 
@@ -1591,7 +1626,6 @@ def _process_system_level_and_children(
 def _process_system_root(
     ignored: tuple[str],
     root: ConfigSystemRoot,
-    system: ConfigSystem,
     jdex: None | dict[str, list[JDexEntry]],
 ) -> tuple[dict[str, list[SystemFolder | SystemFile]], list[Issue]]:
     by_id: dict[str, list[tuple[str | None, PurePath]]] = {}
@@ -1607,27 +1641,27 @@ def _process_system_root(
 
     # Check for duplicate IDs
     duplicate_id_errors = [
-        IssueDuplicateID(fs[0][1], tuple([f[1] for f in fs]), id)
-        for id, fs in by_id.items()
+        IssueDuplicateID(fs[0][1], tuple([f[1] for f in fs]), jid)
+        for jid, fs in by_id.items()
         if len(fs) != 1
     ]
 
     # If we have a JDex, we can do some additional checks
     id_errors = []
     if jdex is not None:
-        for id, fs in by_id.items():
-            if id not in jdex:
-                id_errors.append(IssueIDNotInJDex(fs[0][1], id))
+        for jid, fs in by_id.items():
+            if jid not in jdex:
+                id_errors.append(IssueIDNotInJDex(fs[0][1], jid))
             else:
-                jdex_entries = [n.entry for n in jdex[id]]
+                jdex_entries = [n.entry for n in jdex[jid]]
                 for expected_jdex_entry, f in fs:
                     if expected_jdex_entry and expected_jdex_entry not in jdex_entries:
                         id_errors.append(
                             IssueIDDifferentFromJDex(
                                 f,
-                                id,
+                                jid,
                                 expected_jdex_entry,
-                                jdex[id],
+                                jdex[jid],
                             ),
                         )
 
@@ -1635,6 +1669,7 @@ def _process_system_root(
 
 
 def lint_system(config: Config) -> LintResults:
+    """Given a valid jdlint config, lint the specified system and return results."""
     jdex_errors = []
     jdex_entries = {}
     if config.system.jdex:
@@ -1648,7 +1683,6 @@ def lint_system(config: Config) -> LintResults:
         (root_structure, root_errors) = _process_system_root(
             config.linter.ignore,
             root,
-            config.system,
             jdex_entries if config.system.jdex else None,
         )
         ignored_errors += sum(
@@ -1733,7 +1767,8 @@ if __name__ == "__main__":
     for r in args.disable:
         if r in [e.type for e in typing.get_args(AnyIssueType)]:
             continue
-        raise ConfigValueError("--disable", "not a valid rule name", r)
+        err = ConfigValueError("--disable", "not a valid rule name", r)
+        raise err
 
     config.linter.disable_rules.extend(args.disable)
 
@@ -1756,17 +1791,20 @@ if __name__ == "__main__":
             jdex_errs_by_type: dict[JDexIssueType, list[JDexIssue]] = {}
             for je in results.jdex.errors if results.jdex else []:
                 _insert_append_sorted(
-                    je.type, je, jdex_errs_by_type, key=_sort_jdex_error
+                    je.type,
+                    je,
+                    jdex_errs_by_type,
+                    key=_sort_jdex_error,
                 )
             # Print JDex errors if any
             if jdex_errs_by_type:
                 any_errors = True
-                print(f"{'':=^80}\n{'JDex Errors Found':^80}\n{'':=^80}")
+                print(f"{'':=^80}\n{'JDex Errors Found':^80}\n{'':=^80}")  # noqa: T201
                 for errs in jdex_errs_by_type.values():
                     first_j_err = next(iter(errs))  # Just get the first error
                     explanation = first_j_err.explain()
-                    print(f"\n{explanation.explanation} ({first_j_err.type})")
-                    print(
+                    print(f"\n{explanation.explanation} ({first_j_err.type})")  # noqa: T201
+                    print(  # noqa: T201
                         textwrap.indent(
                             "\n".join(
                                 [e.display() for e in errs],
@@ -1774,8 +1812,8 @@ if __name__ == "__main__":
                             "  ",
                         ),
                     )
-                    print(explanation.fix)
-                    print("\n")
+                    print(explanation.fix)  # noqa: T201
+                    print("\n")  # noqa: T201
 
         # Print file errors if any
         if any(r.errors for r in results.roots.values()):
@@ -1786,12 +1824,12 @@ if __name__ == "__main__":
                     errs_by_type = {}
                     for e in root.errors:
                         _insert_append_sorted(e.type, e, errs_by_type, key=_sort_error)
-                    print(f"{'':=^80}\n{location + ' Errors Found:':^80}\n{'':=^80}")
+                    print(f"{'':=^80}\n{location + ' Errors Found:':^80}\n{'':=^80}")  # noqa: T201
                     for errs in errs_by_type.values():
                         first_err = next(iter(errs))  # Just get the first error
                         explanation = first_err.explain()
-                        print(f"\n{first_err.type:^80}\n{explanation.explanation}\n---")
-                        print(
+                        print(f"\n{first_err.type:^80}\n{explanation.explanation}\n---")  # noqa: T201
+                        print(  # noqa: T201
                             textwrap.indent(
                                 "\n".join(
                                     [e.display() for e in errs],
@@ -1799,10 +1837,10 @@ if __name__ == "__main__":
                                 "  ",
                             ),
                         )
-                        print(f"---\n{explanation.fix}\n")
+                        print(f"---\n{explanation.fix}\n")  # noqa: T201
 
         if results.ignored_errs:
-            print(
+            print(  # noqa: T201
                 f"{'':=^80}\n{'Ignored Errors: ' + str(results.ignored_errs):^80}\n{'':=^80}",
             )
     if any_errors:
@@ -1810,5 +1848,5 @@ if __name__ == "__main__":
         sys.exit(1)
 
     if not config.linter.json_output:
-        print("Everything looks good!")
+        print("Everything looks good!")  # noqa: T201
     sys.exit(0)
