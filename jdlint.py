@@ -242,10 +242,11 @@ class ConfigSystemJDex:
                     at,
                     "Single file JDexes must not specify children or notes or ignore!",
                 )
+                raise ConfigConflictError
             # Load format
             self.entry = ConfigStaticFormat(
                 f"{at}.entry",
-                # This is the default info made available to all file JDexes
+                # This is the default info made available to a file JDex
                 ConfigFormatAncestorInfo(("Single File JDex",), ("id", "title")),
                 _pop_nonempty_str_attribute(at, "entry", from_file),
             )
@@ -1227,7 +1228,8 @@ def _insert_concat_sorted(k, vs: list, d, key=None) -> None:  # noqa: ANN001
 
 
 def _get_jdex_entries_from_json(
-    jdex: ConfigSystemJDex, json: dict
+    jdex: ConfigSystemJDex,
+    json: dict,
 ) -> tuple[dict[str, list[JDexEntry]], list[JDexIssue]]:
     accumulated_entries: dict[str, list[JDexEntry]] = {}
     accumulated_errors: list[JDexIssue] = []
@@ -1247,7 +1249,8 @@ def _get_jdex_entries_from_json(
 
 
 def _get_jdex_entries_from_text(
-    jdex: ConfigSystemJDex, text: str
+    jdex: ConfigSystemJDex,
+    text: str,
 ) -> tuple[dict[str, list[JDexEntry]], list[JDexIssue]]:
     accumulated_entries: dict[str, list[JDexEntry]] = {}
     accumulated_errors: list[JDexIssue] = []
@@ -1280,7 +1283,7 @@ def _get_jdex_entries_from_file(
         return _get_jdex_entries_from_json(jdex, json.loads(as_text))
 
     except json.JSONDecodeError:
-        # This isn't valid json, so it must be plaintext
+        # This isn't valid JSON, so it must be plaintext
         return _get_jdex_entries_from_text(jdex, as_text)
 
 

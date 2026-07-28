@@ -2,8 +2,11 @@
 
 * [jdlint.toml](#jdlinttoml)
   * [Introduction](#introduction)
-  * [LAS/SBS](#lassbs)
-  * ["SiriusStarr"](#siriusstarr)
+  * [JDex Structure](#jdex-structure)
+    * [Notes on Disk](#notes-on-disk)
+    * [Single File](#single-file)
+    * [None](#none)
+    * ["SiriusStarr"](#siriusstarr)
   * [Formats](#formats)
     * [Literal Segments](#literal-segments)
     * [Variable Segments](#variable-segments)
