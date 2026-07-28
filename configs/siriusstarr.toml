@@ -90,73 +90,9 @@ name = "Knowledge"
 path = "~/Knowledge"
 ignore = [".git", ".gitignore", ".obsidian", ".trash"]
 
-[[system.roots.children]]
-name = "Trunk"
-format = "B/#T/0 /*Trunk/ ⬇️"
-id = "B/=T/0"
-
-[[system.roots.children.children]]
-name = "Trunk Index"
-format = "C/=T/0.00 📇 Index"
-id = "C/=T/0.00"
-allow_arbitrary_contents = true
-
-[[system.roots.children]]
-name = "Branch"
-format = "B/##BB/ /*Branch/"
-id = "B/=BB/"
-
-[[system.roots.children.children]]
-name = "Index"
-format = "C/=BB/.00 📇 Index"
-id = "C/=BB/.00"
-allow_arbitrary_contents = true
-
-[[system.roots.children.children]]
-name = "Header"
-format = "C/=BB/./#H/0 /*Header/ ⬇️"
-id = "C/=BB/./=H/0"
-
-# Disallow headers that don't match this format
-[[system.roots.children.children]]
-name = "Invalid Header Or Index"
-format = "C/=BB/./#H/0 /*Header/"
-id = "C/=BB/./=H/0"
-forbidden = true
-
-[[system.roots.children.children]]
-name = "Inbox"
-format = "C/=BB/.01 📥️ Inbox"
-id = "C/=BB/.01"
-
-# Disallow inboxes that don't match this format
-[[system.roots.children.children]]
-name = "Invalid Inbox"
-format = "C/=BB/.01 /*Inbox/"
-id = "C/=BB/.01"
-forbidden = true
-
-[[system.roots.children.children]]
-name = "Cache"
-format = "C/=BB/./##ID/ /*Cache/"
-
-allow_arbitrary_contents = true
-id = "C/=BB/./=ID/"
-
-[[system.roots.children.children]]
-name = "Nest"
-format = "N/=BB/./####ID/~/*Nest/"
-id = "N/=BB/./=ID/"
-allow_arbitrary_contents = true
-
 [[system.roots]]
 name = "Caches"
 path = "~/Caches"
-
-[[system.roots]]
-name = "Knowledge"
-path = "~/Knowledge"
-ignore = [".obsidian", ".trash"]
 
 [[system.roots]]
 name = "Nests"
@@ -168,6 +104,26 @@ format = "N/##BB/./####ID/~/*Nest/"
 id = "N/=BB/./=ID/"
 allow_arbitrary_contents = true
 
+[[system.roots]]
+name = "Dropbox"
+path = "~/Dropbox"
+
+# Dropbox does not use anything but terminal folders
+[[system.roots.children]]
+name = "Cache"
+format = "C/##BB/./##ID/ /*Cache/"
+allow_arbitrary_contents = true
+id = "C/=BB/./=ID/"
+
+[[system.roots.children]]
+name = "Nest"
+format = "N/##BB/./####ID/~/*Nest/"
+id = "N/=BB/./=ID/"
+allow_arbitrary_contents = true
+
+## #############################################################################
+# Default structure
+## #############################################################################
 [[system.default.children]]
 name = "Trunk"
 format = "B/#T/0 /*Trunk/ ⬇️"
