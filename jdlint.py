@@ -1246,6 +1246,30 @@ def _get_jdex_entries_from_json(
     return (accumulated_entries, accumulated_errors)
 
 
+def _get_jdex_entries_from_text(
+    jdex: ConfigSystemJDex, text: str
+) -> tuple[dict[str, list[JDexEntry]], list[JDexIssue]]:
+    accumulated_entries: dict[str, list[JDexEntry]] = {}
+    accumulated_errors: list[JDexIssue] = []
+    id_regex = re.compile("^\\s*([0-9]{2}(?:[.-][0-9]{2})?) ([^/\\n]+?)\\s*(?:$|/.*)")
+
+    for line in text.splitlines():
+        match = id_regex.fullmatch(line)
+        if match:
+            _insert_append_sorted(
+                match.group(1),
+                JDexEntry(
+                    jdex.entry.build(
+                        {"id": match.group(1), "title": match.group(2)},
+                    ),
+                    None,
+                ),
+                accumulated_entries,
+                key=_sort_jdex_entry,
+            )
+    return (accumulated_entries, accumulated_errors)
+
+
 def _get_jdex_entries_from_file(
     path: Path,
     jdex: ConfigSystemJDex,
@@ -1257,7 +1281,7 @@ def _get_jdex_entries_from_file(
 
     except json.JSONDecodeError:
         # This isn't valid json, so it must be plaintext
-        raise NotImplementedError
+        return _get_jdex_entries_from_text(jdex, as_text)
 
 
 def _get_jdex_entries_here_or_children(

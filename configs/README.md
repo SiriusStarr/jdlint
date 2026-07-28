@@ -46,6 +46,10 @@ them exported to the JSON standard, this will allow you to still use jdlint.
 Note that this format is extremely restrictive to the exact standard, as the
 standard lacks expressiveness for alternative formats.
 
+Additionally, note that jdlint does not check for adherence *to* the standard
+and assumes any file you give it complies with it. It thus does not check for,
+for example, orphans.
+
 ### None
 
 [No JDex](./no_jdex.toml) is exactly what it says on the label; this is

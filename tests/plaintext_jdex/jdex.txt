@@ -1,0 +1,13 @@
+10-19 Life admin     // which I can comment like this
+
+   11 Me /* or like this */
+   /* multiline comments
+      are allowed on their own lines
+    */
+      11.01 Birth certificate
+         - expiryDate: 2028-04-15
+      11.02 Passport
+
+   12 Household
+      12.01 Insurance policies
+         - url: https://example.com/policy 
