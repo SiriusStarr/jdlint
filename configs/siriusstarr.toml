@@ -47,7 +47,7 @@ id = "B/=BB/"
 entry = "B/=BB/ /=Branch/"
 
 [[system.jdex.children.children.notes]]
-name = "JDex Branch Index Note"
+name = "JDex Cache Note"
 format = "C/=BB/./##ID/ /*Name/.md"
 
 [[system.jdex.children.children.notes.ids]]

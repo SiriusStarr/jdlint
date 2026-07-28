@@ -89,8 +89,67 @@ def _report_extra_keys(at: str, from_file: dict, valid: tuple[str, ...]) -> None
         raise err
 
 
+def _pop_nonempty_str_attribute(at: str, attr: str, from_file: dict) -> str:
+    """Given a parent location, a mandatory attribute to get, and data, return it."""
+    if attr not in from_file:
+        err = ConfigMissingKeyError(f"{at}.{attr}")
+        raise err
+    val = from_file.pop(attr)
+    if not isinstance(val, str):
+        err = ConfigTypeError(
+            f"{at}.{attr}",
+            "str",
+            type(val).__name__,
+        )
+        raise err
+    if val == "":
+        err = ConfigValueError(
+            f"{at}.{attr}",
+            "Must not be empty.",
+            val,
+        )
+        raise err
+    return val
+
+
+def _pop_default_false_bool(at: str, attr: str, from_file: dict) -> bool:
+    """Get a boolean at the specified attribute, defaulting to false, or fail."""
+    val = from_file.pop(attr, False)
+    if not isinstance(val, bool):
+        err = ConfigTypeError(
+            f"{at}.{attr}",
+            "bool",
+            type(val).__name__,
+        )
+        raise err
+    return val
+
+
+def _pop_default_empty_list(at: str, attr: str, from_file: dict) -> list:
+    """Get a list at the specified attribute, defaulting to [], or fail."""
+    val = from_file.pop(attr, [])
+    if not isinstance(val, list):
+        err = ConfigTypeError(
+            f"{at}.{attr}",
+            "list",
+            type(val).__name__,
+        )
+        raise err
+    return val
+
+
+def _pop_ignore_list(at: str, from_file: dict) -> list[str]:
+    """Get a list of strings at .ignore or fail, defaulting to []."""
+    val = _pop_default_empty_list(at, "ignore", from_file)
+    for i, r in enumerate(val):
+        if not isinstance(r, str):
+            err = ConfigTypeError(f"{at}.ignore[{i}]", "str", type(r).__name__)
+            raise err
+    return val
+
+
 class ConfigSystemRoot:
-    """A root (base folder) of a JD system to check for correctness, e.g. ~/Documents."""
+    """A root of a JD system to check for correctness, e.g. ~/Documents."""
 
     def __init__(
         self,
@@ -99,24 +158,11 @@ class ConfigSystemRoot:
         from_file: dict,
     ) -> None:
         """Create a valid configuration given a loaded section of a config file."""
-        # Acquire and set defaults
-        if "name" not in from_file:
-            err = ConfigMissingKeyError(f"{at}.name")
-            raise err
-        self.name = from_file.pop("name")
-        if "path" not in from_file:
-            err = ConfigMissingKeyError(f"{at}.path")
-            raise err
-        self.path = Path(from_file.pop("path")).expanduser()
-        self.ignore = from_file.pop("ignore", [])
-
-        if not isinstance(self.name, str):
-            err = ConfigTypeError(
-                f"{at}.name",
-                "str",
-                type(self.name).__name__,
-            )
-            raise err
+        self.name = _pop_nonempty_str_attribute(at, "name", from_file)
+        self.path = Path(
+            _pop_nonempty_str_attribute(at, "path", from_file),
+        ).expanduser()
+        self.ignore = _pop_ignore_list(at, from_file)
 
         # Validate path is good
         if not self.path.is_dir():
@@ -126,17 +172,6 @@ class ConfigSystemRoot:
                 str(self.path),
             )
             raise err
-        if not isinstance(self.ignore, list):
-            err = ConfigTypeError(
-                f"{at}.ignore",
-                "list",
-                type(self.ignore).__name__,
-            )
-            raise err
-        for r in self.ignore:
-            if not isinstance(r, str):
-                err = ConfigTypeError(f"{at}.ignore", "str", type(r).__name__)
-                raise err
 
         # Load specialized structure, if any
         if "children" in from_file:
@@ -146,7 +181,9 @@ class ConfigSystemRoot:
                     ConfigFormatAncestorInfo((), ()),
                     v,
                 )
-                for i, v in enumerate(from_file.pop("children", []))
+                for i, v in enumerate(
+                    _pop_default_empty_list(at, "children", from_file),
+                )
             ]
         elif default_structure:
             self.children = default_structure
@@ -166,13 +203,12 @@ class ConfigSystemJDex:
     def __init__(self, at: str, from_file: dict) -> None:
         """Create a valid configuration given a loaded section of a config file."""
         # Acquire and set defaults
-        if "path" not in from_file:
-            err = ConfigMissingKeyError(f"{at}.path")
-            raise err
-        self.path = Path(from_file.pop("path")).expanduser()
-        self.ignore = from_file.pop("ignore", [])
+        self.path = Path(
+            _pop_nonempty_str_attribute(at, "path", from_file),
+        ).expanduser()
+        self.ignore = _pop_ignore_list(at, from_file)
 
-        # Validate
+        # Validate path
         if not self.path.is_dir():
             err = ConfigValueError(
                 f"{at}.path",
@@ -180,17 +216,6 @@ class ConfigSystemJDex:
                 str(self.path),
             )
             raise err
-        if not isinstance(self.ignore, list):
-            err = ConfigTypeError(
-                f"{at}.ignore",
-                "list",
-                type(self.ignore).__name__,
-            )
-            raise err
-        for r in self.ignore:
-            if not isinstance(r, str):
-                err = ConfigTypeError(f"{at}.ignore", "str", type(r).__name__)
-                raise err
 
         self.children = [
             ConfigJDexTier(
@@ -198,7 +223,7 @@ class ConfigSystemJDex:
                 ConfigFormatAncestorInfo((), ()),
                 v,
             )
-            for i, v in enumerate(from_file.pop("children", []))
+            for i, v in enumerate(_pop_default_empty_list(at, "children", from_file))
         ]
         self.notes = [
             ConfigJDexNotes(
@@ -206,7 +231,7 @@ class ConfigSystemJDex:
                 ConfigFormatAncestorInfo((), ()),
                 v,
             )
-            for i, v in enumerate(from_file.pop("notes", []))
+            for i, v in enumerate(_pop_default_empty_list(at, "notes", from_file))
         ]
 
         _report_extra_keys(at, from_file, tuple(self.__dict__.keys()))
@@ -218,18 +243,15 @@ class ConfigLinter:
     def __init__(self, from_file: dict) -> None:
         """Create a valid configuration given a loaded linter section of a config file."""
         # Acquire and set defaults
-        self.disable_rules = from_file.pop("disable_rules", [])
-        self.json_output = from_file.pop("json_output", False)
-        self.ignore = from_file.pop("ignore", [])
+        self.disable_rules = _pop_default_empty_list(
+            "linter",
+            "disable_rules",
+            from_file,
+        )
+        self.json_output = _pop_default_false_bool("linter", "json_output", from_file)
+        self.ignore = _pop_ignore_list("linter", from_file)
 
         # Validate
-        if not isinstance(self.disable_rules, list):
-            err = ConfigTypeError(
-                "linter.disable_rules",
-                "list",
-                type(self.disable_rules).__name__,
-            )
-            raise err
         for r in self.disable_rules:
             if r in [e.type for e in typing.get_args(AnyIssueType)]:
                 continue
@@ -243,18 +265,6 @@ class ConfigLinter:
                 type(self.json_output).__name__,
             )
             raise err
-
-        if not isinstance(self.ignore, list):
-            err = ConfigTypeError(
-                "linter.ignore",
-                "list",
-                type(self.ignore).__name__,
-            )
-            raise err
-        for r in self.ignore:
-            if not isinstance(r, str):
-                err = ConfigTypeError("linter.ignore", "str", type(r).__name__)
-                raise err
 
         _report_extra_keys("linter", from_file, tuple(self.__dict__.keys()))
 
@@ -270,7 +280,13 @@ class ConfigSystem:
                 ConfigFormatAncestorInfo((), ()),
                 v,
             )
-            for i, v in enumerate(from_file.pop("default", {}).pop("children", []))
+            for i, v in enumerate(
+                _pop_default_empty_list(
+                    "system.default",
+                    "children",
+                    from_file.pop("default", {}),
+                ),
+            )
         ]
 
         self.roots = [
@@ -279,7 +295,7 @@ class ConfigSystem:
                 default_structure,
                 v,
             )
-            for i, v in enumerate(from_file.pop("roots", []))
+            for i, v in enumerate(_pop_default_empty_list("system", "roots", from_file))
         ]
 
         accum_names = {}
@@ -320,22 +336,10 @@ class ConfigStaticFormat:
     ) -> None:
         """Create a valid format given a string from a config file."""
         # Validate
-        if not isinstance(from_file, str):
-            raise ConfigTypeError(
-                at,
-                "str",
-                type(from_file).__name__,
-            )
         if from_file.count("/") % 2 != 0:
             raise ConfigValueError(
                 at,
-                "Malformed id/JDex note format; there must be an even number of / characters.  You have an extra one/are missing one.",
-                from_file,
-            )
-        if from_file == "":
-            raise ConfigValueError(
-                at,
-                "Malformed id/JDex note format; must not be empty.",
+                "Malformed format; there must be an even number of / characters. You have an extra/are missing one.",
                 from_file,
             )
 
@@ -351,7 +355,7 @@ class ConfigStaticFormat:
                 if not match:
                     raise ConfigValueError(
                         at,
-                        "Malformed id/JDex note format; variable segment must consist of = followed by an alphabetic identifier.",
+                        "Malformed format; variable segment must consist of = followed by an alphabetic identifier.",
                         v,
                     )
                 if match.group(1) in ancestors.segments:
@@ -361,7 +365,7 @@ class ConfigStaticFormat:
                 else:
                     raise ConfigValueError(
                         at,
-                        "Malformed id/JDex note format; variable segment referenced an identifier never bound.",
+                        "Malformed format; variable segment referenced an identifier never bound.",
                         v,
                     )
 
@@ -378,22 +382,15 @@ class ConfigJDexID:
         from_file: dict,
     ) -> None:
         """Create a valid note format given a loaded section of a config file."""
-        # Compile Format
-        if "id" not in from_file:
-            err = ConfigMissingKeyError(f"{at}.id")
-            raise err
         self.id = ConfigStaticFormat(
             f"{at}.id",
             ancestors,
-            from_file.pop("id"),
+            _pop_nonempty_str_attribute(at, "id", from_file),
         )
-        if "entry" not in from_file:
-            err = ConfigMissingKeyError(f"{at}.entry")
-            raise err
         self.entry = ConfigStaticFormat(
             f"{at}.entry",
             ancestors,
-            from_file.pop("entry"),
+            _pop_nonempty_str_attribute(at, "entry", from_file),
         )
 
         _report_extra_keys(at, from_file, tuple(self.__dict__.keys()))
@@ -427,13 +424,13 @@ class ConfigJDexNotes:
                 self.format,
                 v,
             )
-            for i, v in enumerate(from_file.pop("ids", []))
+            for i, v in enumerate(_pop_default_empty_list(at, "ids", from_file))
         ]
         if "jdex_entry" in from_file:
             self.jdex_entry = ConfigStaticFormat(
                 f"{at}.jdex_entry",
                 self.format,
-                from_file.pop("jdex_entry"),
+                _pop_nonempty_str_attribute(at, "jdex_entry", from_file),
             )
         else:
             self.jdex_entry = None
@@ -442,7 +439,7 @@ class ConfigJDexNotes:
 
 
 class ConfigFolderTier:
-    """A tier (hierarchical level) of a JD system, e.g. a Category, whether in the JDex or the system itself."""
+    """A tier of a JD system, e.g. a Category, whether in the JDex or the system itself."""
 
     def __init__(
         self,
@@ -453,7 +450,11 @@ class ConfigFolderTier:
     ) -> None:
         """Create a valid tier given a loaded section of a config file."""
         # Acquire and set defaults
-        self.allow_arbitrary_contents = from_file.pop("allow_arbitrary_contents", False)
+        self.allow_arbitrary_contents = _pop_default_false_bool(
+            at,
+            "allow_arbitrary_contents",
+            from_file,
+        )
 
         # Validate
         if not isinstance(self.allow_arbitrary_contents, bool):
@@ -476,7 +477,7 @@ class ConfigFolderTier:
                 self.format,
                 v,
             )
-            for i, v in enumerate(from_file.pop("children", []))
+            for i, v in enumerate(_pop_default_empty_list(at, "children", from_file))
         ]
         if self.children and self.allow_arbitrary_contents:
             raise ConfigConflictError(
@@ -496,7 +497,7 @@ class ConfigFolderTier:
 
 
 class ConfigSystemTier(ConfigFolderTier):
-    """A tier (hierarchical level) of a JD system, e.g. a Category, in the system (not the JDex)."""
+    """A tier of a JD system, e.g. a Category, in the system (not the JDex)."""
 
     def __init__(
         self,
@@ -507,8 +508,8 @@ class ConfigSystemTier(ConfigFolderTier):
         """Create a valid tier given a loaded section of a config file."""
         # Acquire and set defaults
 
-        self.can_be_file = from_file.pop("can_be_file", False)
-        self.no_jdex_entry = from_file.pop("no_jdex_entry", False)
+        self.can_be_file = _pop_default_false_bool(at, "can_be_file", from_file)
+        self.no_jdex_entry = _pop_default_false_bool(at, "no_jdex_entry", from_file)
 
         # Call the folder tier stuff
         super().__init__(ConfigSystemTier, at, ancestors, from_file)
@@ -517,18 +518,15 @@ class ConfigSystemTier(ConfigFolderTier):
             self.jdex_entry = ConfigStaticFormat(
                 f"{at}.jdex_entry",
                 self.format,
-                from_file.pop("jdex_entry"),
+                _pop_nonempty_str_attribute(at, "jdex_entry", from_file),
             )
         else:
             self.jdex_entry = None
 
-        if "id" not in from_file:
-            err = ConfigMissingKeyError(f"{at}.id")
-            raise err
         self.id = ConfigStaticFormat(
             f"{at}.id",
             self.format,
-            from_file.pop("id"),
+            _pop_nonempty_str_attribute(at, "id", from_file),
         )
 
         if not isinstance(self.can_be_file, bool):
@@ -581,13 +579,13 @@ class ConfigJDexTier(ConfigFolderTier):
                 self.format,
                 v,
             )
-            for i, v in enumerate(from_file.pop("notes", []))
+            for i, v in enumerate(_pop_default_empty_list(at, "notes", from_file))
         ]
 
         if self.notes and self.format.forbidden:
             raise ConfigConflictError(
                 at,
-                "If forbidden, notes cannot be speciefed.",
+                "If forbidden, notes cannot be specified.",
             )
 
         _report_extra_keys(at, from_file, tuple(self.__dict__.keys()))
@@ -614,58 +612,15 @@ class ConfigFormat(ConfigFormatAncestorInfo):
         from_file: dict,
     ) -> None:
         """Create a valid format given a string from a config file."""
-        if "format" not in from_file:
-            err = ConfigMissingKeyError(f"{at}.format")
-            raise err
-
-        self.raw_format = from_file.pop("format")
-        self.forbidden = from_file.pop("forbidden", False)
-
-        if "name" not in from_file:
-            err = ConfigMissingKeyError(f"{at}.name")
-            raise err
+        name = _pop_nonempty_str_attribute(at, "name", from_file)
+        self.raw_format = _pop_nonempty_str_attribute(at, "format", from_file)
+        self.forbidden = _pop_default_false_bool(at, "forbidden", from_file)
 
         # Validate
-        if not isinstance(from_file["name"], str):
-            err = ConfigTypeError(
-                f"{at}.name",
-                "str",
-                type(from_file["name"]).__name__,
-            )
-            raise err
-        if not isinstance(self.raw_format, str):
-            err = ConfigTypeError(
-                f"{at}.format",
-                "str",
-                type(self.raw_format).__name__,
-            )
-            raise err
-        if not isinstance(self.forbidden, bool):
-            err = ConfigTypeError(
-                f"{at}.forbidden",
-                "bool",
-                type(self.forbidden).__name__,
-            )
-            raise err
-
-        if from_file["name"] == "":
-            err = ConfigValueError(
-                f"{at}.name",
-                "Malformed name; must not be empty.",
-                str(from_file),
-            )
-            raise err
         if self.raw_format.count("/") % 2 != 0:
             err = ConfigValueError(
                 f"{at}.format",
                 "Malformed format; there must be an even number of / characters.  You have an extra one/are missing one.",
-                str(from_file),
-            )
-            raise err
-        if self.raw_format == "":
-            err = ConfigValueError(
-                f"{at}.format",
-                "Malformed format; must not be empty.",
                 str(from_file),
             )
             raise err
@@ -677,64 +632,64 @@ class ConfigFormat(ConfigFormatAncestorInfo):
             if i % 2 == 0:
                 # Literal segment
                 regex.append(lambda _, v=v: re.escape(v))
-            else:
-                # Variable segment
-                match = ConfigFormat.variable_segment_re.fullmatch(v)
-                if not match:
+                continue
+            # Variable segment
+            match = ConfigFormat.variable_segment_re.fullmatch(v)
+            if not match:
+                err = ConfigValueError(
+                    f"{at}.format",
+                    "Malformed format; variable segment must consist of =, *, or one or more # followed by an alphabetic identifier.",
+                    v,
+                )
+                raise err
+            segment_type = match.group(1)
+            identifier = match.group(2)
+            if segment_type == "=":
+                if identifier in ancestors.segments:
+                    p = identifier
+                    regex.append(lambda d, p=p: re.escape(d[p]))
+                elif identifier in new_segments:
+                    regex.append(
+                        lambda _, identifier=identifier: f"(?P={identifier})",
+                    )
+
+                else:
                     err = ConfigValueError(
                         f"{at}.format",
-                        "Malformed format; variable segment must consist of =, *, or one or more # followed by an alphabetic identifier.",
+                        f'Malformed format; variable segment referenced the identifier "{identifier}" which has not been bound.',
                         v,
                     )
                     raise err
-                if match.group(1) == "=":
-                    if match.group(2) in ancestors.segments:
-                        p = match.group(2)
-                        regex.append(lambda d, p=p: re.escape(d[p]))
-                    elif match.group(2) in new_segments:
-                        identifier = match.group(2)
-                        regex.append(
-                            lambda _, identifier=identifier: f"(?P={identifier})",
-                        )
-
-                    else:
-                        err = ConfigValueError(
-                            f"{at}.format",
-                            "Malformed format; variable segment referenced an identifier never bound.",
-                            v,
-                        )
-                        raise err
+            else:
+                if identifier in ancestors.segments:
+                    err = ConfigValueError(
+                        f"{at}.format",
+                        f'Malformed format; variable segment tried to rebind the identifier "{identifier}", which was already bound in a parent.',
+                        v,
+                    )
+                    raise err
+                if identifier in new_segments:
+                    err = ConfigValueError(
+                        f"{at}.format",
+                        f'Malformed format; variable segment tried to rebind the identifier "{identifier}", which was already bound in this format.',
+                        v,
+                    )
+                    raise err
+                new_segments.append(identifier)
+                if segment_type == "*":
+                    regex.append(
+                        lambda _, identifier=identifier: f"(?P<{identifier}>.+)",
+                    )
                 else:
-                    if match.group(2) in ancestors.segments:
-                        err = ConfigValueError(
-                            f"{at}.format",
-                            "Malformed format; variable segment tried to rebind an identifier already bound in a parent.",
-                            v,
-                        )
-                        raise err
-                    if match.group(2) in new_segments:
-                        err = ConfigValueError(
-                            f"{at}.format",
-                            "Malformed format; variable segment tried to rebind an identifier already bound.",
-                            v,
-                        )
-                        raise err
-                    identifier = match.group(2)
-                    new_segments.append(identifier)
-                    if match.group(1) == "*":
-                        regex.append(
-                            lambda _, identifier=identifier: f"(?P<{identifier}>.+)",
-                        )
-                    else:
-                        # Must be a ## type variable
-                        match_len = len(match.group(1))
-                        regex.append(
-                            lambda _, identifier=identifier, match_len=match_len: (
-                                f"(?P<{identifier}>[0-9]{{{match_len}}})"
-                            ),
-                        )
+                    # Must be a ## type variable
+                    match_len = len(segment_type)
+                    regex.append(
+                        lambda _, identifier=identifier, match_len=match_len: (
+                            f"(?P<{identifier}>[0-9]{{{match_len}}})"
+                        ),
+                    )
 
-        self.name = (*ancestors.name, from_file.pop("name"))
+        self.name = (*ancestors.name, name)
         self.segments = ancestors.segments + tuple(new_segments)
         self.build_regex = lambda d: "".join([f(d) for f in regex])
 
@@ -762,7 +717,7 @@ class Issue:
     """A single error detected in the system."""
 
     file: PurePath
-    type = None
+    type = ""
 
     def display(self) -> str:
         """Display this particular instance of an error."""
@@ -778,7 +733,7 @@ class JDexIssue:
     """A single error detected in the JDex."""
 
     file: PurePath
-    type = None
+    type = ""
 
     def display(self) -> str:
         """Display this particular instance of an error."""
@@ -816,13 +771,13 @@ class IssueFileWhereFolderExpected(Issue):
 
     def display(self) -> str:
         """Display this particular instance of an error."""
-        return f"{self.file!s}\n    (matched {_print_pattern(self.matched_pattern)})"
+        return f"{self.file!s}\n  matched: {_print_pattern(self.matched_pattern)})"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
         return _Explanation(
             explanation="A file was found that matched the format of an expected child folder.",
-            fix="Your format should not mix folders and notes that share a naming scheme.",
+            fix="Your format should not mix folders and files that share a naming scheme.",
         )
 
 
@@ -856,7 +811,7 @@ class IssueFolderShouldBeEmpty(Issue):
 
     def display(self) -> str:
         """Display this particular instance of an error."""
-        return f"{self.file!s}\n  has {len(self.children)} children"
+        return f"{self.file!s}\n  has {_pluralize(len(self.children), 'child', 'children')}"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -876,7 +831,7 @@ class IssueDuplicateID(Issue):
 
     def display(self) -> str:
         """Display this particular instance of an error."""
-        return f"{self.id}:\n    " + "\n    ".join([str(f.name) for f in self.files])
+        return f"{self.id}:\n    " + "\n    ".join([str(f) for f in self.files])
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -895,7 +850,7 @@ class IssueIDNotInJDex(Issue):
 
     def display(self) -> str:
         """Display this particular instance of an error."""
-        return f"{self.file!s} [ID: {self.id}]"
+        return f"{self.id}:\n  {self.file!s}"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -917,9 +872,9 @@ class IssueIDDifferentFromJDex(Issue):
     def display(self) -> str:
         """Display this particular instance of an error."""
         known = "\n".join(
-            f"{n.entry}    [from {n.path.name}]" for n in self.known_jdex_entries
+            f"{n.entry}  [from {n.path}]" for n in self.known_jdex_entries
         )
-        return f"{self.file!s}\n  ID: {self.id}\n  Expected:\n    {self.expected_jdex_entry}\n  Actual:\n{textwrap.indent(known, '    ')}"
+        return f"{self.id}:\n  Folder: {self.file!s}\n  Expected JDex: {self.expected_jdex_entry}\n  Actual JDex:\n{textwrap.indent(known, '    ')}"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -938,7 +893,7 @@ class IssueEncounteredForbiddenFolder(Issue):
 
     def display(self) -> str:
         """Display this particular instance of an error."""
-        return f"{self.file!s}\n    (matched {_print_pattern(self.matched_pattern)})"
+        return f"{self.file!s}\n  matched: {_print_pattern(self.matched_pattern)})"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -966,7 +921,7 @@ class JDexIssueDuplicateID(JDexIssue):
 
     def display(self) -> str:
         """Display this particular instance of an error."""
-        return f"{self.id}:\n    " + "\n    ".join([str(f.name) for f in self.files])
+        return f"{self.id}:\n    " + "\n    ".join([str(f) for f in self.files])
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -985,7 +940,7 @@ class JDexIssueFileWhereFolderExpected(JDexIssue):
 
     def display(self) -> str:
         """Display this particular instance of an error."""
-        return f"{self.file!s}\n    (matched {_print_pattern(self.matched_pattern)})"
+        return f"{self.file!s}\n  matched: {_print_pattern(self.matched_pattern)})"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -1004,7 +959,7 @@ class JDexIssueFolderWhereNoteExpected(JDexIssue):
 
     def display(self) -> str:
         """Display this particular instance of an error."""
-        return f"{self.file!s}\n    (matched {_print_pattern(self.matched_pattern)})"
+        return f"{self.file!s}\n  matched: {_print_pattern(self.matched_pattern)})"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -1072,7 +1027,7 @@ class JDexIssueEncounteredForbiddenFolder(JDexIssue):
 
     def display(self) -> str:
         """Display this particular instance of an error."""
-        return f"{self.file!s}\n    (matched {_print_pattern(self.matched_pattern)})"
+        return f"{self.file!s}\n  matched: {_print_pattern(self.matched_pattern)})"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -1091,7 +1046,7 @@ class JDexIssueEncounteredForbiddenNote(JDexIssue):
 
     def display(self) -> str:
         """Display this particular instance of an error."""
-        return f"{self.file!s}\n    (matched {_print_pattern(self.matched_pattern)})"
+        return f"{self.file!s}\n  matched: {_print_pattern(self.matched_pattern)})"
 
     def explain(self) -> _Explanation:
         """Explain what this error is."""
@@ -1180,33 +1135,6 @@ class LintResults:
     ignored_errs: int
 
 
-@dataclass
-class _JDexAccumulator:
-    """Accumulator used by _get_jdex_entries to gather information about the JDex."""
-
-    errors: list[JDexIssue]
-    areas: dict[str, list[tuple[str, File]]]
-    categories: dict[str, list[tuple[str, File]]]
-    ids: dict[str, list[tuple[str, File]]]
-    headers: dict[str, list[tuple[str, File]]]
-
-    def __init__(self) -> None:
-        self.errors = []
-        self.areas = {}
-        self.categories = {}
-        self.ids = {}
-        self.headers = {}
-
-
-@dataclass(frozen=True)
-class _JDexResults:
-    """Canonical results from the JDex, featuring the ID and name of each area/category/ID."""
-
-    areas: dict[str, str]
-    categories: dict[str, str]
-    ids: dict[str, str]
-
-
 class _EnhancedJSONEncoder(json.JSONEncoder):
     def default(self, o: object) -> object:
         # Add JSON encoding for dataclasses and paths
@@ -1229,7 +1157,7 @@ def _print_unmatched_patterns(ps: tuple[ContentPattern, ...]) -> str:
 def _sort_jdex_error(e: JDexIssue) -> tuple[str, tuple[tuple[str, ...], str]]:
     # Sort errors alphabetically by type, then by file affected
     # This is split from _sort_error for type-checking nonsense
-    if e.type is None:
+    if e.type == "":
         raise NotImplementedError
     return (
         e.type,
@@ -1240,7 +1168,7 @@ def _sort_jdex_error(e: JDexIssue) -> tuple[str, tuple[tuple[str, ...], str]]:
 def _sort_error(e: Issue) -> tuple[str, tuple[tuple[str, ...], str]]:
     # Sort errors alphabetically by type, then by file affected
     # This is split from _sort_jdex_error for type-checking nonsense
-    if e.type is None:
+    if e.type == "":
         raise NotImplementedError
     return (
         e.type,
@@ -1253,7 +1181,7 @@ def _sort_jdex_entry(e: JDexEntry) -> tuple[str, PurePath]:
 
 
 def _entry_is_ignored(
-    ignored: tuple[str] | None,
+    ignored: list[str] | None,
     f: os.DirEntry,
 ) -> bool:
     """Check if a given file/directory should be ignored."""
@@ -1283,49 +1211,11 @@ def _insert_concat_sorted(k, vs: list, d, key=None) -> None:  # noqa: ANN001
     d[k].sort(key=key)
 
 
-def _process_single_file_jdex(path: Path) -> _JDexResults:
-    """Process a JDex located in a single file."""
-    # Matches JDex areas in a single-file format
-    jdex_line_area_re = re.compile("([0-9])0-(?:\\1)9 (.+?)\\s*(//.*)?")
-    # Matches JDex categories in a single-file format
-    jdex_line_category_re = re.compile("([0-9][0-9]) (.+?)\\s*(//.*)?")
-    # Matches JDex ids in a single-file format
-    jdex_line_id_re = re.compile("([0-9][0-9].[0-9][0-9]) (.+?)\\s*(//.*)?")
-
-    file_areas = {}
-    file_categories = {}
-    file_ids = {}
-
-    with path.open() as jdex_it:
-        for entry in jdex_it:
-            area_match = jdex_line_area_re.fullmatch(entry.strip())
-            if area_match:
-                file_areas[area_match.group(1)] = (
-                    f"{area_match.group(1)}0-09 {area_match.group(2)}"
-                )
-                continue
-            category_match = jdex_line_category_re.fullmatch(entry.strip())
-            if category_match:
-                file_categories[category_match.group(1)] = (
-                    f"{category_match.group(1)} {category_match.group(2)}"
-                )
-                continue
-            id_match = jdex_line_id_re.fullmatch(entry.strip())
-            if id_match:
-                file_ids[id_match.group(1)] = f"{id_match.group(1)} {id_match.group(2)}"
-                continue
-    return _JDexResults(
-        areas=file_areas,
-        categories=file_categories,
-        ids=file_ids,
-    )
-
-
 def _get_jdex_entries_here_or_children(
-    ignored: tuple[str],
+    ignored: list[str],
+    root_path: PurePath,
     bound_segments: dict[str, str],
     path: os.PathLike,
-    relative_to: PurePath,
     tier: ConfigJDexTier | ConfigSystemJDex,
 ) -> tuple[dict[str, list[JDexEntry]], list[JDexIssue]]:
     # Compile regexes for children
@@ -1340,132 +1230,137 @@ def _get_jdex_entries_here_or_children(
     accumulated_errors: list[JDexIssue] = []
 
     has_content = False
+
+    def process_dir_entry(x: os.DirEntry) -> None:
+        for child_format, child in valid_children:
+            match = child_format.fullmatch(x.name)
+            if match:
+                if child.format.forbidden:
+                    accumulated_errors.append(
+                        JDexIssueEncounteredForbiddenFolder(
+                            PurePath(x).relative_to(root_path),
+                            ContentPattern(
+                                child.format.name,
+                                child.format.raw_format,
+                            ),
+                        ),
+                    )
+                    break
+                # Is a valid child folder
+                if x.is_file():
+                    # This is an error
+                    accumulated_errors.append(
+                        JDexIssueFileWhereFolderExpected(
+                            PurePath(x).relative_to(root_path),
+                            ContentPattern(
+                                child.format.name,
+                                child.format.raw_format,
+                            ),
+                        ),
+                    )
+                    break
+
+                # Walk child
+                (child_entries, child_errors) = _get_jdex_entries_here_or_children(
+                    ignored,
+                    root_path,
+                    {**bound_segments, **match.groupdict()},
+                    PurePath(x),
+                    child,
+                )
+                for jid, entries in child_entries.items():
+                    _insert_concat_sorted(
+                        jid,
+                        entries,
+                        accumulated_entries,
+                        key=_sort_jdex_entry,
+                    )
+                accumulated_errors.extend(child_errors)
+                break
+        else:
+            for note_format, note in valid_notes:
+                match = note_format.fullmatch(x.name)
+                if match:
+                    if note.format.forbidden:
+                        accumulated_errors.append(
+                            JDexIssueEncounteredForbiddenNote(
+                                PurePath(x).relative_to(root_path),
+                                ContentPattern(
+                                    note.format.name,
+                                    note.format.raw_format,
+                                ),
+                            ),
+                        )
+                        break
+                    # Is a valid JDex note
+                    if x.is_dir():
+                        # This is an error
+                        accumulated_errors.append(
+                            JDexIssueFolderWhereNoteExpected(
+                                PurePath(x).relative_to(root_path),
+                                ContentPattern(
+                                    note.format.name,
+                                    note.format.raw_format,
+                                ),
+                            ),
+                        )
+                        break
+
+                    # Create entry
+                    for jid in note.ids:
+                        _insert_append_sorted(
+                            jid.id.build({**bound_segments, **match.groupdict()}),
+                            JDexEntry(
+                                jid.entry.build(
+                                    {**bound_segments, **match.groupdict()},
+                                ),
+                                PurePath(x).relative_to(root_path),
+                            ),
+                            accumulated_entries,
+                            key=_sort_jdex_entry,
+                        )
+                    break
+            else:
+                # If we got here, it matched no known child/note
+                if not getattr(tier, "allow_arbitrary_contents", False):
+                    # This is an error
+                    accumulated_errors.append(
+                        JDexIssueArbitraryContentWhereNotAllowed(
+                            PurePath(x).relative_to(root_path),
+                            tuple(
+                                ContentPattern(c.format.name, c.format.raw_format)
+                                for c in tier.children
+                            )
+                            + tuple(
+                                ContentPattern(n.format.name, n.format.raw_format)
+                                for n in tier.notes
+                            ),
+                        ),
+                    )
+
     with os.scandir(path) as contents:
         for x in contents:
             if _entry_is_ignored(ignored, x):
                 continue
             has_content = True
-            for child_format, child in valid_children:
-                match = child_format.fullmatch(x.name)
-                if match:
-                    if child.format.forbidden:
-                        accumulated_errors.append(
-                            JDexIssueEncounteredForbiddenFolder(
-                                PurePath(x).relative_to(relative_to),
-                                ContentPattern(
-                                    child.format.name,
-                                    child.format.raw_format,
-                                ),
-                            ),
-                        )
-                        break
-                    # Is a valid child folder
-                    if x.is_file():
-                        # This is an error
-                        accumulated_errors.append(
-                            JDexIssueFileWhereFolderExpected(
-                                PurePath(x).relative_to(relative_to),
-                                ContentPattern(
-                                    child.format.name,
-                                    child.format.raw_format,
-                                ),
-                            ),
-                        )
-                        break
+            process_dir_entry(x)
 
-                    # Walk child
-                    (child_entries, child_errors) = _get_jdex_entries_here_or_children(
-                        ignored,
-                        {**bound_segments, **match.groupdict()},
-                        PurePath(x),
-                        relative_to,
-                        child,
-                    )
-                    for jid, entries in child_entries.items():
-                        _insert_concat_sorted(
-                            jid,
-                            entries,
-                            accumulated_entries,
-                            key=_sort_jdex_entry,
-                        )
-                    accumulated_errors.extend(child_errors)
-                    break
-            else:
-                for note_format, note in valid_notes:
-                    match = note_format.fullmatch(x.name)
-                    if match:
-                        if note.format.forbidden:
-                            accumulated_errors.append(
-                                JDexIssueEncounteredForbiddenNote(
-                                    PurePath(x).relative_to(relative_to),
-                                    ContentPattern(
-                                        note.format.name,
-                                        note.format.raw_format,
-                                    ),
-                                ),
-                            )
-                            break
-                        # Is a valid JDex note
-                        if x.is_dir():
-                            # This is an error
-                            accumulated_errors.append(
-                                JDexIssueFolderWhereNoteExpected(
-                                    PurePath(x).relative_to(relative_to),
-                                    ContentPattern(
-                                        note.format.name,
-                                        note.format.raw_format,
-                                    ),
-                                ),
-                            )
-                            break
-
-                        # Create entry
-                        for jid in note.ids:
-                            _insert_append_sorted(
-                                jid.id.build({**bound_segments, **match.groupdict()}),
-                                JDexEntry(
-                                    jid.entry.build(
-                                        {**bound_segments, **match.groupdict()},
-                                    ),
-                                    PurePath(x).relative_to(relative_to),
-                                ),
-                                accumulated_entries,
-                                key=_sort_jdex_entry,
-                            )
-                        break
-                else:
-                    # If we got here, it matched no known child/note
-                    if not getattr(tier, "allow_arbitrary_contents", False):
-                        # This is an error
-                        accumulated_errors.append(
-                            JDexIssueArbitraryContentWhereNotAllowed(
-                                PurePath(x).relative_to(relative_to),
-                                tuple(
-                                    ContentPattern(c.format.name, c.format.raw_format)
-                                    for c in tier.children
-                                )
-                                + tuple(
-                                    ContentPattern(n.format.name, n.format.raw_format)
-                                    for n in tier.notes
-                                ),
-                            ),
-                        )
     if not has_content:
         # We have a fully empty JDex folder; it shouldn't exist if it's doing nothing.
         accumulated_errors.append(
-            JDexIssueEmptyFolder(PurePath(path).relative_to(relative_to)),
+            JDexIssueEmptyFolder(PurePath(path).relative_to(root_path)),
         )
     return (accumulated_entries, accumulated_errors)
 
 
 def _process_jdex(
-    ignored: tuple[str],
+    ignored: list[str],
     jdex: ConfigSystemJDex,
 ) -> tuple[dict[str, list[JDexEntry]], list[JDexIssue]]:
     (jdex_entries_by_id, jdex_errors) = _get_jdex_entries_here_or_children(
         ignored + jdex.ignore,
-        {},
         jdex.path,
+        {},
         jdex.path,
         jdex,
     )
@@ -1487,130 +1382,128 @@ def _process_jdex(
 
 
 def _process_system_level_and_children(
-    ignored: tuple[str],
+    by_id_dict: dict[str, list[tuple[str | None, PurePath]]],
+    ignored: list[str],
+    root_path: PurePath,
     bound_segments: dict[str, str],
     path: os.PathLike,
-    relative_to: PurePath,
     tier: ConfigSystemRoot | ConfigSystemTier,
-    jdex: None | dict[str, list[JDexEntry]],
-    by_id_dict: dict[str, list[tuple[str | None, PurePath]]],
 ) -> tuple[dict[str, list[SystemFolder | SystemFile]], list[Issue]]:
     # Compile regexes for children
     valid_children = [
         (re.compile(c.format.build_regex(bound_segments)), c) for c in tier.children
     ]
-
     accumulated_errors = []
     accumulated_structure = {}
-
     has_content = False
-    children_that_should_not_be = []
+    content_in_should_be_empty = []
 
-    with os.scandir(path) as contents:
-        for x in contents:
-            if _entry_is_ignored(ignored, x):
-                continue
-            has_content = True
-            for child_format, child in valid_children:
-                match = child_format.fullmatch(x.name)
-                if match:
-                    if child.format.forbidden:
+    def process_dir_entry(x: os.DirEntry) -> None:
+        for child_format, child in valid_children:
+            match = child_format.fullmatch(x.name)
+            if match:
+                if child.format.forbidden:
+                    accumulated_errors.append(
+                        IssueEncounteredForbiddenFolder(
+                            PurePath(x).relative_to(root_path),
+                            ContentPattern(
+                                child.format.name,
+                                child.format.raw_format,
+                            ),
+                        ),
+                    )
+                    break
+                # Is a valid child folder
+                child_id = child.id.build({**bound_segments, **match.groupdict()})
+                if not child.no_jdex_entry:
+                    _insert_append_sorted(
+                        child_id,
+                        (
+                            child.jdex_entry.build(
+                                {**bound_segments, **match.groupdict()},
+                            )
+                            if child.jdex_entry
+                            else x.name,
+                            PurePath(x).relative_to(root_path),
+                        ),
+                        by_id_dict,
+                        # Sort duplicates by their path, not their JDex entry
+                        key=lambda e: e[1],
+                    )
+                if x.is_file():
+                    if child.can_be_file:
+                        _insert_append_sorted(
+                            child_id,
+                            SystemFile(
+                                PurePath(x).relative_to(root_path),
+                            ),
+                            accumulated_structure,
+                            key=lambda e: e.path,
+                        )
+                    else:
+                        # This is an error
                         accumulated_errors.append(
-                            IssueEncounteredForbiddenFolder(
-                                PurePath(x).relative_to(relative_to),
+                            IssueFileWhereFolderExpected(
+                                PurePath(x).relative_to(root_path),
                                 ContentPattern(
                                     child.format.name,
                                     child.format.raw_format,
                                 ),
                             ),
                         )
-                        break
-                    # Is a valid child folder
-                    child_id = child.id.build({**bound_segments, **match.groupdict()})
-                    if x.is_file():
-                        if child.can_be_file:
-                            _insert_append_sorted(
-                                child_id,
-                                SystemFile(
-                                    PurePath(x).relative_to(relative_to),
-                                ),
-                                accumulated_structure,
-                                key=lambda e: e.path,
-                            )
-                        else:
-                            # This is an error
-                            accumulated_errors.append(
-                                IssueFileWhereFolderExpected(
-                                    PurePath(x).relative_to(relative_to),
-                                    ContentPattern(
-                                        child.format.name,
-                                        child.format.raw_format,
-                                    ),
-                                ),
-                            )
-
-                    else:
-                        # Walk child
-                        (child_structure, child_errors) = (
-                            _process_system_level_and_children(
-                                ignored,
-                                {**bound_segments, **match.groupdict()},
-                                PurePath(x),
-                                relative_to,
-                                child,
-                                jdex,
-                                by_id_dict,
-                            )
-                        )
-                        _insert_append_sorted(
-                            child_id,
-                            SystemFolder(
-                                PurePath(x).relative_to(relative_to),
-                                child_structure,
-                            ),
-                            accumulated_structure,
-                            key=lambda e: e.path,
-                        )
-                        accumulated_errors.extend(child_errors)
-                    if not child.no_jdex_entry:
-                        _insert_append_sorted(
-                            child_id,
-                            (
-                                child.jdex_entry.build(
-                                    {**bound_segments, **match.groupdict()},
-                                )
-                                if child.jdex_entry
-                                else x.name,
-                                PurePath(x).relative_to(relative_to),
-                            ),
-                            by_id_dict,
-                            # Sort duplicates by their path, not their JDex entry
-                            key=lambda e: e[1],
-                        )
                     break
-            else:
-                # If we got here, it matched no known child/note
-                if not getattr(tier, "allow_arbitrary_contents", False):
-                    # If the tier has no children specified, it should be empty
-                    if not tier.children:
-                        children_that_should_not_be.append(
-                            PurePath(x).relative_to(relative_to),
-                        )
-                    else:
-                        accumulated_errors.append(
-                            IssueArbitraryContentWhereNotAllowed(
-                                PurePath(x).relative_to(relative_to),
-                                tuple(
-                                    ContentPattern(c.format.name, c.format.raw_format)
-                                    for c in tier.children
-                                ),
+
+                # Walk child
+                (child_structure, child_errors) = _process_system_level_and_children(
+                    by_id_dict,
+                    ignored,
+                    root_path,
+                    {**bound_segments, **match.groupdict()},
+                    PurePath(x),
+                    child,
+                )
+                _insert_append_sorted(
+                    child_id,
+                    SystemFolder(
+                        PurePath(x).relative_to(root_path),
+                        child_structure,
+                    ),
+                    accumulated_structure,
+                    key=lambda e: e.path,
+                )
+                accumulated_errors.extend(child_errors)
+                break
+        else:
+            # If we got here, it matched no known child/note
+            if not getattr(tier, "allow_arbitrary_contents", False):
+                # If the tier has no children specified, it should be empty
+                if not tier.children:
+                    content_in_should_be_empty.append(
+                        PurePath(x).relative_to(root_path),
+                    )
+                else:
+                    accumulated_errors.append(
+                        IssueArbitraryContentWhereNotAllowed(
+                            PurePath(x).relative_to(root_path),
+                            tuple(
+                                ContentPattern(c.format.name, c.format.raw_format)
+                                for c in tier.children
                             ),
-                        )
-    if children_that_should_not_be:
+                        ),
+                    )
+
+    with os.scandir(path) as contents:
+        for x in contents:
+            if _entry_is_ignored(ignored, x):
+                continue
+            has_content = True
+            process_dir_entry(x)
+
+    if content_in_should_be_empty:
         accumulated_errors.append(
             IssueFolderShouldBeEmpty(
-                PurePath(path).relative_to(relative_to),
-                tuple(children_that_should_not_be),
+                PurePath(path).relative_to(root_path),
+                tuple(content_in_should_be_empty),
             ),
         )
     if not has_content and (
@@ -1618,25 +1511,24 @@ def _process_system_level_and_children(
     ):
         # We have a fully empty folder; it shouldn't exist if it's doing nothing (unless it should be empty).
         accumulated_errors.append(
-            IssueEmptyFolder(PurePath(path).relative_to(relative_to)),
+            IssueEmptyFolder(PurePath(path).relative_to(root_path)),
         )
     return (accumulated_structure, accumulated_errors)
 
 
 def _process_system_root(
-    ignored: tuple[str],
+    ignored: list[str],
     root: ConfigSystemRoot,
     jdex: None | dict[str, list[JDexEntry]],
 ) -> tuple[dict[str, list[SystemFolder | SystemFile]], list[Issue]]:
     by_id: dict[str, list[tuple[str | None, PurePath]]] = {}
     (root_structure, root_errors) = _process_system_level_and_children(
+        by_id,
         ignored + root.ignore,
+        root.path,
         {},
         root.path,
-        root.path,
         root,
-        jdex,
-        by_id,
     )
 
     # Check for duplicate IDs
@@ -1715,6 +1607,14 @@ def lint_system(config: Config) -> LintResults:
         roots,
         ignored_errors + ignored_jdex_errors,
     )
+
+
+def _pluralize(num: int, word: str, weird_plural: str | None = None) -> str:
+    if num == 1:
+        return f"{num!s} {word}"
+    if weird_plural is None:
+        return f"{num!s} {word}s"
+    return f"{num!s} {weird_plural}"
 
 
 if __name__ == "__main__":
@@ -1799,11 +1699,16 @@ if __name__ == "__main__":
             # Print JDex errors if any
             if jdex_errs_by_type:
                 any_errors = True
-                print(f"{'':=^80}\n{'JDex Errors Found':^80}\n{'':=^80}")  # noqa: T201
+                total_errs = sum(len(errs) for errs in jdex_errs_by_type.values())
+                print(
+                    f"{'':=^80}\n{'JDex Errors Found:':^80}\n{_pluralize(total_errs, 'instance') + '; ' + _pluralize(len(jdex_errs_by_type), 'kind'):^80}\n{'':=^80}\n",
+                )
                 for errs in jdex_errs_by_type.values():
                     first_j_err = next(iter(errs))  # Just get the first error
                     explanation = first_j_err.explain()
-                    print(f"\n{explanation.explanation} ({first_j_err.type})")  # noqa: T201
+                    print(  # noqa: T201
+                        f"{first_j_err.type + ' (' + str(len(errs)) + ')':^80}\n{explanation.explanation}\n---",
+                    )
                     print(  # noqa: T201
                         textwrap.indent(
                             "\n".join(
@@ -1812,8 +1717,7 @@ if __name__ == "__main__":
                             "  ",
                         ),
                     )
-                    print(explanation.fix)  # noqa: T201
-                    print("\n")  # noqa: T201
+                    print(f"---\n{explanation.fix}\n")  # noqa: T201
 
         # Print file errors if any
         if any(r.errors for r in results.roots.values()):
@@ -1824,11 +1728,16 @@ if __name__ == "__main__":
                     errs_by_type = {}
                     for e in root.errors:
                         _insert_append_sorted(e.type, e, errs_by_type, key=_sort_error)
-                    print(f"{'':=^80}\n{location + ' Errors Found:':^80}\n{'':=^80}")  # noqa: T201
+                    total_errs = sum(len(errs) for errs in errs_by_type.values())
+                    print(  # noqa: T201
+                        f"{'':=^80}\n{location + ' Errors Found:':^80}\n{_pluralize(total_errs, 'instance') + '; ' + _pluralize(len(errs_by_type), 'kind'):^80}\n{'':=^80}\n",
+                    )
                     for errs in errs_by_type.values():
                         first_err = next(iter(errs))  # Just get the first error
                         explanation = first_err.explain()
-                        print(f"\n{first_err.type:^80}\n{explanation.explanation}\n---")  # noqa: T201
+                        print(  # noqa: T201
+                            f"{first_err.type + ' (' + str(len(errs)) + ')':^80}\n{explanation.explanation}\n---",
+                        )
                         print(  # noqa: T201
                             textwrap.indent(
                                 "\n".join(
