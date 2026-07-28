@@ -1,0 +1,30 @@
+{
+  "roots": {
+    "Files": {
+      "errors": [
+        {
+          "type": "EMPTY_FOLDER",
+          "file": "1/1A"
+        }
+      ],
+      "path": "files",
+      "structure": {
+        "1": [
+          {
+            "path": "1",
+            "children": {
+              "1.A": [
+                {
+                  "path": "1/1A",
+                  "children": {}
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "jdex": null,
+  "ignored_errs": 0
+}

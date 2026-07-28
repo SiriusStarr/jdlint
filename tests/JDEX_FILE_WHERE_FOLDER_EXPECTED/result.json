@@ -1,0 +1,47 @@
+{
+  "roots": {
+    "Files": {
+      "errors": [],
+      "path": "files",
+      "structure": {
+        "1": [
+          {
+            "path": "1",
+            "children": {}
+          }
+        ]
+      }
+    }
+  },
+  "jdex": {
+    "errors": [
+      {
+        "type": "JDEX_FILE_WHERE_FOLDER_EXPECTED",
+        "file": "1/1B",
+        "matched_pattern": {
+          "name": [
+            "A",
+            "B"
+          ],
+          "format": "/=A//*Name/"
+        }
+      }
+    ],
+    "path": "files",
+    "entries": {
+      "1": [
+        {
+          "entry": "1",
+          "path": "1/1A/1.md"
+        }
+      ],
+      "1.A": [
+        {
+          "entry": "1.A",
+          "path": "1/1A/1A.md"
+        }
+      ]
+    }
+  },
+  "ignored_errs": 0
+}

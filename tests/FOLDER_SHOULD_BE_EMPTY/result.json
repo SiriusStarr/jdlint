@@ -1,0 +1,65 @@
+{
+  "roots": {
+    "Files": {
+      "errors": [
+        {
+          "type": "FOLDER_SHOULD_BE_EMPTY",
+          "file": "10-19 Life Admin/11 Me, Myself, & I/11.01 Inbox",
+          "children": [
+            "10-19 Life Admin/11 Me, Myself, & I/11.01 Inbox/Content"
+          ]
+        },
+        {
+          "type": "FOLDER_SHOULD_BE_EMPTY",
+          "file": "10-19 Life Admin/11 Me, Myself, & I/11.10 ■ Selves",
+          "children": [
+            "10-19 Life Admin/11 Me, Myself, & I/11.10 ■ Selves/Content"
+          ]
+        }
+      ],
+      "path": "files",
+      "structure": {
+        "10-19": [
+          {
+            "path": "10-19 Life Admin",
+            "children": {
+              "11": [
+                {
+                  "path": "10-19 Life Admin/11 Me, Myself, & I",
+                  "children": {
+                    "11.01": [
+                      {
+                        "path": "10-19 Life Admin/11 Me, Myself, & I/11.01 Inbox",
+                        "children": {}
+                      }
+                    ],
+                    "11.10": [
+                      {
+                        "path": "10-19 Life Admin/11 Me, Myself, & I/11.10 ■ Selves",
+                        "children": {}
+                      }
+                    ],
+                    "11.11": [
+                      {
+                        "path": "10-19 Life Admin/11 Me, Myself, & I/11.11 Me",
+                        "children": {}
+                      }
+                    ],
+                    "11.12": [
+                      {
+                        "path": "10-19 Life Admin/11 Me, Myself, & I/11.12 Myself",
+                        "children": {}
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "jdex": null,
+  "ignored_errs": 0
+}

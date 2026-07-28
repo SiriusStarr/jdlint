@@ -1,0 +1,46 @@
+[linter]
+json_output = true
+ignore = [".placeholder"]
+
+[[system.roots]]
+name = "Files"
+path = "files"
+
+[[system.default.children]]
+name = "Area"
+format = "/#A/0-/=A/9 /*Area/"
+id = "/=A/0-/=A/9"
+
+[[system.default.children.children]]
+name = "Category"
+format = "/=A//#C/ /*Category/"
+id = "/=A//=C/"
+
+[[system.default.children.children.children]]
+name = "Inbox"
+format = "/=A//=C/.01 Inbox"
+id = "/=A//=C/.01"
+
+[[system.default.children.children.children]]
+name = "Bad Inbox"
+format = "/=A//=C/.01 /*Inbox/"
+id = "/=A//=C/.01"
+forbidden = true
+
+[[system.default.children.children.children]]
+name = "Header"
+format = "/=A//=C/./#I/0 ■ /*Header/"
+id = "/=A//=C/./=I/0"
+
+[[system.default.children.children.children]]
+name = "Bad Header"
+format = "/=A//=C/./#I/0 /*Header/"
+id = "/=A//=C/./=I/0"
+forbidden = true
+
+[[system.default.children.children.children]]
+name = "ID"
+format = "/=A//=C/./##ID/ /*IDName/"
+id = "/=A//=C/./=ID/"
+can_be_file = true
+allow_arbitrary_contents = true

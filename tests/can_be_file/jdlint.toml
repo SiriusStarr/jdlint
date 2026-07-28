@@ -1,0 +1,22 @@
+[linter]
+json_output = true
+
+[[system.roots]]
+name = "Files"
+path = "files"
+
+[[system.default.children]]
+name = "A"
+format = "/#A/"
+id = "/=A/"
+
+[[system.default.children.children]]
+name = "B"
+format = "/=A//*Name/"
+id = "/=A/./=Name/"
+
+[[system.default.children.children.children]]
+name = "C"
+format = "/=A//=Name/"
+id = "/=A/./=Name/"
+can_be_file = true

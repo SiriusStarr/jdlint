@@ -1,0 +1,34 @@
+{
+  "roots": {
+    "Files": {
+      "errors": [],
+      "path": "files",
+      "structure": {
+        "1": [
+          {
+            "path": "1",
+            "children": {}
+          }
+        ]
+      }
+    }
+  },
+  "jdex": {
+    "errors": [
+      {
+        "type": "JDEX_EMPTY_FOLDER",
+        "file": "1/1A"
+      }
+    ],
+    "path": "files",
+    "entries": {
+      "1": [
+        {
+          "entry": "1",
+          "path": "1/1B/X.md"
+        }
+      ]
+    }
+  },
+  "ignored_errs": 0
+}

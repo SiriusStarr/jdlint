@@ -1,0 +1,110 @@
+## #############################################################################
+# The linter section handles global settings
+## #############################################################################
+[linter]
+# Globally disable one or more rules by name, e.g. with `disable_rules = ["ID_DIFFERENT_FROM_JDEX"]`
+disable_rules = []
+# Output machine-readable JSON instead of human-readable terminal output
+json_output = false
+# File patterns to ignore anywhere they appear; these support rudimentary globbing
+ignore = [".stignore", ".stfolder", ".git*"]
+
+## #############################################################################
+# The system section handles defining your system format
+## #############################################################################
+[system]
+## #############################################################################
+# The system.jdex section defines how your JDex is stored on the disk
+## #############################################################################
+[system.jdex]
+# The path that the JSON file is located at.  jdlint will automatically detect
+# that it is a file, not a folder.
+path = "~/jdex.jd.json"
+
+# Only one configuration option is available for single-file JDexes, which is a
+# format for how to create entries out of the data in the file.  Only two bound
+# segments will be available, `/=id/` and `/=title`.  You may use this to e.g.
+# replace the space that normally comes between an ID and its title with an
+# underscore, should you do that.
+entry = "/=id/ /=title/"
+
+## #############################################################################
+#  system.default defines the *default* structure used by any roots to check
+## #############################################################################
+[system.default]
+# At any level, we can define ".children" to specify one or more formats of
+# folders to be allowed within the current level; here, we are defining the
+# topmost level.
+#
+# Note that children are always matched sequentially as they are defined in the
+# config file, meaning you can define a more narrow case first and then a more
+# broad case later.
+[[system.default.children]]
+# The name to refer to the folder type as in errors/JSON output
+name = "Area"
+# The expected format of the folder
+format = "/#A/0-/=A/9 /*Area/"
+# The ID of this entry; this will be checked for uniqueness and matched to the
+# JDex. Note that you can use bound segments in this.
+id = "/=A/0-/=A/9"
+
+# Here we are defining the child folders of the top-level area folders
+[[system.default.children.children]]
+name = "Category"
+format = "/=A//#C/ /*Category/"  # Note that we're using bound segments from the parent area
+id = "/=A//=C/"
+
+# Here, we define a folder without any children; that tells jdlint that it
+# should be empty. This is useful for Headers and Inboxes.
+[[system.default.children.children.children]]
+name = "Header"
+format = "/=A//=C/./#I/0 ■ /*Header/"
+id = "/=A//=C/./=I/0"
+
+[[system.default.children.children.children]]
+name = "Inbox"
+format = "00.01 Inbox for the /*System/ System 📥"
+id = "00.01"
+
+[[system.default.children.children.children]]
+name = "Inbox"
+format = "/=A/0.01 Inbox for area /=A/0-/=A/9 📥"
+id = "/=A/0.01"
+
+[[system.default.children.children.children]]
+name = "Inbox"
+format = "/=A//=C/.01 Inbox for category /=A//=C/"
+id = "/=A//=C/.01"
+
+# Here, we're disallowing inboxes (AC.01) that don't match the exact naming scheme above.
+[[system.default.children.children.children]]
+name = "Invalid Inbox"
+format = "/=A//=C/.01 /*Inbox/"
+id = "/=A//=C/.01"
+forbidden = true  # This just causes jdlint to fail anything that matches the format
+
+# Here, we're defining our terminal ID folders
+[[system.default.children.children.children]]
+name = "ID"
+format = "/=A//=C/./##ID/ /*IDName/"
+id = "/=A//=C/./=ID/"
+can_be_file = true  # This allows us to have a file as a terminal folder; you might like this for notes, for example
+allow_arbitrary_contents = true  # This tells jdlint to tolerate absolutely anything in this folder
+
+## #############################################################################
+# system.roots define folders that should be organized according to your JD
+# system; for example, you might have ~/Documents as one root and ~/Dropbox
+# as another.
+## #############################################################################
+[[system.roots]]
+# The name to refer to the root as in errors/JSON output
+name = "Documents"
+# The path to the files
+path = "~/Documents"
+# Any ignore patterns that apply only to that set of files
+ignore = [".trash"]
+
+[[system.roots]]
+name = "Dropbox"
+path = "~/Dropbox"
+ignore = []
