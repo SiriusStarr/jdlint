@@ -1,0 +1,41 @@
+{
+  "A01": {
+    "type": "system",
+    "title": "My life"
+  },
+  "10-19": {
+    "type": "area",
+    "title": "Life admin"
+  },
+  "11": {
+    "type": "category",
+    "title": "Me"
+  },
+  "11.01": {
+    "type": "id",
+    "title": "Birth certificate"
+  },
+  "11.02": {
+    "type": "id",
+    "title": "Passport",
+    "metadata": {
+      "relatesTo": [
+        "11.01"
+      ],
+      "expiryDate": "2028-04-15"
+    }
+  },
+  "12": {
+    "type": "category",
+    "title": "Household"
+  },
+  "12.01": {
+    "type": "id",
+    "title": "Insurance policies",
+    "metadata": {
+      "url": [
+        "https://example.com/policy"
+      ]
+    }
+  }
+}

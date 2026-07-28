@@ -19,7 +19,9 @@ well-documented with comments and demonstrate the full range of capabilities.
 
 You're strongly encouraged to read through the entirety of one of the configs
 
-## LAS/SBS
+## JDex Structure
+
+### Notes on Disk
 
 [Partially-nested](./partially_nested_jdex.toml) should work mostly
 out-of-the-box with the Life Admin System or Small Business System. You'll need
@@ -30,11 +32,27 @@ demonstrate the existence of certain options.
 longer have "canon" downloads available for them, so they will likely need more
 tweaking to make work.
 
+### Single File
+
+jdlint supports the official index specification as defined
+[here](https://github.com/johnnydecimal/index-spec).
+
+[JSON JDex](./json_jdex.toml) and [Plaintext JDex](./plaintext_jdex.toml)
+demonstrate loading from (respectively) the JSON and plaintext standards.
+
+If you have your JDex stored in e.g. some database, but are capable of getting
+them exported to the JSON standard, this will allow you to still use jdlint.
+
+Note that this format is extremely restrictive to the exact standard, as the
+standard lacks expressiveness for alternative formats.
+
+### None
+
 [No JDex](./no_jdex.toml) is exactly what it says on the label; this is
 generally an inferior mode to run jdlint in, since it many checks are
 impossible, but it may be necessary depending on how you store your JDex.
 
-## "SiriusStarr"
+### "SiriusStarr"
 
 [SiriusStarr](./SiriusStarr.toml) is an example config for a very non-standard
 system that showcases the ability of jdlint to adapt to flexible system
@@ -95,6 +113,9 @@ It will *not* match the following:
 * `12.35 A.m` -- (Missing the `d` on the end of the literal `.md`)
 * `12.35 .md` -- (Wildcard segments must match at least 1 character, not
   nothing)
+
+**Note:** If you know regex, this is equivalent to `.+?` under the hood, i.e.
+lazily matching one or more character.
 
 ### Bound Segments
 

@@ -208,15 +208,6 @@ class ConfigSystemJDex:
         ).expanduser()
         self.ignore = _pop_ignore_list(at, from_file)
 
-        # Validate path
-        if not self.path.is_dir():
-            err = ConfigValueError(
-                f"{at}.path",
-                "JDex path isn't a folder that exists!",
-                str(self.path),
-            )
-            raise err
-
         self.children = [
             ConfigJDexTier(
                 f"{at}.children[{i}]",
@@ -234,6 +225,30 @@ class ConfigSystemJDex:
             for i, v in enumerate(_pop_default_empty_list(at, "notes", from_file))
         ]
 
+        # Validate path
+        if not self.path.is_dir():
+            if not self.path.is_file():
+                # Something's weird
+                err = ConfigValueError(
+                    f"{at}.path",
+                    "JDex path isn't a folder or file that exists!",
+                    str(self.path),
+                )
+                raise err
+
+            # We have a file-based JDex; that's fine
+            if self.children or self.notes or self.ignore:
+                err = ConfigConflictError(
+                    at,
+                    "Single file JDexes must not specify children or notes or ignore!",
+                )
+            # Load format
+            self.entry = ConfigStaticFormat(
+                f"{at}.entry",
+                # This is the default info made available to all file JDexes
+                ConfigFormatAncestorInfo(("Single File JDex",), ("id", "title")),
+                _pop_nonempty_str_attribute(at, "entry", from_file),
+            )
         _report_extra_keys(at, from_file, tuple(self.__dict__.keys()))
 
 
@@ -678,7 +693,7 @@ class ConfigFormat(ConfigFormatAncestorInfo):
                 new_segments.append(identifier)
                 if segment_type == "*":
                     regex.append(
-                        lambda _, identifier=identifier: f"(?P<{identifier}>.+)",
+                        lambda _, identifier=identifier: f"(?P<{identifier}>.+?)",
                     )
                 else:
                     # Must be a ## type variable
@@ -732,7 +747,7 @@ class Issue:
 class JDexIssue:
     """A single error detected in the JDex."""
 
-    file: PurePath
+    file: PurePath | None
     type = ""
 
     def display(self) -> str:
@@ -915,7 +930,7 @@ class File:
 class JDexIssueDuplicateID(JDexIssue):
     """A JDex ID that has been used multiple times."""
 
-    files: tuple[PurePath, ...]
+    files: tuple[PurePath | None, ...]
     id: str
     type: Literal["JDEX_DUPLICATE_ID"] = "JDEX_DUPLICATE_ID"
 
@@ -1105,7 +1120,7 @@ class JDexEntry:
     """An entry in a JDex, including the path to the note that defined it."""
 
     entry: str
-    path: PurePath
+    path: PurePath | None
 
 
 @dataclass(frozen=True)
@@ -1161,7 +1176,7 @@ def _sort_jdex_error(e: JDexIssue) -> tuple[str, tuple[tuple[str, ...], str]]:
         raise NotImplementedError
     return (
         e.type,
-        (e.file.parent.parts, e.file.name),
+        (e.file.parent.parts, e.file.name) if e.file else ((), ""),
     )
 
 
@@ -1177,7 +1192,7 @@ def _sort_error(e: Issue) -> tuple[str, tuple[tuple[str, ...], str]]:
 
 
 def _sort_jdex_entry(e: JDexEntry) -> tuple[str, PurePath]:
-    return (e.entry, e.path)
+    return (e.entry, e.path or PurePath())
 
 
 def _entry_is_ignored(
@@ -1209,6 +1224,40 @@ def _insert_concat_sorted(k, vs: list, d, key=None) -> None:  # noqa: ANN001
 
     d[k].extend(vs)
     d[k].sort(key=key)
+
+
+def _get_jdex_entries_from_json(
+    jdex: ConfigSystemJDex, json: dict
+) -> tuple[dict[str, list[JDexEntry]], list[JDexIssue]]:
+    accumulated_entries: dict[str, list[JDexEntry]] = {}
+    accumulated_errors: list[JDexIssue] = []
+    for jid, v in json.items():
+        _insert_append_sorted(
+            jid,
+            JDexEntry(
+                jdex.entry.build(
+                    {"id": jid, "title": v["title"]},
+                ),
+                None,
+            ),
+            accumulated_entries,
+            key=_sort_jdex_entry,
+        )
+    return (accumulated_entries, accumulated_errors)
+
+
+def _get_jdex_entries_from_file(
+    path: Path,
+    jdex: ConfigSystemJDex,
+) -> tuple[dict[str, list[JDexEntry]], list[JDexIssue]]:
+    # Load file
+    as_text = Path.read_text(path)
+    try:
+        return _get_jdex_entries_from_json(jdex, json.loads(as_text))
+
+    except json.JSONDecodeError:
+        # This isn't valid json, so it must be plaintext
+        raise NotImplementedError
 
 
 def _get_jdex_entries_here_or_children(
@@ -1357,13 +1406,22 @@ def _process_jdex(
     ignored: list[str],
     jdex: ConfigSystemJDex,
 ) -> tuple[dict[str, list[JDexEntry]], list[JDexIssue]]:
-    (jdex_entries_by_id, jdex_errors) = _get_jdex_entries_here_or_children(
-        ignored + jdex.ignore,
-        jdex.path,
-        {},
-        jdex.path,
-        jdex,
-    )
+    # We need to first see if we have a single file, or a folder
+    if not getattr(jdex, "entry", False):
+        # Normal note-based JDex
+        (jdex_entries_by_id, jdex_errors) = _get_jdex_entries_here_or_children(
+            ignored + jdex.ignore,
+            jdex.path,
+            {},
+            jdex.path,
+            jdex,
+        )
+    else:
+        # Single file JDex
+        (jdex_entries_by_id, jdex_errors) = _get_jdex_entries_from_file(
+            jdex.path,
+            jdex,
+        )
 
     # Check for duplicate ids
     duplicate_id_errors = [

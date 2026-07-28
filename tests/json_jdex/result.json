@@ -1,0 +1,129 @@
+{
+  "jdex": {
+    "errors": [],
+    "path": "jdex.jd.json",
+    "entries": {
+      "A01": [
+        {
+          "entry": "A01 My life",
+          "path": null
+        }
+      ],
+      "10-19": [
+        {
+          "entry": "10-19 Life admin",
+          "path": null
+        }
+      ],
+      "11": [
+        {
+          "entry": "11 Me",
+          "path": null
+        }
+      ],
+      "11.01": [
+        {
+          "entry": "11.01 Birth certificate",
+          "path": null
+        }
+      ],
+      "11.02": [
+        {
+          "entry": "11.02 Passport",
+          "path": null
+        }
+      ],
+      "12": [
+        {
+          "entry": "12 Household",
+          "path": null
+        }
+      ],
+      "12.01": [
+        {
+          "entry": "12.01 Insurance policies",
+          "path": null
+        }
+      ]
+    }
+  },
+  "roots": {
+    "Files": {
+      "errors": [
+        {
+          "type": "ID_DIFFERENT_FROM_JDEX",
+          "id": "11.02",
+          "file": "A01 My life/10-19 Life admin/11 Me/11.02 Passpor",
+          "expected_jdex_entry": "11.02 Passpor",
+          "known_jdex_entries": [
+            {
+              "entry": "11.02 Passport",
+              "path": null
+            }
+          ]
+        },
+        {
+          "type": "ID_NOT_IN_JDEX",
+          "id": "12.02",
+          "file": "A01 My life/10-19 Life admin/12 Household/12.02 Missing"
+        }
+      ],
+      "path": "files",
+      "structure": {
+        "A01": [
+          {
+            "path": "A01 My life",
+            "children": {
+              "10-19": [
+                {
+                  "path": "A01 My life/10-19 Life admin",
+                  "children": {
+                    "11": [
+                      {
+                        "path": "A01 My life/10-19 Life admin/11 Me",
+                        "children": {
+                          "11.01": [
+                            {
+                              "path": "A01 My life/10-19 Life admin/11 Me/11.01 Birth certificate",
+                              "children": {}
+                            }
+                          ],
+                          "11.02": [
+                            {
+                              "path": "A01 My life/10-19 Life admin/11 Me/11.02 Passpor",
+                              "children": {}
+                            }
+                          ]
+                        }
+                      }
+                    ],
+                    "12": [
+                      {
+                        "path": "A01 My life/10-19 Life admin/12 Household",
+                        "children": {
+                          "12.01": [
+                            {
+                              "path": "A01 My life/10-19 Life admin/12 Household/12.01 Insurance policies",
+                              "children": {}
+                            }
+                          ],
+                          "12.02": [
+                            {
+                              "path": "A01 My life/10-19 Life admin/12 Household/12.02 Missing",
+                              "children": {}
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "ignored_errs": 0
+}
