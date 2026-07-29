@@ -22,6 +22,10 @@ well-documented with comments and demonstrate the full range of capabilities.
 
 You're strongly encouraged to read through the entirety of one of the configs
 
+Please note that you **must** edit whichever config you choose, as you'll need
+to set the path to your files and JDex and such. These are things that vary from
+computer to computer based on OS, personal preference, etc.
+
 ## JDex Structure
 
 ### Notes on Disk

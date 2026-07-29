@@ -19,7 +19,7 @@ ignore = [".stignore", ".stfolder", ".git*"]
 [system.jdex]
 # The path to begin JDex structure within; if you have a flat structure, this
 # can just be whatever folder it's in.
-path = "~/Obsidian/00-09 System/00 System Management/00.00 System Index"
+path = "~/Documents/00-09 System-management area/00 System-management category ⚙️/00.00 JDex for the Life Admin System 📇"
 # File patterns to ignore just in the JDex
 ignore = ["Attachments"]
 
@@ -168,24 +168,24 @@ path = "~/Documents"
 # Any ignore patterns that apply only to that set of files
 ignore = [".trash"]
 
-[[system.roots]]
-name = "Dropbox"
-path = "~/Dropbox"
-ignore = []
+# [[system.roots]]
+# name = "Dropbox"
+# path = "~/Dropbox"
+# ignore = []
 
 # You can override the default structure for just *one* location if you want,
 # e.g. if you only wanted work packages and nothing else in your dropbox
-[[system.roots.children]]
-name = "Work Packages Area"
-format = "W0000-W9999 /*Area/"
-id = "W0000-W9999"
-# This allows us to not need a JDex entry for something
-no_jdex_entry = true
+# [[system.roots.children]]
+# name = "Work Packages Area"
+# format = "W0000-W9999 /*Area/"
+# id = "W0000-W9999"
+# # This allows us to not need a JDex entry for something
+# no_jdex_entry = true
 
-[[system.roots.children.children]]
-name = "Work Package"
-format = "W/####WPID/~/##AC/./##ID/ /*WPName/"
-# You can override an expected JDex entry with `jdex_entry`
-jdex_entry = "Something wildly arbitrary for /=WPID/; you should change this"
-id = "W/=WPID/"
-allow_arbitrary_contents = true
+# [[system.roots.children.children]]
+# name = "Work Package"
+# format = "W/####WPID/~/##AC/./##ID/ /*WPName/"
+# # You can override an expected JDex entry with `jdex_entry`
+# jdex_entry = "Something wildly arbitrary for /=WPID/; you should change this"
+# id = "W/=WPID/"
+# allow_arbitrary_contents = true

@@ -59,13 +59,13 @@ Everything the script needs is specified in the config file.
 
 ## Config File
 
-Several config files are provided in this repository, matching the various
+Several config files are provided in this repository, demonstrating the various
 JDex/JD standards. You can of course customize it to your liking.
 
-It's recommended you read the [Config README](./configs/README.md) for
-information on the format, and check out the provided example configs in that
-folder, which are (hopefully) well-documented. If you have questions/need help,
-please feel free to poke me on the JD Discord.
+You **must** read the [Config README](./configs/README.md) for information on
+the format, and check out the provided example configs in that folder, which are
+(hopefully) well-documented. If you have questions/need help, please feel free
+to poke me on the JD Discord.
 
 ## Ignoring Files
 

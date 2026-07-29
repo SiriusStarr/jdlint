@@ -104,7 +104,7 @@ path = "~/Documents"
 # Any ignore patterns that apply only to that set of files
 ignore = [".trash"]
 
-[[system.roots]]
-name = "Dropbox"
-path = "~/Dropbox"
-ignore = []
+# [[system.roots]]
+# name = "Dropbox"
+# path = "~/Dropbox"
+# ignore = []
