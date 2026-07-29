@@ -1256,7 +1256,21 @@ def _get_jdex_entries_from_text(
     accumulated_errors: list[JDexIssue] = []
     id_regex = re.compile("^\\s*([0-9]{2}(?:[.-][0-9]{2})?) ([^/\\n]+?)\\s*(?:$|/.*)")
 
-    for line in text.splitlines():
+    # First, we need to strip multiline comments, because that's tricky.
+    comment_regex = re.compile("(/\\*|\\*/)")
+    depth = 0
+    cleaned = ""
+    for i, chunk in enumerate(comment_regex.split(text)):
+        if i % 2 == 0:
+            if depth == 0:
+                cleaned += chunk
+            continue
+        if chunk == "/*":
+            depth += 1
+        elif depth > 0:
+            depth -= 1
+
+    for line in cleaned.splitlines():
         match = id_regex.fullmatch(line)
         if match:
             _insert_append_sorted(
