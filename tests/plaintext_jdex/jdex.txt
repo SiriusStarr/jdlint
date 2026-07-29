@@ -16,3 +16,4 @@
 /* And they can be nested... */
 12.03 Not an ID
 because they cannot be parsed by regex */
+// 12.03 Not an ID either
