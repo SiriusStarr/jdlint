@@ -242,7 +242,7 @@ class ConfigSystemJDex:
                     at,
                     "Single file JDexes must not specify children or notes or ignore!",
                 )
-                raise ConfigConflictError
+                raise err
             # Load format
             self.entry = ConfigStaticFormat(
                 f"{at}.entry",
