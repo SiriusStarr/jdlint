@@ -20,7 +20,6 @@ format = "/=A/0 Management of area /=A/0-/=A/9"
 [[system.jdex.children.children.notes]]
 name = "JDex Area Note"
 format = "/=A/0.00 /*Name/.md"
-jdex_entry = "/=A/0.00 /=Name/"
 
 [[system.jdex.children.children.notes.ids]]
 id = "/=A/0-/=A/9"
@@ -42,7 +41,6 @@ format = "/=A//#C/ /*Category/"
 [[system.jdex.children.children.notes]]
 name = "JDex Category Note"
 format = "/=A//=C/.00 /*Name/.md"
-jdex_entry = "/=A//=C/.00 /=Name/"
 
 [[system.jdex.children.children.notes.ids]]
 id = "/=A//=C/"

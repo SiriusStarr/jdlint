@@ -442,14 +442,6 @@ class ConfigJDexNotes:
             )
             for i, v in enumerate(_pop_default_empty_list(at, "ids", from_file))
         ]
-        if "jdex_entry" in from_file:
-            self.jdex_entry = ConfigStaticFormat(
-                f"{at}.jdex_entry",
-                self.format,
-                _pop_nonempty_str_attribute(at, "jdex_entry", from_file),
-            )
-        else:
-            self.jdex_entry = None
 
         _report_extra_keys(at, from_file, tuple(self.__dict__.keys()))
 
