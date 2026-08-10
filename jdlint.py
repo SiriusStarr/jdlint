@@ -1791,7 +1791,7 @@ if __name__ == "__main__":
             if jdex_errs_by_type:
                 any_errors = True
                 total_errs = sum(len(errs) for errs in jdex_errs_by_type.values())
-                print(
+                print(  # noqa: T201
                     f"{'':=^80}\n{'JDex Errors Found:':^80}\n{_pluralize(total_errs, 'instance') + '; ' + _pluralize(len(jdex_errs_by_type), 'kind'):^80}\n{'':=^80}\n",
                 )
                 for errs in jdex_errs_by_type.values():
