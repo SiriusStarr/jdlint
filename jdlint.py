@@ -1166,27 +1166,27 @@ class JDexIssueEncounteredForbiddenNote(JDexIssue):
 
 
 JDexIssueType = (
-    JDexIssueArbitraryContentWhereNotAllowed
+    JDexIssueAmbiguousAncestry
+    | JDexIssueAncestryCycle
+    | JDexIssueArbitraryContentWhereNotAllowed
     | JDexIssueDuplicateID
     | JDexIssueEmptyFolder
-    | JDexIssueFileWhereFolderExpected
-    | JDexIssueFolderWhereNoteExpected
     | JDexIssueEncounteredForbiddenFolder
     | JDexIssueEncounteredForbiddenNote
+    | JDexIssueFileWhereFolderExpected
+    | JDexIssueFolderWhereNoteExpected
     | JDexIssueInvalidID
     | JDexIssueOrphan
-    | JDexIssueAncestryCycle
-    | JDexIssueAmbiguousAncestry
 )
 IssueType = (
     IssueArbitraryContentWhereNotAllowed
     | IssueDuplicateID
     | IssueEmptyFolder
+    | IssueEncounteredForbiddenFolder
     | IssueFileWhereFolderExpected
     | IssueFolderShouldBeEmpty
     | IssueIDDifferentFromJDex
     | IssueIDNotInJDex
-    | IssueEncounteredForbiddenFolder
 )
 
 AnyIssueType = JDexIssueType | IssueType

@@ -17,8 +17,8 @@ clean.
     * [`ENCOUNTERED_FORBIDDEN_FOLDER`](#encountered_forbidden_folder)
     * [`FILE_WHERE_FOLDER_EXPECTED`](#file_where_folder_expected)
     * [`FOLDER_SHOULD_BE_EMPTY`](#folder_should_be_empty)
-    * [`ID_NOT_IN_JDEX`](#id_not_in_jdex)
     * [`ID_DIFFERENT_FROM_JDEX`](#id_different_from_jdex)
+    * [`ID_NOT_IN_JDEX`](#id_not_in_jdex)
   * [JDex Errors](#jdex-errors)
     * [`JDEX_AMBIGUOUS_ANCESTRY`](#jdex_ambiguous_ancestry)
     * [`JDEX_ANCESTRY_CYCLE`](#jdex_ancestry_cycle)
@@ -208,21 +208,6 @@ A folder that should be empty per the config (e.g. inboxes and headers) wasn't.
         └── 11.11 Me
 ```
 
-### `ID_NOT_IN_JDEX`
-
-An ID without a corresponding JDex entry, e.g.
-
-```text
-.
-├── files
-│   └── 00-09 System              <-- This Area has no corresponding entry in the JDex
-│       └── 01 System Stuff       <-- This Category has no corresponding entry in the JDex
-│           ├── 01.02 Missing ID  <-- This ID has no corresponding entry in the JDex
-│           └── 01.03 Another ID
-└── jdex
-    └── 01.03 Another ID.md
-```
-
 ### `ID_DIFFERENT_FROM_JDEX`
 
 An ID with a differently-named JDex entry, e.g.
@@ -240,6 +225,21 @@ An ID with a differently-named JDex entry, e.g.
     ├── 01.02 A Name.md
     ├── 01.03 Another ID.md
     └── 01.04 An ID.md
+```
+
+### `ID_NOT_IN_JDEX`
+
+An ID without a corresponding JDex entry, e.g.
+
+```text
+.
+├── files
+│   └── 00-09 System              <-- This Area has no corresponding entry in the JDex
+│       └── 01 System Stuff       <-- This Category has no corresponding entry in the JDex
+│           ├── 01.02 Missing ID  <-- This ID has no corresponding entry in the JDex
+│           └── 01.03 Another ID
+└── jdex
+    └── 01.03 Another ID.md
 ```
 
 ## JDex Errors
