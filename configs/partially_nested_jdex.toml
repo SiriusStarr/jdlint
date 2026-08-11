@@ -197,7 +197,7 @@ ignore = [".trash"]
 # [[system.roots.children.children]]
 # name = "Work Package"
 # format = "W/####WPID/~/##AC/./##ID/ /*WPName/"
-# # You can override an expected JDex entry with `jdex_entry`
-# jdex_entry = "Something wildly arbitrary for /=WPID/; you should change this"
+# # You can override an expected JDex entry with `entry`
+# entry = "Something wildly arbitrary for /=WPID/; you should change this"
 # id = "W/=WPID/"
 # allow_arbitrary_contents = true
