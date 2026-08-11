@@ -110,7 +110,7 @@ just once with the flag:
 ```
 
 Note that these JSON results additionally contain complete information about the
-structure of your system that jdlint had to scan, if that information if of use
+structure of your system that jdlint had to scan, if that information is of use
 to you. This structure only returns portions of the system that are possibly
 valid; it will not return forbidden files/folders, or files where folders are
 required, for example, nor will it return JDex entries that are orphans.

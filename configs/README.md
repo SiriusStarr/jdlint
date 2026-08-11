@@ -156,9 +156,9 @@ symbol, followed by the name to bind the match to.
 
 For example, `format = "12.35 /*Name/.md"` will match all of the following:
 
-* `12.35` A.md
-* `12.35` This is a long title woooooo.md
-* `12.35` This title with 1946 digits and 🐦️ emoji.md
+* `12.35 A.md`
+* `12.35 This is a long title woooooo.md`
+* `12.35 This title with 1946 digits and 🐦️ emoji.md`
 
 It will *not* match the following:
 
@@ -221,6 +221,9 @@ try).
 
 ## Full Config Specification
 
+This section describes all available keys that can be specified; as always,
+refer to the example configs if something is confusing.
+
 ### `linter`
 
 General linter behavior.
@@ -254,7 +257,7 @@ errors.
   JSON or plaintext JDex (per
   [the standard](https://github.com/johnnydecimal/index-spec)), this can just be
   the path to it, and you can leave the rest of `system.jdex` empty except for
-  `system.jdex.entry`. If you use notes, this should be the path to where its
+  `system.jdex.entry`. If you use notes, this should be the path to where that
   structure begins.
 * `system.jdex.entry` – If and only if you have a single-file JDex, this format
   specifies how to build an expected entry name from the information in the
@@ -265,8 +268,10 @@ errors.
 * `system.jdex.ignore` – Like `linter.ignore`, but only for the JDex structure.
   You might want this to be `[".obsidian", ".trash"]`, for example. Not relevant
   to single file JDexes.
-* `system.jdex.children` – A list of top-level folders expected in the JDex.
-* `system.jdex.notes` – A list of top-level notes expected in the JDex.
+* `system.jdex.children` – A list of top-level folders expected in the JDex; see
+  below for the expected format. Not relevant to single file JDexes.
+* `system.jdex.notes` – A list of top-level notes expected in the JDex; see
+  below for the expected format. Not relevant to single file JDexes.
 
 ##### JDex `*.children` Tier
 
@@ -333,7 +338,8 @@ A list of root directories to check. These contain your actual "stuff".
   the structure, e.g. `"~/Documents"`.
 * `system.roots.ignore` – Like `linter.ignore`, but only for this root. You
   might want this to be `[".stfolder"]` if you use Syncthing, for example
-* `system.roots.children` – A list of top-level folders expected in this root.
+* `system.roots.children` – A list of top-level folders expected in this root;
+  see below for the expected format.
 
 ##### Root `*.children` Tier
 
@@ -341,8 +347,8 @@ This is a "level" of folder in the root, e.g. Areas.
 
 * `*.children.allow_arbitrary_contents` – Boolean, default false. If false,
   jdlint will report anything within this tier of folders that does not match
-  either its `.children` or `.notes`. Set this to true if you expect the folder
-  to contain unstructured/arbitrary stuff (like a terminal ID folder).
+  its `.children`. Set this to true if you expect the folder to contain
+  unstructured/arbitrary stuff (like a terminal ID folder).
 * `*.children.children` – An (empty by default) list of more folder tiers
   expected within this folder; for example, if you're defining an area folder at
   `system.roots.children`, `system.roots.children.children` should define
@@ -352,7 +358,7 @@ This is a "level" of folder in the root, e.g. Areas.
 * `*.children.format` – A string that specifies the expected format of the
   folders at this tier. See [formats](#formats) for details.
 * `*children.id` – A string that specifies the ID of this folder, e.g.
-  `"/=A//=C/./=ID/"` jdlint will check that a corresponding JDex entry exists.
+  `"/=A//=C/./=ID/"`. jdlint will check that a corresponding JDex entry exists.
   See [formats](#formats) for details.
 * `*.children.entry` – A string that specifies the JDex entry (ID and name)
   expected by this folder, e.g. `"/=A//=C/./=ID/ /=Name/"`. jdlint will check

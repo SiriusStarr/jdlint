@@ -1,14 +1,35 @@
 # Changelog
 
 * [Changelog](#changelog)
+  * [`v3.0.0`](#v300)
   * [`v2.0.1`](#v201)
   * [`v2.0.0`](#v200)
   * [`v1.0.1`](#v101)
   * [`v1.0.0`](#v100)
 
+## `v3.0.0`
+
+Please note that this introduces **breaking changes** to the config file format.
+
+* 🚨 – Renamed `jdex_entry` to just `entry` for consistency; you will need to
+  update this name if you used the old key name.
+* 🚨 – Removed the `jdex_entry` key from notes; you could previously specify it
+  and it did…exactly nothing, so probably no one did. No changes are necessary
+  if you didn't specify that.
+* ✨ – Added the `parent` key to JDex entries to allow checking for orphans; go
+  add this to your configs to enable orphan checking. This allows you to
+  guarantee work packages only associate with IDs that actually exist, for
+  example.
+* 🛠️ – Better handling of IDs in single file JDexes; invalid IDs that do not
+  match the standard are now reported instead of being silently ignored.
+* 📚 – Significantly improved documentation of the configuration format
+  (hopefully). All available settings are now fully-documented in the
+  [config readme](./configs/README.md).
+* 📚 – Spell Johnny's name correctly, whoops, sorry.
+
 ## `v2.0.1`
 
-* 🐛 -- Improved handling of multiline comments in plaintext JDexes. Previously,
+* 🐛 – Improved handling of multiline comments in plaintext JDexes. Previously,
   commented-out IDs could be erroneously detected.
 
 ## `v2.0.0`
@@ -25,7 +46,7 @@
 * Also, now you can easily, repeatably lint multiple different locations (notes,
   files, dropbox), with different ignore lists (and even different structures!)
   per location.
-* Supports the plaintext and JSON standards defined by Johhny
+* Supports the plaintext and JSON standards defined by Johnny
   (https://github.com/johnnydecimal/index-spec), so if you keep your JDex in a
   database but can get them out in that format, you can still use it.
 * JSON output still is a thing, but now also spits out your full system/index
@@ -39,7 +60,7 @@
 
 ## `v1.0.1`
 
-* 🚸 -- Group errors of the same type when printing, so the header and footer
+* 🚸 – Group errors of the same type when printing, so the header and footer
   aren't unnecessarily repeated. This does not affect JSON output.
 
 ## `v1.0.0`
