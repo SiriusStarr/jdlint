@@ -1,0 +1,15 @@
+10-9 Life admin     // This is a comment
+   1 Me     // This title ends with "category"
+      // Comments may be the only content
+      // on a line and multiple may occur
+      // in a row if desired
+      11.011 Birth certificate
+         - expiryDate: 2028-04-15
+      11.02 Passport
+
+   12 Household
+      12.01 Insurance policies
+         - url: https://example.com/policy 
+
+   // 12.02 Missing // This should not be an ID
+   // 12.03 Not an ID either

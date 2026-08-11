@@ -4,12 +4,12 @@
       "errors": [
         {
           "type": "DUPLICATE_ID",
-          "file": "1/1A",
+          "file": "1/1A/1A",
           "files": [
-            "1/1A",
-            "1/1A/1A"
+            "1/1A/1A",
+            "1/1A/1B"
           ],
-          "id": "1.A"
+          "id": "1.A Child"
         }
       ],
       "path": "files",
@@ -22,9 +22,13 @@
                 {
                   "path": "1/1A",
                   "children": {
-                    "1.A": [
+                    "1.A Child": [
                       {
                         "path": "1/1A/1A"
+                      },
+                      {
+                        "path": "1/1A/1B",
+                        "children": {}
                       }
                     ]
                   }

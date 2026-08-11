@@ -1,0 +1,121 @@
+{
+  "roots": {
+    "Files": {
+      "errors": [],
+      "path": "files",
+      "structure": {
+        "10-19": [
+          {
+            "path": "10-19 Life Admin",
+            "children": {
+              "11": [
+                {
+                  "path": "10-19 Life Admin/11 Me, Myself, & I",
+                  "children": {
+                    "11.11": [
+                      {
+                        "path": "10-19 Life Admin/11 Me, Myself, & I/11.11 Me",
+                        "children": {}
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "ignored_errs": 1,
+  "jdex": {
+    "errors": [
+      {
+        "type": "JDEX_AMBIGUOUS_ANCESTRY",
+        "id": "W1234",
+        "file": "W0000-W9999 Work Packages/W1234~11.12 My WP.md",
+        "entries": [
+          {
+            "path": "W0000-W9999 Work Packages/W1234~11.12 My WP.md",
+            "entry": "W1234~11.12 My WP",
+            "parent": "11.12"
+          },
+          {
+            "path": "W0000-W9999 Work Packages/W1234~11.13 My Other WP.md",
+            "entry": "W1234~11.13 My Other WP",
+            "parent": "11.13"
+          }
+        ]
+      }
+    ],
+    "path": "jdex",
+    "entries": {
+      "10-19": {
+        "entries": [
+          {
+            "entry": "10-19 Life Admin",
+            "path": "10-19 Life Admin/10 Management of area 10-19/10.00 Life Admin.md"
+          }
+        ],
+        "children": {
+          "10": {
+            "entries": [
+              {
+                "entry": "10 Life Admin",
+                "path": "10-19 Life Admin/10 Management of area 10-19/10.00 Life Admin.md"
+              }
+            ],
+            "children": {
+              "10.00": {
+                "entries": [
+                  {
+                    "entry": "10.00 Life Admin",
+                    "path": "10-19 Life Admin/10 Management of area 10-19/10.00 Life Admin.md"
+                  }
+                ],
+                "children": {}
+              }
+            }
+          },
+          "11": {
+            "entries": [
+              {
+                "entry": "11 Me, Myself, & I",
+                "path": "10-19 Life Admin/11 Me, Myself, & I/11.00 Me, Myself, & I.md"
+              }
+            ],
+            "children": {
+              "11.00": {
+                "entries": [
+                  {
+                    "entry": "11.00 Me, Myself, & I",
+                    "path": "10-19 Life Admin/11 Me, Myself, & I/11.00 Me, Myself, & I.md"
+                  }
+                ],
+                "children": {}
+              },
+              "11.11": {
+                "entries": [
+                  {
+                    "entry": "11.11 Me",
+                    "path": "10-19 Life Admin/11 Me, Myself, & I/11.11 Me.md"
+                  }
+                ],
+                "children": {}
+              },
+              "11.12": {
+                "entries": [
+                  {
+                    "entry": "11.12 Myself",
+                    "path": "10-19 Life Admin/11 Me, Myself, & I/11.12 Myself.md"
+                  }
+                ],
+                "children": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

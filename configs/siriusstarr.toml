@@ -27,48 +27,84 @@ ignore = [".obsidian", ".trash"]
 # going to be Markdown notes, but they don't have to be) that make up the JDex.
 [[system.jdex.children]]
 # The name to refer to the note type as in errors/JSON output
+name = "JDex Trunk Folder"
+# The expected format of the note
+format = "B/#T/0 /*Trunk/"
+
+[[system.jdex.children.children]]
+name = "JDex Trunk Index Folder"
+format = "C/=T/0.00 📇 Index"
+
+[[system.jdex.children.children.notes]]
+name = "JDex Trunk Note"
+format = "B/=T/0 /=Trunk/.md"
+
+[[system.jdex.children.children.notes.ids]]
+id = "B/=T/0-/=T/9"
+entry = "B/=T/0-/=T/9 /=Trunk/"
+
+[[system.jdex.children.children.notes.ids]]
+id = "B/=T/0"
+parent = "B/=T/0-/=T/9"
+entry = "B/=T/0 /=Trunk/"
+
+[[system.jdex.children.children.notes]]
+name = "JDex Trunk Index Note"
+format = "C/=T/0.00 📇 Index.md"
+
+[[system.jdex.children.children.notes.ids]]
+id = "C/=T/0.00"
+parent = "B/=T/0"
+entry = "C/=T/0.00 📇 Index"
+
+[[system.jdex.children]]
+# The name to refer to the note type as in errors/JSON output
 name = "JDex Branch Folder"
 # The expected format of the note
-format = "B/##BB/ /*Branch/"
+format = "B/#T//#B/ /*Branch/"
 
 [[system.jdex.children.children]]
 name = "JDex Branch Index Folder"
-format = "C/=BB/.00 📇 Index"
+format = "C/=T//=B/.00 📇 Index"
 
 [[system.jdex.children.children.notes]]
 name = "JDex Branch Note"
-format = "B/=BB/ /=Branch/.md"
+format = "B/=T//=B/ /=Branch/.md"
 
 # `ids` specifies what IDs a note creates, and what their full "name" is.  Note
 # that a note *can* allow more than one, e.g. 10.00 allows Area 10-19, Category
 # 10, and ID 10.00 to exist. Note that you can use bound segments in this.
 [[system.jdex.children.children.notes.ids]]
-id = "B/=BB/"
-entry = "B/=BB/ /=Branch/"
+id = "B/=T//=B/"
+parent = "B/=T/0-/=T/9"
+entry = "B/=T//=B/ /=Branch/"
 
 [[system.jdex.children.children.notes]]
 name = "JDex Cache Note"
-format = "C/=BB/./##ID/ /*Name/.md"
+format = "C/=T//=B/./##ID/ /*Name/.md"
 
 [[system.jdex.children.children.notes.ids]]
-id = "C/=BB/./=ID/"
-entry = "C/=BB/./=ID/ /=Name/"
+id = "C/=T//=B/./=ID/"
+parent = "B/=T//=B/"
+entry = "C/=T//=B/./=ID/ /=Name/"
 
 [[system.jdex.children.children.notes]]
 name = "Nest To Cache Note"
-format = "N/=BB/./####ID/~C/=BB/./##RelID/ /*Nest/.md"
+format = "N/=T//=B/./####ID/~C/=T//=B/./##RelID/ /*Nest/.md"
 
 [[system.jdex.children.children.notes.ids]]
-id = "N/=BB/./=ID/"
-entry = "N/=BB/./=ID/~C/=BB/./=RelID/ /=Nest/"
+id = "N/=T//=B/./=ID/"
+parent = "C/=T//=B/./=RelID/"
+entry = "N/=T//=B/./=ID/~C/=T//=B/./=RelID/ /=Nest/"
 
 [[system.jdex.children.children.notes]]
 name = "Nest To Nest Note"
-format = "N/=BB/./####ID/~N/=BB/./####RelID/ /*Nest/.md"
+format = "N/=T//=B/./####ID/~N/=T//=B/./####RelID/ /*Nest/.md"
 
 [[system.jdex.children.children.notes.ids]]
-id = "N/=BB/./=ID/"
-entry = "N/=BB/./=ID/~N/=BB/./=RelID/ /=Nest/"
+id = "N/=T//=B/./=ID/"
+parent = "N/=T//=B/./=RelID/"
+entry = "N/=T//=B/./=ID/~N/=T//=B/./=RelID/ /=Nest/"
 
 [[system.jdex.children.children.children]]
 name = "Attachments Folder"
@@ -77,12 +113,12 @@ allow_arbitrary_contents = true
 
 [[system.jdex.children.children]]
 name = "JDex Cache Non-Index Folder"
-format = "C/=BB/./##ID/ /*Cache/"
+format = "C/=T//=B/./##ID/ /*Cache/"
 allow_arbitrary_contents = true
 
 [[system.jdex.children.children]]
 name = "JDex Nest Non-Index Folder"
-format = "N/=BB/./####ID/~/*Nest/"
+format = "N/=T//=B/./####ID/~/*Nest/"
 allow_arbitrary_contents = true
 
 [[system.roots]]
@@ -90,18 +126,431 @@ name = "Knowledge"
 path = "~/Knowledge"
 ignore = [".git", ".gitignore", ".obsidian", ".trash"]
 
+[[system.roots.children]]
+name = "Trunk"
+format = "B/#T/0 /*Trunk/ ⬇️"
+id = "B/=T/0"
+
+[[system.roots.children.children]]
+name = "Index"
+format = "C/=T/0.00 📇 Index"
+id = "C/=T/0.00"
+allow_arbitrary_contents = true
+
+[[system.roots.children]]
+name = "Branch"
+format = "B/#T//#B/ /*Branch/"
+id = "B/=T//=B/"
+
+## #############################################################################
+# Here, we're defining standard zeros so that they are all named consistently
+## #############################################################################
+[[system.roots.children.children]]
+name = "Index"
+format = "C/=T//=B/.00 📇 Index"
+id = "C/=T//=B/.00"
+allow_arbitrary_contents = true
+
+[[system.roots.children.children]]
+name = "Invalid Index"
+format = "C/=T//=B/.00/*Index/"
+id = "C/=T//=B/.00"
+forbidden = true
+
+[[system.roots.children.children]]
+name = "Inbox"
+format = "C/=T//=B/.01 📥️ Inbox"
+id = "C/=T//=B/.01"
+
+[[system.roots.children.children]]
+name = "Invalid Inbox"
+format = "C/=T//=B/.01/*Inbox/"
+id = "C/=T//=B/.01"
+forbidden = true
+
+[[system.roots.children.children]]
+name = "Control"
+format = "C/=T//=B/.02 ✅ Control"
+id = "C/=T//=B/.02"
+allow_arbitrary_contents = true
+
+[[system.roots.children.children]]
+name = "Invalid Control"
+format = "C/=T//=B/.02/*Control/"
+id = "C/=T//=B/.02"
+forbidden = true
+
+[[system.roots.children.children]]
+name = "Templates"
+format = "C/=T//=B/.03 📑 Templates & Standards"
+id = "C/=T//=B/.03"
+allow_arbitrary_contents = true
+
+[[system.roots.children.children]]
+name = "Invalid Templates"
+format = "C/=T//=B/.03/*Templates/"
+id = "C/=T//=B/.03"
+forbidden = true
+
+[[system.roots.children.children]]
+name = "Links"
+format = "C/=T//=B/.04 🔗 Sources, Resources, & Links"
+id = "C/=T//=B/.04"
+allow_arbitrary_contents = true
+
+[[system.roots.children.children]]
+name = "Invalid Links"
+format = "C/=T//=B/.04/*Links/"
+id = "C/=T//=B/.04"
+forbidden = true
+
+[[system.roots.children.children]]
+name = "Ideas"
+format = "C/=T//=B/.05 💭 Inspiration, Ideas, & Percolation"
+id = "C/=T//=B/.05"
+allow_arbitrary_contents = true
+
+[[system.roots.children.children]]
+name = "Invalid Ideas"
+format = "C/=T//=B/.05/*Ideas/"
+id = "C/=T//=B/.05"
+forbidden = true
+
+[[system.roots.children.children]]
+name = "Tags"
+format = "C/=T//=B/.06 🏷️ Topics & Tags"
+id = "C/=T//=B/.06"
+allow_arbitrary_contents = true
+
+[[system.roots.children.children]]
+name = "Invalid Tags"
+format = "C/=T//=B/.06/*Tags/"
+id = "C/=T//=B/.06"
+forbidden = true
+
+[[system.roots.children.children]]
+name = "Unused .07"
+format = "C/=T//=B/.07/*Name/"
+id = "C/=T//=B/.07"
+forbidden = true
+
+[[system.roots.children.children]]
+name = "Unused .08"
+format = "C/=T//=B/.08/*Name/"
+id = "C/=T//=B/.08"
+forbidden = true
+
+[[system.roots.children.children]]
+name = "ADR"
+format = "C/=T//=B/.09 ⚖️ Decision Log"
+id = "C/=T//=B/.09"
+allow_arbitrary_contents = true
+
+[[system.roots.children.children]]
+name = "Invalid ADR"
+format = "C/=T//=B/.09/*ADR/"
+id = "C/=T//=B/.09"
+forbidden = true
+
+## #############################################################################
+# Ensure headers are empty and properly named
+## #############################################################################
+[[system.roots.children.children]]
+name = "Header"
+format = "C/=T//=B/./#H/0 /*Header/ ⬇️"
+id = "C/=T//=B/./=H/0"
+
+# Disallow headers that don't match this format
+[[system.roots.children.children]]
+name = "Invalid Header Or Index"
+format = "C/=T//=B/./#H/0 /*Header/"
+id = "C/=T//=B/./=H/0"
+forbidden = true
+
+## #############################################################################
+# Actual Content
+## #############################################################################
+[[system.roots.children.children]]
+name = "Cache"
+format = "C/=T//=B/./##ID/ /*Cache/"
+allow_arbitrary_contents = true
+id = "C/=T//=B/./=ID/"
+
+[[system.roots.children.children]]
+name = "Nest To Cache"
+format = "N/=T//=B/./####ID/~C/=T//=B/./##RelID/ /*Nest/"
+id = "N/=T//=B/./=ID/"
+allow_arbitrary_contents = true
+
+[[system.roots.children.children]]
+name = "Nest To Nest"
+format = "N/=T//=B/./####ID/~N/=T//=B/./####RelID/ /*Nest/"
+id = "N/=T//=B/./=ID/"
+allow_arbitrary_contents = true
+
+## #############################################################################
+# roots.structure
+## #############################################################################
+[[system.roots.children]]
+name = "Trunk"
+format = "B/#T/0 /*Trunk/ ⬇️"
+id = "B/=T/0"
+
+[[system.roots.children.children]]
+name = "Index"
+format = "C/=T/0.00 📇 Index"
+id = "C/=T/0.00"
+allow_arbitrary_contents = true
+
+[[system.roots.children]]
+name = "Branch"
+format = "B/#T//#B/ /*Branch/"
+id = "B/=T//=B/"
+
+## #############################################################################
+# Here, we're defining standard zeros so that they are all named consistently
+## #############################################################################
+[[system.roots.children.children]]
+name = "Index"
+format = "C/=T//=B/.00 📇 Index"
+id = "C/=T//=B/.00"
+allow_arbitrary_contents = true
+
+[[system.roots.children.children]]
+name = "Invalid Index"
+format = "C/=T//=B/.00/*Index/"
+id = "C/=T//=B/.00"
+forbidden = true
+
+[[system.roots.children.children]]
+name = "Inbox"
+format = "C/=T//=B/.01 📥️ Inbox"
+id = "C/=T//=B/.01"
+
+[[system.roots.children.children]]
+name = "Invalid Inbox"
+format = "C/=T//=B/.01/*Inbox/"
+id = "C/=T//=B/.01"
+forbidden = true
+
+[[system.roots.children.children]]
+name = "Control"
+format = "C/=T//=B/.02 ✅ Control"
+id = "C/=T//=B/.02"
+allow_arbitrary_contents = true
+
+[[system.roots.children.children]]
+name = "Invalid Control"
+format = "C/=T//=B/.02/*Control/"
+id = "C/=T//=B/.02"
+forbidden = true
+
+[[system.roots.children.children]]
+name = "Templates"
+format = "C/=T//=B/.03 📑 Templates & Standards"
+id = "C/=T//=B/.03"
+allow_arbitrary_contents = true
+
+[[system.roots.children.children]]
+name = "Invalid Templates"
+format = "C/=T//=B/.03/*Templates/"
+id = "C/=T//=B/.03"
+forbidden = true
+
+[[system.roots.children.children]]
+name = "Links"
+format = "C/=T//=B/.04 🔗 Sources, Resources, & Links"
+id = "C/=T//=B/.04"
+allow_arbitrary_contents = true
+
+[[system.roots.children.children]]
+name = "Invalid Links"
+format = "C/=T//=B/.04/*Links/"
+id = "C/=T//=B/.04"
+forbidden = true
+
+[[system.roots.children.children]]
+name = "Ideas"
+format = "C/=T//=B/.05 💭 Inspiration, Ideas, & Percolation"
+id = "C/=T//=B/.05"
+allow_arbitrary_contents = true
+
+[[system.roots.children.children]]
+name = "Invalid Ideas"
+format = "C/=T//=B/.05/*Ideas/"
+id = "C/=T//=B/.05"
+forbidden = true
+
+[[system.roots.children.children]]
+name = "Tags"
+format = "C/=T//=B/.06 🏷️ Topics & Tags"
+id = "C/=T//=B/.06"
+allow_arbitrary_contents = true
+
+[[system.roots.children.children]]
+name = "Invalid Tags"
+format = "C/=T//=B/.06/*Tags/"
+id = "C/=T//=B/.06"
+forbidden = true
+
+[[system.roots.children.children]]
+name = "Unused .07"
+format = "C/=T//=B/.07/*Name/"
+id = "C/=T//=B/.07"
+forbidden = true
+
+[[system.roots.children.children]]
+name = "Unused .08"
+format = "C/=T//=B/.08/*Name/"
+id = "C/=T//=B/.08"
+forbidden = true
+
+[[system.roots.children.children]]
+name = "ADR"
+format = "C/=T//=B/.09 ⚖️ Decision Log"
+id = "C/=T//=B/.09"
+allow_arbitrary_contents = true
+
+[[system.roots.children.children]]
+name = "Invalid ADR"
+format = "C/=T//=B/.09/*ADR/"
+id = "C/=T//=B/.09"
+forbidden = true
+
+## #############################################################################
+# Ensure headers are empty and properly named
+## #############################################################################
+[[system.roots.children.children]]
+name = "Header"
+format = "C/=T//=B/./#H/0 /*Header/ ⬇️"
+id = "C/=T//=B/./=H/0"
+
+# Disallow headers that don't match this format
+[[system.roots.children.children]]
+name = "Invalid Header Or Index"
+format = "C/=T//=B/./#H/0 /*Header/"
+id = "C/=T//=B/./=H/0"
+forbidden = true
+
+## #############################################################################
+# Actual Content
+## #############################################################################
+[[system.roots.children.children]]
+name = "Cache"
+format = "C/=T//=B/./##ID/ /*Cache/"
+allow_arbitrary_contents = true
+id = "C/=T//=B/./=ID/"
+
+[[system.roots.children.children]]
+name = "Nest To Cache"
+format = "N/=T//=B/./####ID/~C/=T//=B/./##RelID/ /*Nest/"
+id = "N/=T//=B/./=ID/"
+allow_arbitrary_contents = true
+
+[[system.roots.children.children]]
+name = "Nest To Nest"
+format = "N/=T//=B/./####ID/~N/=T//=B/./####RelID/ /*Nest/"
+id = "N/=T//=B/./=ID/"
+allow_arbitrary_contents = true
+
 [[system.roots]]
 name = "Caches"
 path = "~/Caches"
+
+[[system.roots.children]]
+name = "Trunk"
+format = "B/#T/0 /*Trunk/ ⬇️"
+id = "B/=T/0"
+
+[[system.roots.children]]
+name = "Branch"
+format = "B/#T//#B/ /*Branch/"
+id = "B/=T//=B/"
+
+## #############################################################################
+# Here, we're defining folders that should be empty or not exist
+# ## #############################################################################
+[[system.roots.children.children]]
+name = "Index in Caches"
+format = "C/=T//=B/.00/*Index/"
+id = "C/=T//=B/.00"
+forbidden = true
+
+[[system.roots.children.children]]
+name = "Inbox"
+format = "C/=T//=B/.01 📥️ Inbox"
+id = "C/=T//=B/.01"
+
+[[system.roots.children.children]]
+name = "Invalid Inbox"
+format = "C/=T//=B/.01/*Inbox/"
+id = "C/=T//=B/.01"
+forbidden = true
+
+[[system.roots.children.children]]
+name = "Control in Caches"
+format = "C/=T//=B/.02/*Control/"
+id = "C/=T//=B/.02"
+forbidden = true
+
+[[system.roots.children.children]]
+name = "Links in Caches"
+format = "C/=T//=B/.04/*Links/"
+id = "C/=T//=B/.04"
+forbidden = true
+
+[[system.roots.children.children]]
+name = "Tags In Caches"
+format = "C/=T//=B/.06/*Tags/"
+id = "C/=T//=B/.06"
+forbidden = true
+
+[[system.roots.children.children]]
+name = "ADR in Caches"
+format = "C/=T//=B/.09/*ADR/"
+id = "C/=T//=B/.09"
+forbidden = true
+
+[[system.roots.children.children]]
+name = "Header"
+format = "C/=T//=B/./#H/0 /*Header/ ⬇️"
+id = "C/=T//=B/./=H/0"
+
+## #############################################################################
+# Actual Content
+## #############################################################################
+[[system.roots.children.children]]
+name = "Cache"
+format = "C/=T//=B/./##ID/ /*Cache/"
+allow_arbitrary_contents = true
+id = "C/=T//=B/./=ID/"
+
+[[system.roots.children.children]]
+name = "Nest To Cache"
+format = "N/=T//=B/./####ID/~C/=T//=B/./##RelID/ /*Nest/"
+id = "N/=T//=B/./=ID/"
+allow_arbitrary_contents = true
+
+[[system.roots.children.children]]
+name = "Nest To Nest"
+format = "N/=T//=B/./####ID/~N/=T//=B/./####RelID/ /*Nest/"
+id = "N/=T//=B/./=ID/"
+allow_arbitrary_contents = true
 
 [[system.roots]]
 name = "Nests"
 path = "~/Nests"
 
 [[system.roots.children]]
-name = "Nest"
-format = "N/##BB/./####ID/~/*Nest/"
-id = "N/=BB/./=ID/"
+name = "Nest To Cache"
+format = "N/#T//#B/./####ID/~C/=T//=B/./##RelID/ /*Nest/"
+id = "N/=T//=B/./=ID/"
+allow_arbitrary_contents = true
+
+[[system.roots.children]]
+name = "Nest To Nest"
+format = "N/#T//#B/./####ID/~N/=T//=B/./####RelID/ /*Nest/"
+id = "N/=T//=B/./=ID/"
 allow_arbitrary_contents = true
 
 [[system.roots]]
@@ -111,165 +560,18 @@ path = "~/Dropbox"
 # Dropbox does not use anything but terminal folders
 [[system.roots.children]]
 name = "Cache"
-format = "C/##BB/./##ID/ /*Cache/"
+format = "C/#T//#B/./##ID/ /*Cache/"
 allow_arbitrary_contents = true
-id = "C/=BB/./=ID/"
+id = "C/=T//=B/./=ID/"
 
 [[system.roots.children]]
-name = "Nest"
-format = "N/##BB/./####ID/~/*Nest/"
-id = "N/=BB/./=ID/"
+name = "Nest To Cache"
+format = "N/#T//#B/./####ID/~C/=T//=B/./##RelID/ /*Nest/"
+id = "N/=T//=B/./=ID/"
 allow_arbitrary_contents = true
 
-## #############################################################################
-# Default structure
-## #############################################################################
-[[system.default.children]]
-name = "Trunk"
-format = "B/#T/0 /*Trunk/ ⬇️"
-id = "B/=T/0"
-
-[[system.default.children]]
-name = "Branch"
-format = "B/##BB/ /*Branch/"
-id = "B/=BB/"
-
-## #############################################################################
-# Here, we're defining standard zeros so that they are all named consistently
-## #############################################################################
-[[system.default.children.children]]
-name = "Index"
-format = "C/=BB/.00 📇 Index"
-id = "C/=BB/.00"
-allow_arbitrary_contents = true
-
-[[system.default.children.children]]
-name = "Invalid Index"
-format = "C/=BB/.00/*Index/"
-id = "C/=BB/.00"
-forbidden = true
-
-[[system.default.children.children]]
-name = "Inbox"
-format = "C/=BB/.01 📥️ Inbox"
-id = "C/=BB/.01"
-
-[[system.default.children.children]]
-name = "Invalid Inbox"
-format = "C/=BB/.01/*Inbox/"
-id = "C/=BB/.01"
-forbidden = true
-
-[[system.default.children.children]]
-name = "Control"
-format = "C/=BB/.02 ✅ Control"
-id = "C/=BB/.02"
-allow_arbitrary_contents = true
-
-[[system.default.children.children]]
-name = "Invalid Control"
-format = "C/=BB/.02/*Control/"
-id = "C/=BB/.02"
-forbidden = true
-
-[[system.default.children.children]]
-name = "Templates"
-format = "C/=BB/.03 📑 Templates & Standards"
-id = "C/=BB/.03"
-allow_arbitrary_contents = true
-
-[[system.default.children.children]]
-name = "Invalid Templates"
-format = "C/=BB/.03/*Templates/"
-id = "C/=BB/.03"
-forbidden = true
-
-[[system.default.children.children]]
-name = "Links"
-format = "C/=BB/.04 🔗 Sources, Resources, & Links"
-id = "C/=BB/.04"
-allow_arbitrary_contents = true
-
-[[system.default.children.children]]
-name = "Invalid Links"
-format = "C/=BB/.04/*Links/"
-id = "C/=BB/.04"
-forbidden = true
-
-[[system.default.children.children]]
-name = "Ideas"
-format = "C/=BB/.05 💭 Inspiration, Ideas, & Percolation"
-id = "C/=BB/.05"
-allow_arbitrary_contents = true
-
-[[system.default.children.children]]
-name = "Invalid Ideas"
-format = "C/=BB/.05/*Ideas/"
-id = "C/=BB/.05"
-forbidden = true
-
-[[system.default.children.children]]
-name = "Tags"
-format = "C/=BB/.06 🏷️ Topics & Tags"
-id = "C/=BB/.06"
-allow_arbitrary_contents = true
-
-[[system.default.children.children]]
-name = "Invalid Tags"
-format = "C/=BB/.06/*Tags/"
-id = "C/=BB/.06"
-forbidden = true
-
-[[system.default.children.children]]
-name = "Unused .07"
-format = "C/=BB/.07/*Name/"
-id = "C/=BB/.07"
-forbidden = true
-
-[[system.default.children.children]]
-name = "Unused .08"
-format = "C/=BB/.08/*Name/"
-id = "C/=BB/.08"
-forbidden = true
-
-[[system.default.children.children]]
-name = "ADR"
-format = "C/=BB/.09 ⚖️ Decision Log"
-id = "C/=BB/.09"
-allow_arbitrary_contents = true
-
-[[system.default.children.children]]
-name = "Invalid ADR"
-format = "C/=BB/.09/*ADR/"
-id = "C/=BB/.09"
-forbidden = true
-
-## #############################################################################
-# Ensure headers are empty and properly named
-## #############################################################################
-[[system.default.children.children]]
-name = "Header"
-format = "C/=BB/./#H/0 /*Header/ ⬇️"
-id = "C/=BB/./=H/0"
-
-# Disallow headers that don't match this format
-[[system.default.children.children]]
-name = "Invalid Header Or Index"
-format = "C/=BB/./#H/0 /*Header/"
-id = "C/=BB/./=H/0"
-forbidden = true
-
-## #############################################################################
-# Actual Content
-## #############################################################################
-[[system.default.children.children]]
-name = "Cache"
-format = "C/=BB/./##ID/ /*Cache/"
-allow_arbitrary_contents = true
-id = "C/=BB/./=ID/"
-
-[[system.default.children.children]]
-name = "Nest"
-format = "N/=BB/./####ID/~/*Nest/"
-id = "N/=BB/./=ID/"
+[[system.roots.children]]
+name = "Nest To Nest"
+format = "N/#T//#B/./####ID/~N/=T//=B/./####RelID/ /*Nest/"
+id = "N/=T//=B/./=ID/"
 allow_arbitrary_contents = true

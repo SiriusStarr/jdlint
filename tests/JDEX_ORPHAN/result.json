@@ -1,0 +1,50 @@
+{
+  "roots": {
+    "Files": {
+      "errors": [],
+      "path": "files",
+      "structure": {
+        "10-19": [
+          {
+            "path": "10-19 Life Admin",
+            "children": {
+              "11": [
+                {
+                  "path": "10-19 Life Admin/11 Me, Myself, & I",
+                  "children": {
+                    "11.11": [
+                      {
+                        "path": "10-19 Life Admin/11 Me, Myself, & I/11.11 Me",
+                        "children": {}
+                      }
+                    ],
+                    "11.12": [
+                      {
+                        "path": "10-19 Life Admin/11 Me, Myself, & I/11.12 Myself",
+                        "children": {}
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "ignored_errs": 1,
+  "jdex": {
+    "errors": [
+      {
+        "type": "JDEX_ORPHAN",
+        "id": "11",
+        "entry": "11 Me, Myself, & I",
+        "file": "10-19 Life Admin/11 Me, Myself, & I/11.00 Me, Myself, & I.md",
+        "parent": "10-19"
+      }
+    ],
+    "path": "jdex",
+    "entries": {}
+  }
+}

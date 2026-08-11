@@ -20,6 +20,8 @@ clean.
     * [`ID_NOT_IN_JDEX`](#id_not_in_jdex)
     * [`ID_DIFFERENT_FROM_JDEX`](#id_different_from_jdex)
   * [JDex Errors](#jdex-errors)
+    * [`JDEX_AMBIGUOUS_ANCESTRY`](#jdex_ambiguous_ancestry)
+    * [`JDEX_ANCESTRY_CYCLE`](#jdex_ancestry_cycle)
     * [`JDEX_ARBITRARY_CONTENT_WHERE_NOT_ALLOWED`](#jdex_arbitrary_content_where_not_allowed)
     * [`JDEX_DUPLICATE_ID`](#jdex_duplicate_id)
     * [`JDEX_EMPTY_FOLDER`](#jdex_empty_folder)
@@ -27,6 +29,8 @@ clean.
     * [`JDEX_ENCOUNTERED_FORBIDDEN_NOTE`](#jdex_encountered_forbidden_note)
     * [`JDEX_FILE_WHERE_FOLDER_EXPECTED`](#jdex_file_where_folder_expected)
     * [`JDEX_FOLDER_WHERE_NOTE_EXPECTED`](#jdex_folder_where_note_expected)
+    * [`JDEX_INVALID_ID`](#jdex_invalid_id)
+    * [`JDEX_ORPHAN`](#jdex_orphan)
   * [Does This Modify My Files?](#does-this-modify-my-files)
   * [Why Doesn't This Check For-](#why-doesnt-this-check-for-)
   * [This Doesn't Work with My System Because-](#this-doesnt-work-with-my-system-because-)
@@ -107,9 +111,9 @@ just once with the flag:
 
 Note that these JSON results additionally contain complete information about the
 structure of your system that jdlint had to scan, if that information if of use
-to you. This structure only returns portions of the system that are at least
-possibly valid; it will not return forbidden files/folders, or files where
-folders are required, for example.
+to you. This structure only returns portions of the system that are possibly
+valid; it will not return forbidden files/folders, or files where folders are
+required, for example, nor will it return JDex entries that are orphans.
 
 ## Errors
 
@@ -243,8 +247,19 @@ An ID with a differently-named JDex entry, e.g.
 These are errors that are only generated about the state of your JDex, not your
 files.
 
-    | JDexIssueEncounteredForbiddenFolder
-    | JDexIssueEncounteredForbiddenNote
+### `JDEX_AMBIGUOUS_ANCESTRY`
+
+An ID in the JDex was used multiple times with a different parent each time.
+This typically occurs if you've duplicated an ID by accident but changed the
+parent, for example if you have work package `W1234~23.65 My Logo` and
+`W1234~15.43 My Website`.
+
+### `JDEX_ANCESTRY_CYCLE`
+
+IDs in the JDex formed a cycle of ancestry. This cannot happen with a "normal"
+system, but if you for instance allow work packages to relate to other work
+packages, you should not have circular dependency, e.g. you should not have
+`W0001~W0002 First.md` and `W0002~W0001 Second.md`.
 
 ### `JDEX_ARBITRARY_CONTENT_WHERE_NOT_ALLOWED`
 
@@ -338,6 +353,19 @@ A folder was found with the name of something that should have been a file.
         └── 11.13 I.md             <-- This is a file that looks like a category folder
             └── Some file
 ```
+
+### `JDEX_INVALID_ID`
+
+An entry in a single file (JSON or plaintext) JDex did not match the appropriate
+"canonical" form. For example, the ID `11.011`, or the area `10-9`. Refer to the
+spec
+[here](https://github.com/johnnydecimal/spec.johnnydecimal.com/blob/main/implementations/json.md).
+
+### `JDEX_ORPHAN`
+
+An entry in the JDex specified a parent that doesn't exist. For example, is you
+have the work package `W1234~23.65 My Logo`, but no ID `23.65` exists, or if you
+have an ID `12.33` with no category 12.
 
 ## Does This Modify My Files?
 

@@ -1,9 +1,8 @@
-10-19 Life admin     // which I can comment like this
-
-   11 Me /* or like this */
-   /* multiline comments
-      are allowed on their own lines
-    */
+10-19 Life admin     // This is a comment
+   11 Me     // This title ends with "category"
+      // Comments may be the only content
+      // on a line and multiple may occur
+      // in a row if desired
       11.01 Birth certificate
          - expiryDate: 2028-04-15
       11.02 Passport
@@ -11,9 +10,6 @@
    12 Household
       12.01 Insurance policies
          - url: https://example.com/policy 
-/* Multiline comments are a terrible idea
-12.02 Missing // This should not be an ID
-/* And they can be nested... */
-12.03 Not an ID
-because they cannot be parsed by regex */
-// 12.03 Not an ID either
+
+   // 12.02 Missing // This should not be an ID
+   // 12.03 Not an ID either

@@ -22,12 +22,15 @@
     ],
     "path": "files",
     "entries": {
-      "1": [
-        {
-          "entry": "1",
-          "path": "1/1B/X.md"
-        }
-      ]
+      "1": {
+        "entries": [
+          {
+            "entry": "1",
+            "path": "1/1B/X.md"
+          }
+        ],
+        "children": {}
+      }
     }
   },
   "ignored_errs": 0

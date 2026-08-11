@@ -29,18 +29,25 @@
     ],
     "path": "files",
     "entries": {
-      "1": [
-        {
-          "entry": "1",
-          "path": "1/1A/1.md"
+      "1": {
+        "entries": [
+          {
+            "entry": "1",
+            "path": "1/1A/1.md"
+          }
+        ],
+        "children": {
+          "1.A": {
+            "entries": [
+              {
+                "entry": "1.A",
+                "path": "1/1A/1A.md"
+              }
+            ],
+            "children": {}
+          }
         }
-      ],
-      "1.A": [
-        {
-          "entry": "1.A",
-          "path": "1/1A/1A.md"
-        }
-      ]
+      }
     }
   },
   "ignored_errs": 0

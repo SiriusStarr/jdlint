@@ -17,6 +17,7 @@ id = "/=A/./=Name/"
 
 [[system.default.children.children.children]]
 name = "C"
-format = "/=A//=Name/"
-id = "/=A/./=Name/"
+format = "/*Child/"
+id = "/=A/./=Name/ Child"
 can_be_file = true
+allow_arbitrary_contents = true

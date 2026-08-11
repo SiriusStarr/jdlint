@@ -1,0 +1,58 @@
+{
+  "jdex": {
+    "errors": [
+      {
+        "type": "JDEX_INVALID_ID",
+        "file": null,
+        "entry_type": "system",
+        "entry": "0A1 My life",
+        "id": "0A1"
+      },
+      {
+        "type": "JDEX_INVALID_ID",
+        "file": null,
+        "entry_type": "category",
+        "entry": "1 Me",
+        "id": "1"
+      },
+      {
+        "type": "JDEX_INVALID_ID",
+        "file": null,
+        "entry_type": "area",
+        "entry": "10 Life admin",
+        "id": "10"
+      },
+      {
+        "type": "JDEX_INVALID_ID",
+        "file": null,
+        "entry_type": "id",
+        "entry": "11.011 Birth certificate",
+        "id": "11.011"
+      },
+      {
+        "type": "JDEX_ORPHAN",
+        "file": null,
+        "entry": "11.02 Passport",
+        "id": "11.02",
+        "parent": "11"
+      },
+      {
+        "type": "JDEX_ORPHAN",
+        "file": null,
+        "entry": "12 Household",
+        "id": "12",
+        "parent": "10-19"
+      }
+    ],
+    "path": "jdex.jd.json",
+    "entries": {}
+  },
+  "roots": {
+    "Files": {
+      "errors": [],
+      "path": "files",
+      "structure": {}
+    }
+  },
+  "ignored_errs": 1
+}

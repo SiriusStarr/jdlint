@@ -125,8 +125,17 @@ def _pop_default_false_bool(at: str, attr: str, from_file: dict) -> bool:
     return val
 
 
-def _pop_default_empty_list(at: str, attr: str, from_file: dict) -> list:
+def _pop_list(
+    at: str,
+    attr: str,
+    from_file: dict,
+    *,
+    default_empty: bool = True,
+) -> list:
     """Get a list at the specified attribute, defaulting to [], or fail."""
+    if not default_empty and attr not in from_file:
+        err = ConfigMissingKeyError(f"{at}.{attr}")
+        raise err
     val = from_file.pop(attr, [])
     if not isinstance(val, list):
         err = ConfigTypeError(
@@ -138,12 +147,18 @@ def _pop_default_empty_list(at: str, attr: str, from_file: dict) -> list:
     return val
 
 
-def _pop_ignore_list(at: str, from_file: dict) -> list[str]:
+def _pop_list_of_strings(
+    at: str,
+    attr: str,
+    from_file: dict,
+    *,
+    default_empty: bool = True,
+) -> list[str]:
     """Get a list of strings at .ignore or fail, defaulting to []."""
-    val = _pop_default_empty_list(at, "ignore", from_file)
+    val = _pop_list(at, attr, from_file, default_empty=default_empty)
     for i, r in enumerate(val):
         if not isinstance(r, str):
-            err = ConfigTypeError(f"{at}.ignore[{i}]", "str", type(r).__name__)
+            err = ConfigTypeError(f"{at}.{attr}[{i}]", "str", type(r).__name__)
             raise err
     return val
 
@@ -162,7 +177,7 @@ class ConfigSystemRoot:
         self.path = Path(
             _pop_nonempty_str_attribute(at, "path", from_file),
         ).expanduser()
-        self.ignore = _pop_ignore_list(at, from_file)
+        self.ignore = _pop_list_of_strings(at, "ignore", from_file)
 
         # Validate path is good
         if not self.path.is_dir():
@@ -182,7 +197,7 @@ class ConfigSystemRoot:
                     v,
                 )
                 for i, v in enumerate(
-                    _pop_default_empty_list(at, "children", from_file),
+                    _pop_list(at, "children", from_file),
                 )
             ]
         elif default_structure:
@@ -206,7 +221,7 @@ class ConfigSystemJDex:
         self.path = Path(
             _pop_nonempty_str_attribute(at, "path", from_file),
         ).expanduser()
-        self.ignore = _pop_ignore_list(at, from_file)
+        self.ignore = _pop_list_of_strings(at, "ignore", from_file)
 
         self.children = [
             ConfigJDexTier(
@@ -214,7 +229,7 @@ class ConfigSystemJDex:
                 ConfigFormatAncestorInfo((), ()),
                 v,
             )
-            for i, v in enumerate(_pop_default_empty_list(at, "children", from_file))
+            for i, v in enumerate(_pop_list(at, "children", from_file))
         ]
         self.notes = [
             ConfigJDexNotes(
@@ -222,7 +237,7 @@ class ConfigSystemJDex:
                 ConfigFormatAncestorInfo((), ()),
                 v,
             )
-            for i, v in enumerate(_pop_default_empty_list(at, "notes", from_file))
+            for i, v in enumerate(_pop_list(at, "notes", from_file))
         ]
 
         # Validate path
@@ -259,13 +274,13 @@ class ConfigLinter:
     def __init__(self, from_file: dict) -> None:
         """Create a valid configuration given a loaded linter section of a config file."""
         # Acquire and set defaults
-        self.disable_rules = _pop_default_empty_list(
+        self.disable_rules = _pop_list(
             "linter",
             "disable_rules",
             from_file,
         )
         self.json_output = _pop_default_false_bool("linter", "json_output", from_file)
-        self.ignore = _pop_ignore_list("linter", from_file)
+        self.ignore = _pop_list_of_strings("linter", "ignore", from_file)
 
         # Validate
         for r in self.disable_rules:
@@ -297,7 +312,7 @@ class ConfigSystem:
                 v,
             )
             for i, v in enumerate(
-                _pop_default_empty_list(
+                _pop_list(
                     "system.default",
                     "children",
                     from_file.pop("default", {}),
@@ -311,7 +326,7 @@ class ConfigSystem:
                 default_structure,
                 v,
             )
-            for i, v in enumerate(_pop_default_empty_list("system", "roots", from_file))
+            for i, v in enumerate(_pop_list("system", "roots", from_file))
         ]
 
         accum_names = {}
@@ -388,26 +403,41 @@ class ConfigStaticFormat:
         self.build = lambda d: "".join([f(d) for f in build])
 
 
-class ConfigJDexID:
-    """Configuration for how a JDex ID is related to a note."""
+class ConfigID:
+    """Configuration for how a file, folder, or JDex note is related to an ID."""
 
     def __init__(
         self,
         at: str,
         ancestors: ConfigFormatAncestorInfo,
         from_file: dict,
+        *,
+        supports_parent: bool,
     ) -> None:
-        """Create a valid note format given a loaded section of a config file."""
+        """Create a valid ID given a loaded section of a config file."""
         self.id = ConfigStaticFormat(
             f"{at}.id",
             ancestors,
             _pop_nonempty_str_attribute(at, "id", from_file),
         )
-        self.entry = ConfigStaticFormat(
-            f"{at}.entry",
-            ancestors,
-            _pop_nonempty_str_attribute(at, "entry", from_file),
-        )
+        if supports_parent:
+            try:
+                self.parent = ConfigStaticFormat(
+                    f"{at}.parent",
+                    ancestors,
+                    _pop_nonempty_str_attribute(at, "parent", from_file),
+                )
+            except ConfigMissingKeyError:
+                self.parent = None
+
+        try:
+            self.entry = ConfigStaticFormat(
+                f"{at}.entry",
+                ancestors,
+                _pop_nonempty_str_attribute(at, "entry", from_file),
+            )
+        except ConfigMissingKeyError:
+            self.entry = None
 
         _report_extra_keys(at, from_file, tuple(self.__dict__.keys()))
 
@@ -435,12 +465,8 @@ class ConfigJDexNotes:
             err = ConfigMissingKeyError(f"{at}.ids")
             raise err
         self.ids = [
-            ConfigJDexID(
-                f"{at}.ids[{i}]",
-                self.format,
-                v,
-            )
-            for i, v in enumerate(_pop_default_empty_list(at, "ids", from_file))
+            ConfigID(f"{at}.ids[{i}]", self.format, v, supports_parent=True)
+            for i, v in enumerate(_pop_list(at, "ids", from_file))
         ]
 
         _report_extra_keys(at, from_file, tuple(self.__dict__.keys()))
@@ -485,7 +511,7 @@ class ConfigFolderTier:
                 self.format,
                 v,
             )
-            for i, v in enumerate(_pop_default_empty_list(at, "children", from_file))
+            for i, v in enumerate(_pop_list(at, "children", from_file))
         ]
         if self.children and self.allow_arbitrary_contents:
             raise ConfigConflictError(
@@ -522,20 +548,7 @@ class ConfigSystemTier(ConfigFolderTier):
         # Call the folder tier stuff
         super().__init__(ConfigSystemTier, at, ancestors, from_file)
 
-        if "jdex_entry" in from_file:
-            self.jdex_entry = ConfigStaticFormat(
-                f"{at}.jdex_entry",
-                self.format,
-                _pop_nonempty_str_attribute(at, "jdex_entry", from_file),
-            )
-        else:
-            self.jdex_entry = None
-
-        self.id = ConfigStaticFormat(
-            f"{at}.id",
-            self.format,
-            _pop_nonempty_str_attribute(at, "id", from_file),
-        )
+        self.id = ConfigID(at, self.format, from_file, supports_parent=False)
 
         if not isinstance(self.can_be_file, bool):
             err = ConfigTypeError(
@@ -558,10 +571,10 @@ class ConfigSystemTier(ConfigFolderTier):
                 "If forbidden, can_be_file must be false.",
             )
             raise err
-        if self.no_jdex_entry and self.jdex_entry:
+        if self.no_jdex_entry and self.id.entry:
             err = ConfigConflictError(
                 at,
-                "Only one of no_jdex_entry and jdex_entry may be set.",
+                "Only one of no_jdex_entry and entry may be set.",
             )
             raise err
 
@@ -587,7 +600,7 @@ class ConfigJDexTier(ConfigFolderTier):
                 self.format,
                 v,
             )
-            for i, v in enumerate(_pop_default_empty_list(at, "notes", from_file))
+            for i, v in enumerate(_pop_list(at, "notes", from_file))
         ]
 
         if self.notes and self.format.forbidden:
@@ -874,7 +887,7 @@ class IssueIDDifferentFromJDex(Issue):
 
     id: str
     expected_jdex_entry: str
-    known_jdex_entries: list[JDexEntry]
+    known_jdex_entries: list[CollectedJDexEntry]
     type: Literal["ID_DIFFERENT_FROM_JDEX"] = "ID_DIFFERENT_FROM_JDEX"
 
     def display(self) -> str:
@@ -917,6 +930,94 @@ class File:
 
     name: Path
     path: Path
+
+
+@dataclass(frozen=True)
+class JDexIssueInvalidID(JDexIssue):
+    """An ID that does not conform to the index spec in a single file JDex."""
+
+    id: str
+    entry: str
+    entry_type: str
+    type: Literal["JDEX_INVALID_ID"] = "JDEX_INVALID_ID"
+
+    def display(self) -> str:
+        """Display this particular instance of an error."""
+        return f"{self.id}: {self.entry} is not a valid {self.entry_type} ID"
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="An index entry in a single file JDex had an ID that wasn't standards compliant.",
+            fix='Systems should be like "A01", areas like "10-19", categories like "12", and IDs like "12.34"',
+        )
+
+
+@dataclass(frozen=True)
+class JDexIssueOrphan(JDexIssue):
+    """An ID in the JDex whose specified parent does not exist."""
+
+    id: str
+    entry: str
+    parent: str
+    type: Literal["JDEX_ORPHAN"] = "JDEX_ORPHAN"
+
+    def display(self) -> str:
+        """Display this particular instance of an error."""
+        return f"{self.id}: {self.entry} expected a parent with ID {self.parent} to exist, but none does."
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation='IDs cannot exist "under" IDs that don\'t exist; an ID 11.12 requires a category 11 and an area 10-19.',
+            fix="Add any missing categories/areas, or ensure the specified parent is correct.",
+        )
+
+
+@dataclass(frozen=True)
+class JDexIssueAmbiguousAncestry(JDexIssue):
+    """An ID in the JDex occurred multiple times with different parents."""
+
+    id: str
+    entries: list[CollectedJDexEntry]
+    type: Literal["JDEX_AMBIGUOUS_ANCESTRY"] = "JDEX_AMBIGUOUS_ANCESTRY"
+
+    def display(self) -> str:
+        """Display this particular instance of an error."""
+        return f"{self.id}:\n    " + "\n    ".join(
+            [f"Parent {f.parent}:  {f.path}" for f in self.entries],
+        )
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="An ID must have exactly one parent, e.g. a work package cannot relate to both ~12.34 and ~12.35",
+            fix="This usually occurs due to an accidental duplicate ID. Fix the erroneous entry.",
+        )
+
+
+@dataclass(frozen=True)
+class JDexIssueAncestryCycle(JDexIssue):
+    """IDs in the JDex had cyclical inheritance."""
+
+    entries: dict[str, list[CollectedJDexEntry]]
+    type: Literal["JDEX_ANCESTRY_CYCLE"] = "JDEX_ANCESTRY_CYCLE"
+
+    def display(self) -> str:
+        """Display this particular instance of an error."""
+        return "Cycle:\n    " + "\n    ".join(
+            [
+                f"{jid} with parent {es[0].parent}:  {', '.join([str(entry.path) for entry in es])}"
+                for jid, es in self.entries.items()
+            ],
+        )
+
+    def explain(self) -> _Explanation:
+        """Explain what this error is."""
+        return _Explanation(
+            explanation="ID's must not have circular inheritance, e.g. two work packages cannot relate to each other. An ID cannot be its own parent.",
+            fix="Fix the parentage of the IDs in question to break the cycle.",
+        )
 
 
 @dataclass(frozen=True)
@@ -1072,6 +1173,10 @@ JDexIssueType = (
     | JDexIssueFolderWhereNoteExpected
     | JDexIssueEncounteredForbiddenFolder
     | JDexIssueEncounteredForbiddenNote
+    | JDexIssueInvalidID
+    | JDexIssueOrphan
+    | JDexIssueAncestryCycle
+    | JDexIssueAmbiguousAncestry
 )
 IssueType = (
     IssueArbitraryContentWhereNotAllowed
@@ -1109,6 +1214,14 @@ class SystemFile:
 
 
 @dataclass(frozen=True)
+class _CollectedSystemEntry:
+    """A file/folder collected by the lint, prior to processing."""
+
+    expected_jdex_entry: str | None
+    path: PurePath
+
+
+@dataclass(frozen=True)
 class JDexEntry:
     """An entry in a JDex, including the path to the note that defined it."""
 
@@ -1117,12 +1230,32 @@ class JDexEntry:
 
 
 @dataclass(frozen=True)
+class CollectedJDexEntry:
+    """An entry in a JDex collected by the lint, prior to processing."""
+
+    entry: str
+    parent: str | None
+    path: PurePath | None
+
+
+_CollectedJDex = dict[str, list[CollectedJDexEntry]]
+
+
+@dataclass
+class JDexIDEntry:
+    """An ID in a JDex, including any entries that defined it and any children nested under it."""
+
+    entries: list[JDexEntry]
+    children: dict[str, JDexIDEntry]
+
+
+@dataclass(frozen=True)
 class JDexLintResults:
     """All errors returned from linting the JDex."""
 
     errors: list[JDexIssue]
     path: PurePath
-    entries: dict[str, list[JDexEntry]]
+    entries: dict[str, JDexIDEntry]
 
 
 @dataclass(frozen=True)
@@ -1162,14 +1295,15 @@ def _print_unmatched_patterns(ps: tuple[ContentPattern, ...]) -> str:
     return f"matched none of:\n{textwrap.indent(formats, '  ')}"
 
 
-def _sort_jdex_error(e: JDexIssue) -> tuple[str, tuple[tuple[str, ...], str]]:
-    # Sort errors alphabetically by type, then by file affected
+def _sort_jdex_error(e: JDexIssue) -> tuple[str, tuple[tuple[str, ...], str], str]:
+    # Sort errors alphabetically by type, then by file affected, then by ID, if it exists
     # This is split from _sort_error for type-checking nonsense
     if e.type == "":
         raise NotImplementedError
     return (
         e.type,
         (e.file.parent.parts, e.file.name) if e.file else ((), ""),
+        getattr(e, "id", ""),
     )
 
 
@@ -1184,7 +1318,7 @@ def _sort_error(e: Issue) -> tuple[str, tuple[tuple[str, ...], str]]:
     )
 
 
-def _sort_jdex_entry(e: JDexEntry) -> tuple[str, PurePath]:
+def _sort_jdex_entry(e: CollectedJDexEntry | JDexEntry) -> tuple[str, PurePath]:
     return (e.entry, e.path or PurePath())
 
 
@@ -1222,59 +1356,168 @@ def _insert_concat_sorted(k, vs: list, d, key=None) -> None:  # noqa: ANN001
 def _get_jdex_entries_from_json(
     jdex: ConfigSystemJDex,
     json: dict,
-) -> tuple[dict[str, list[JDexEntry]], list[JDexIssue]]:
-    accumulated_entries: dict[str, list[JDexEntry]] = {}
+) -> tuple[_CollectedJDex, list[JDexIssue]]:
+    accumulated_entries: list[tuple[tuple[str | None | Literal[-1], str], str]] = []
     accumulated_errors: list[JDexIssue] = []
+    system_regex = re.compile("[A-Z][0-9][0-9]")
+    area_regex = re.compile("(?P<A>[0-9])0-(?P=A)9")
+    category_regex = re.compile("([0-9])[0-9]")
+    id_regex = re.compile("(([0-9])([0-9]))\\.[0-9]{2}")
+    system = None
     for jid, v in json.items():
+        built_id: None | tuple[str | None | Literal[-1], str] = None
+        entry = jdex.entry.build({"id": jid, "title": v["title"]})
+        match v["type"]:
+            case "system":
+                if system_regex.fullmatch(jid):
+                    system = jid
+                    built_id = (None, jid)
+                else:
+                    accumulated_errors.append(
+                        JDexIssueInvalidID(
+                            None,
+                            jid,
+                            entry,
+                            "system",
+                        ),
+                    )
+            case "area":
+                if area_regex.fullmatch(jid):
+                    built_id = (-1, jid)
+                else:
+                    accumulated_errors.append(
+                        JDexIssueInvalidID(
+                            None,
+                            jid,
+                            entry,
+                            "area",
+                        ),
+                    )
+            case "category":
+                match = category_regex.fullmatch(jid)
+                if match:
+                    built_id = (f"{match.group(1)}0-{match.group(1)}9", jid)
+                else:
+                    accumulated_errors.append(
+                        JDexIssueInvalidID(
+                            None,
+                            jid,
+                            entry,
+                            "category",
+                        ),
+                    )
+            case "id":
+                match = id_regex.fullmatch(jid)
+                if match:
+                    built_id = (
+                        f"{match.group(2)}{match.group(3)}",
+                        jid,
+                    )
+                else:
+                    accumulated_errors.append(
+                        JDexIssueInvalidID(
+                            None,
+                            jid,
+                            entry,
+                            "id",
+                        ),
+                    )
+            case t:
+                accumulated_errors.append(
+                    JDexIssueInvalidID(
+                        None,
+                        jid,
+                        entry,
+                        f'unknown type: "{t}"',
+                    ),
+                )
+
+        if built_id is not None:
+            accumulated_entries.append((built_id, entry))
+    to_return = {}
+    for (parent, jid), e in accumulated_entries:
         _insert_append_sorted(
             jid,
-            JDexEntry(
-                jdex.entry.build(
-                    {"id": jid, "title": v["title"]},
-                ),
-                None,
-            ),
-            accumulated_entries,
+            CollectedJDexEntry(e, system if parent == -1 else parent, None),
+            to_return,
             key=_sort_jdex_entry,
         )
-    return (accumulated_entries, accumulated_errors)
+    return (to_return, accumulated_errors)
 
 
 def _get_jdex_entries_from_text(
     jdex: ConfigSystemJDex,
     text: str,
-) -> tuple[dict[str, list[JDexEntry]], list[JDexIssue]]:
-    accumulated_entries: dict[str, list[JDexEntry]] = {}
+) -> tuple[_CollectedJDex, list[JDexIssue]]:
+    accumulated_entries: _CollectedJDex = {}
     accumulated_errors: list[JDexIssue] = []
-    id_regex = re.compile("^\\s*([0-9]{2}(?:[.-][0-9]{2})?) ([^/\\n]+?)\\s*(?:$|/.*)")
+    area_regex = re.compile("^\\s*(?P<A>[0-9])0-(?P=A)9 ([^/\\n]+?)\\s*(?:$|/.*)")
+    category_regex = re.compile("^\\s*(([0-9])[0-9]) ([^/\\n]+?)\\s*(?:$|/.*)")
+    id_regex = re.compile("^\\s*(([0-9])[0-9])\\.([0-9]{2}) ([^/\\n]+?)\\s*(?:$|/.*)")
+    metadata_or_whitespace_regex = re.compile("^\\s*(- .+?)?\\s*(?:$|/.*)")
 
-    # First, we need to strip multiline comments, because that's tricky.
-    comment_regex = re.compile("(/\\*|\\*/)")
-    depth = 0
-    cleaned = ""
-    for i, chunk in enumerate(comment_regex.split(text)):
-        if i % 2 == 0:
-            if depth == 0:
-                cleaned += chunk
-            continue
-        if chunk == "/*":
-            depth += 1
-        elif depth > 0:
-            depth -= 1
-
-    for line in cleaned.splitlines():
-        match = id_regex.fullmatch(line)
+    for line in text.splitlines():
+        match = area_regex.fullmatch(line)
         if match:
+            jid = f"{match.group(1)}0-{match.group(1)}9"
+
             _insert_append_sorted(
-                match.group(1),
-                JDexEntry(
+                jid,
+                CollectedJDexEntry(
                     jdex.entry.build(
-                        {"id": match.group(1), "title": match.group(2)},
+                        {"id": jid, "title": match.group(2)},
                     ),
+                    None,
                     None,
                 ),
                 accumulated_entries,
                 key=_sort_jdex_entry,
+            )
+            continue
+        match = category_regex.fullmatch(line)
+        if match:
+            jid = match.group(1)
+
+            _insert_append_sorted(
+                jid,
+                CollectedJDexEntry(
+                    jdex.entry.build(
+                        {"id": jid, "title": match.group(3)},
+                    ),
+                    f"{match.group(2)}0-{match.group(2)}9",
+                    None,
+                ),
+                accumulated_entries,
+                key=_sort_jdex_entry,
+            )
+            continue
+
+        match = id_regex.fullmatch(line)
+        if match:
+            jid = f"{match.group(1)}.{match.group(3)}"
+
+            _insert_append_sorted(
+                jid,
+                CollectedJDexEntry(
+                    jdex.entry.build(
+                        {"id": jid, "title": match.group(4)},
+                    ),
+                    f"{match.group(1)}",
+                    None,
+                ),
+                accumulated_entries,
+                key=_sort_jdex_entry,
+            )
+            continue
+        if not metadata_or_whitespace_regex.fullmatch(line):
+            # This doesn't look like something in the standard
+            accumulated_errors.append(
+                JDexIssueInvalidID(
+                    None,
+                    "unknown",
+                    line.strip(),
+                    "unknown",
+                ),
             )
     return (accumulated_entries, accumulated_errors)
 
@@ -1282,7 +1525,7 @@ def _get_jdex_entries_from_text(
 def _get_jdex_entries_from_file(
     path: Path,
     jdex: ConfigSystemJDex,
-) -> tuple[dict[str, list[JDexEntry]], list[JDexIssue]]:
+) -> tuple[_CollectedJDex, list[JDexIssue]]:
     # Load file
     as_text = Path.read_text(path)
     try:
@@ -1299,7 +1542,7 @@ def _get_jdex_entries_here_or_children(
     bound_segments: dict[str, str],
     path: os.PathLike,
     tier: ConfigJDexTier | ConfigSystemJDex,
-) -> tuple[dict[str, list[JDexEntry]], list[JDexIssue]]:
+) -> tuple[_CollectedJDex, list[JDexIssue]]:
     # Compile regexes for children
     valid_children = [
         (re.compile(c.format.build_regex(bound_segments)), c) for c in tier.children
@@ -1308,7 +1551,7 @@ def _get_jdex_entries_here_or_children(
         (re.compile(n.format.build_regex(bound_segments)), n) for n in tier.notes
     ]
 
-    accumulated_entries: dict[str, list[JDexEntry]] = {}
+    accumulated_entries: _CollectedJDex = {}
     accumulated_errors: list[JDexIssue] = []
 
     has_content = False
@@ -1390,12 +1633,21 @@ def _get_jdex_entries_here_or_children(
 
                     # Create entry
                     for jid in note.ids:
+                        child_id = jid.id.build({**bound_segments, **match.groupdict()})
+                        parent_id = (
+                            jid.parent.build({**bound_segments, **match.groupdict()})
+                            if jid.parent is not None
+                            else None
+                        )
                         _insert_append_sorted(
-                            jid.id.build({**bound_segments, **match.groupdict()}),
-                            JDexEntry(
+                            child_id,
+                            CollectedJDexEntry(
                                 jid.entry.build(
                                     {**bound_segments, **match.groupdict()},
-                                ),
+                                )
+                                if jid.entry
+                                else x.name,
+                                parent_id,
                                 PurePath(x).relative_to(root_path),
                             ),
                             accumulated_entries,
@@ -1438,7 +1690,7 @@ def _get_jdex_entries_here_or_children(
 def _process_jdex(
     ignored: list[str],
     jdex: ConfigSystemJDex,
-) -> tuple[dict[str, list[JDexEntry]], list[JDexIssue]]:
+) -> tuple[_CollectedJDex, list[JDexIssue]]:
     # We need to first see if we have a single file, or a folder
     if not getattr(jdex, "entry", False):
         # Normal note-based JDex
@@ -1473,7 +1725,7 @@ def _process_jdex(
 
 
 def _process_system_level_and_children(
-    by_id_dict: dict[str, list[tuple[str | None, PurePath]]],
+    by_id_dict: dict[str, list[_CollectedSystemEntry]],
     ignored: list[str],
     root_path: PurePath,
     bound_segments: dict[str, str],
@@ -1505,21 +1757,21 @@ def _process_system_level_and_children(
                     )
                     break
                 # Is a valid child folder
-                child_id = child.id.build({**bound_segments, **match.groupdict()})
+                child_id = child.id.id.build({**bound_segments, **match.groupdict()})
                 if not child.no_jdex_entry:
                     _insert_append_sorted(
                         child_id,
-                        (
-                            child.jdex_entry.build(
+                        _CollectedSystemEntry(
+                            child.id.entry.build(
                                 {**bound_segments, **match.groupdict()},
                             )
-                            if child.jdex_entry
+                            if child.id.entry
                             else x.name,
                             PurePath(x).relative_to(root_path),
                         ),
                         by_id_dict,
                         # Sort duplicates by their path, not their JDex entry
-                        key=lambda e: e[1],
+                        key=lambda e: e.path,
                     )
                 if x.is_file():
                     if child.can_be_file:
@@ -1610,9 +1862,9 @@ def _process_system_level_and_children(
 def _process_system_root(
     ignored: list[str],
     root: ConfigSystemRoot,
-    jdex: None | dict[str, list[JDexEntry]],
+    jdex: None | _CollectedJDex,
 ) -> tuple[dict[str, list[SystemFolder | SystemFile]], list[Issue]]:
-    by_id: dict[str, list[tuple[str | None, PurePath]]] = {}
+    by_id: dict[str, list[_CollectedSystemEntry]] = {}
     (root_structure, root_errors) = _process_system_level_and_children(
         by_id,
         ignored + root.ignore,
@@ -1624,7 +1876,7 @@ def _process_system_root(
 
     # Check for duplicate IDs
     duplicate_id_errors = [
-        IssueDuplicateID(fs[0][1], tuple([f[1] for f in fs]), jid)
+        IssueDuplicateID(fs[0].path, tuple([f.path for f in fs]), jid)
         for jid, fs in by_id.items()
         if len(fs) != 1
     ]
@@ -1634,19 +1886,20 @@ def _process_system_root(
     if jdex is not None:
         for jid, fs in by_id.items():
             if jid not in jdex:
-                id_errors.append(IssueIDNotInJDex(fs[0][1], jid))
+                id_errors.append(IssueIDNotInJDex(fs[0].path, jid))
             else:
                 jdex_entries = [n.entry for n in jdex[jid]]
-                for expected_jdex_entry, f in fs:
-                    if expected_jdex_entry and expected_jdex_entry not in jdex_entries:
-                        id_errors.append(
-                            IssueIDDifferentFromJDex(
-                                f,
-                                jid,
-                                expected_jdex_entry,
-                                jdex[jid],
-                            ),
-                        )
+                id_errors.extend(
+                    IssueIDDifferentFromJDex(
+                        f.path,
+                        jid,
+                        f.expected_jdex_entry,
+                        jdex[jid],
+                    )
+                    for f in fs
+                    if f.expected_jdex_entry
+                    and f.expected_jdex_entry not in jdex_entries
+                )
 
     return (root_structure, root_errors + duplicate_id_errors + id_errors)
 
@@ -1654,12 +1907,121 @@ def _process_system_root(
 def lint_system(config: Config) -> LintResults:
     """Given a valid jdlint config, lint the specified system and return results."""
     jdex_errors = []
-    jdex_entries = {}
+    jdex_entries: _CollectedJDex = {}
     if config.system.jdex:
         (jdex_entries, jdex_errors) = _process_jdex(
             config.linter.ignore,
             config.system.jdex,
         )
+        # We need to assemble a tree structure for the JDex, since we only have dependencies
+        safe_entries: dict[tuple[str | None, str], JDexIDEntry] = {}
+        has_children: dict[str, set[str]] = {}
+
+        def go() -> dict[str, JDexIDEntry]:
+            starting_size = len(safe_entries)
+            for pid, jid in tuple(safe_entries.keys()):
+                if jid not in has_children:
+                    entry = safe_entries.pop((pid, jid))
+                    if pid is None:
+                        # this is a top level entry
+                        safe_entries[(None, jid)] = entry
+                        continue
+                    possible_parents = [
+                        (grandparent, parent)
+                        for (grandparent, parent) in safe_entries
+                        if parent == pid
+                    ]
+                    match len(possible_parents):
+                        case 1:
+                            key = possible_parents[0]
+                            parent = safe_entries[key]
+                            parent.children[jid] = entry
+                            safe_entries[key] = parent
+                        case 0:
+                            # ID is an orphan
+                            jdex_errors.extend(
+                                JDexIssueOrphan(e.path, jid, e.entry, pid)
+                                for e in entry.entries
+                            )
+                        case _:
+                            # Parentage is ambiguous; this should not be able to happen, since we've checked for it already
+                            raise NotImplementedError
+                    remaining_children = has_children.pop(pid)
+                    remaining_children.remove(jid)
+                    if remaining_children:
+                        has_children[pid] = remaining_children
+            if has_children:
+                if len(safe_entries) < starting_size:
+                    go()
+                else:
+                    # We have cycles
+                    while True:
+                        # Get an ID that is not top level
+                        pid, jid = next(
+                            ((k, v) for k, v in safe_entries if k is not None),
+                            (None, None),
+                        )
+                        if jid is None:
+                            # All cycles reported
+                            break
+                        cycle = {
+                            jid: [
+                                CollectedJDexEntry(e.entry, pid, e.path)
+                                for e in safe_entries.pop((pid, jid)).entries
+                            ],
+                        }
+
+                        def get_next(
+                            cycle: dict[str, list[CollectedJDexEntry]],
+                            next_parent: str,
+                        ) -> None:
+                            gp, p = next(
+                                ((gp, p) for gp, p in safe_entries if p == next_parent),
+                                (None, None),
+                            )
+                            if p is not None:
+                                cycle[next_parent] = [
+                                    CollectedJDexEntry(e.entry, gp, e.path)
+                                    for e in safe_entries.pop((gp, p)).entries
+                                ]
+                                if gp is not None:
+                                    get_next(cycle, gp)
+
+                        if pid is not None:
+                            get_next(cycle, pid)
+                        jdex_errors.append(
+                            JDexIssueAncestryCycle(
+                                # Sort dict keys
+                                next(iter(cycle[key] for key in sorted(cycle.keys())))[
+                                    0
+                                ].path,
+                                {k: cycle[k] for k in sorted(cycle.keys())},
+                            ),
+                        )
+
+            return {jid: e for (_, jid), e in safe_entries.items()}
+
+        for jid, es in jdex_entries.items():
+            # We need to collect these by parentage first
+            by_parent: dict[str | None, list[CollectedJDexEntry]] = {}
+            for e in es:
+                _insert_append_sorted(e.parent, e, by_parent, key=_sort_jdex_entry)
+            if len(by_parent) == 1:
+                (pid, entries) = by_parent.popitem()
+                safe_entries[(pid, jid)] = JDexIDEntry(
+                    [JDexEntry(e.entry, e.path) for e in entries],
+                    {},
+                )
+
+                if pid is not None:
+                    children = has_children.get(pid, set())
+                    children.add(jid)
+                    has_children[pid] = children
+            else:
+                # Ambiguous parentage
+                jdex_errors.append(JDexIssueAmbiguousAncestry(es[0].path, jid, es))
+        jdex_results = go()
+
     roots = {}
     ignored_errors = 0
     for root in config.system.roots:
@@ -1691,7 +2053,7 @@ def lint_system(config: Config) -> LintResults:
                 key=_sort_jdex_error,
             ),
             config.system.jdex.path,
-            jdex_entries,
+            jdex_results,
         )
         if config.system.jdex
         else None,

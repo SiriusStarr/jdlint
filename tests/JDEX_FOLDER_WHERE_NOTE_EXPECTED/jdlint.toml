@@ -30,6 +30,7 @@ format = "/=A//=Name/.md"
 
 [[system.jdex.children.children.notes.ids]]
 id = "/=A/./=Name/"
+parent = "/=A/"
 entry = "/=A/./=Name/"
 
 [[system.default.children]]

@@ -3,42 +3,63 @@
     "errors": [],
     "path": "jdex.txt",
     "entries": {
-      "10-19": [
-        {
-          "entry": "10-19 Life admin",
-          "path": null
+      "10-19": {
+        "entries": [
+          {
+            "entry": "10-19 Life admin",
+            "path": null
+          }
+        ],
+        "children": {
+          "11": {
+            "entries": [
+              {
+                "entry": "11 Me",
+                "path": null
+              }
+            ],
+            "children": {
+              "11.01": {
+                "entries": [
+                  {
+                    "entry": "11.01 Birth certificate",
+                    "path": null
+                  }
+                ],
+                "children": {}
+              },
+              "11.02": {
+                "entries": [
+                  {
+                    "entry": "11.02 Passport",
+                    "path": null
+                  }
+                ],
+                "children": {}
+              }
+            }
+          },
+          "12": {
+            "entries": [
+              {
+                "entry": "12 Household",
+                "path": null
+              }
+            ],
+            "children": {
+              "12.01": {
+                "entries": [
+                  {
+                    "entry": "12.01 Insurance policies",
+                    "path": null
+                  }
+                ],
+                "children": {}
+              }
+            }
+          }
         }
-      ],
-      "11": [
-        {
-          "entry": "11 Me",
-          "path": null
-        }
-      ],
-      "11.01": [
-        {
-          "entry": "11.01 Birth certificate",
-          "path": null
-        }
-      ],
-      "11.02": [
-        {
-          "entry": "11.02 Passport",
-          "path": null
-        }
-      ],
-      "12": [
-        {
-          "entry": "12 Household",
-          "path": null
-        }
-      ],
-      "12.01": [
-        {
-          "entry": "12.01 Insurance policies",
-          "path": null
-        }
-      ]
+      }
     }
   },
   "roots": {
@@ -52,6 +73,7 @@
           "known_jdex_entries": [
             {
               "entry": "11.02 Passport",
+              "parent": "11",
               "path": null
             }
           ]

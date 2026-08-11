@@ -26,7 +26,13 @@ id = "/=A/0-/=A/9"
 entry = "/=A/0-/=A/9 /=Name/"
 
 [[system.jdex.children.children.notes.ids]]
+id = "/=A/0"
+parent = "/=A/0-/=A/9"
+entry = "/=A/0 /=Name/"
+
+[[system.jdex.children.children.notes.ids]]
 id = "/=A/0.00"
+parent = "/=A/0"
 entry = "/=A/0.00 /=Name/"
 
 [[system.jdex.children.children.notes]]
@@ -35,10 +41,12 @@ format = "/=A//=C/.00 /*Name/.md"
 
 [[system.jdex.children.children.notes.ids]]
 id = "/=A//=C/"
+parent = "/=A/0-/=A/9"
 entry = "/=A//=C/ /=Name/"
 
 [[system.jdex.children.children.notes.ids]]
 id = "/=A//=C/.00"
+parent = "/=A//=C/"
 entry = "/=A//=C/.00 /=Name/"
 
 [[system.jdex.children.children.notes]]
@@ -47,6 +55,7 @@ format = "/=A//=C/./##ID/ /*Name/.md"
 
 [[system.jdex.children.children.notes.ids]]
 id = "/=A//=C/./=ID/"
+parent = "/=A//=C/"
 entry = "/=A//=C/./=ID/ /=Name/"
 
 [[system.default.children]]

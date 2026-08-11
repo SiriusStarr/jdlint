@@ -1,0 +1,77 @@
+[linter]
+json_output = true
+ignore = [".placeholder"]
+disable_rules = ["ID_NOT_IN_JDEX"]
+
+[[system.roots]]
+name = "Files"
+path = "files"
+
+[system.jdex]
+path = "jdex"
+
+[[system.jdex.children]]
+name = "JDex Area Folder"
+format = "/#A/0-/=A/9 /*Area/"
+
+[[system.jdex.children.children]]
+name = "JDex Category Folder"
+format = "/=A//#C/ /*Category/"
+
+[[system.jdex.children.children.notes]]
+name = "JDex Area Note"
+format = "/=A/0.00 /*Name/.md"
+
+[[system.jdex.children.children.notes.ids]]
+id = "/=A/0-/=A/9"
+entry = "/=A/0-/=A/9 /=Name/"
+
+[[system.jdex.children.children.notes.ids]]
+id = "/=A/0"
+parent = "/=A/0-/=A/9"
+entry = "/=A/0 /=Name/"
+
+[[system.jdex.children.children.notes.ids]]
+id = "/=A/0.00"
+parent = "/=A/0"
+entry = "/=A/0.00 /=Name/"
+
+[[system.jdex.children.children.notes]]
+name = "JDex Category Note"
+format = "/=A//=C/.00 /*Name/.md"
+
+[[system.jdex.children.children.notes.ids]]
+id = "/=A//=C/"
+parent = "/=A/0-/=A/9"
+entry = "/=A//=C/ /=Name/"
+
+[[system.jdex.children.children.notes.ids]]
+id = "/=A//=C/.00"
+parent = "/=A//=C/"
+entry = "/=A//=C/.00 /=Name/"
+
+[[system.jdex.children.children.notes]]
+name = "JDex Id Note"
+format = "/=A//=C/./##ID/ /*Name/.md"
+
+[[system.jdex.children.children.notes.ids]]
+id = "/=A//=C/./=ID/"
+parent = "/=A//=C/"
+entry = "/=A//=C/./=ID/ /=Name/"
+
+[[system.default.children]]
+name = "Area"
+format = "/#A/0-/=A/9 /*Area/"
+id = "/=A/0-/=A/9"
+
+[[system.default.children.children]]
+name = "Category"
+format = "/=A//#C/ /*Category/"
+id = "/=A//=C/"
+
+[[system.default.children.children.children]]
+name = "ID"
+format = "/=A//=C/./##ID/ /*IDName/"
+id = "/=A//=C/./=ID/"
+can_be_file = true
+allow_arbitrary_contents = true

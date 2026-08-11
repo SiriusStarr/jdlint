@@ -1,0 +1,42 @@
+[linter]
+json_output = true
+ignore = [".placeholder"]
+disable_rules = ["EMPTY_FOLDER"]
+
+[[system.roots]]
+name = "Files"
+path = "files"
+
+[system.jdex]
+path = "jdex.jd.json"
+entry = "/=id/ /=title/"
+
+[[system.default.children]]
+name = "System"
+format = "/*SYS/ /*System/"
+id = "/=SYS/"
+
+[[system.default.children.children]]
+name = "Area"
+format = "/#A/0-/=A/9 /*Area/"
+id = "/=A/0-/=A/9"
+
+[[system.default.children.children.children]]
+name = "Category"
+format = "/=A//#C/ /*Category/"
+id = "/=A//=C/"
+
+[[system.default.children.children.children.children]]
+name = "ID"
+format = "/=A//=C/.12 Myslef"
+id = "/=A//=C/.12"
+entry = "/=A//=C/.12 Myself"
+can_be_file = true
+allow_arbitrary_contents = true
+
+[[system.default.children.children.children.children]]
+name = "ID"
+format = "/=A//=C/./##ID/ /*IDName/"
+id = "/=A//=C/./=ID/"
+can_be_file = true
+allow_arbitrary_contents = true

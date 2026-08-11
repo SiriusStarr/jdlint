@@ -1,4 +1,8 @@
 {
+  "11": {
+    "type": "category",
+    "title": "Me"
+  },
   "A01": {
     "type": "system",
     "title": "My life"
@@ -6,10 +10,6 @@
   "10-19": {
     "type": "area",
     "title": "Life admin"
-  },
-  "11": {
-    "type": "category",
-    "title": "Me"
   },
   "11.01": {
     "type": "id",

@@ -16,12 +16,6 @@ format = "/#A/0-/=A/9 /*Area/"
 id = "/=A/0-/=A/9"
 
 [[system.default.children.children]]
-name = "10 Category"
-format = "10 /*Category/"
-id = "10"
-no_jdex_entry = true
-
-[[system.default.children.children]]
 name = "Category"
 format = "/=A//#C/ /*Category/"
 id = "/=A//=C/"
@@ -30,7 +24,7 @@ id = "/=A//=C/"
 name = "ID"
 format = "/=A//=C/.12 Myslef"
 id = "/=A//=C/.12"
-jdex_entry = "/=A//=C/.12 Myself"
+entry = "/=A//=C/.12 Myself"
 can_be_file = true
 allow_arbitrary_contents = true
 
