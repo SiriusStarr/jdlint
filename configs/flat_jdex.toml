@@ -46,10 +46,12 @@ entry = "/=A/0-/=A/9 /=Name/"
 [[system.jdex.notes.ids]]
 id = "/=A/0"
 entry = "/=A/0 management for /=Name/"
+parent = "/=A/0-/=A/9"
 
 [[system.jdex.notes.ids]]
 id = "/=A/0.00"
 entry = "/=A/0.00 index for /=Name/"
+parent = "/=A/0"
 
 [[system.jdex.notes]]
 name = "JDex Category Note"
@@ -58,10 +60,12 @@ format = "/#A//#C/.00 /*Name/.md"
 [[system.jdex.notes.ids]]
 id = "/=A//=C/"
 entry = "/=A//=C/ /=Name/"
+parent = "/=A/0-/=A/9"
 
 [[system.jdex.notes.ids]]
 id = "/=A//=C/.00"
 entry = "/=A//=C/.00 JDex for /=Name/"
+parent = "/=A//=C/"
 
 [[system.jdex.notes]]
 name = "JDex Id Note"
@@ -70,6 +74,7 @@ format = "/#A//#C/./##ID/ /*Name/.md"
 [[system.jdex.notes.ids]]
 id = "/=A//=C/./=ID/"
 entry = "/=A//=C/./=ID/ /=Name/"
+parent = "/=A//=C/"
 
 [[system.jdex.notes]]
 name = "JDex Work Package Id Note"
@@ -78,6 +83,7 @@ format = "W/####WPID/~/##AC/./##ID/ /*WPName/.md"
 [[system.jdex.notes.ids]]
 id = "W/=WPID/"
 entry = "W/=WPID/~/=AC/./=ID/ /=WPName/"
+parent = "/=AC/./=ID/"  # This allows us to check that the referenced ID exists
 
 ## #############################################################################
 #  system.default defines the *default* structure used by any roots to check

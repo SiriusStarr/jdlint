@@ -18,7 +18,7 @@ ignore = [".stignore", ".stfolder", ".git*"]
 ## #############################################################################
 [system.jdex]
 # The path to begin JDex structure at.
-path = "~/Obsidian"
+path = "~/Documents"
 # File patterns to ignore just in the JDex
 ignore = ["Attachments"]
 
@@ -59,10 +59,12 @@ entry = "/=A/0-/=A/9 /=Area/"
 [[system.jdex.children.children.children.notes.ids]]
 id = "/=A/0"
 entry = "/=A/0 /=Category/"
+parent = "/=A/0-/=A/9"
 
 [[system.jdex.children.children.children.notes.ids]]
 id = "/=A/0.00"
 entry = "/=A/0.00 /=Name/"
+parent = "/=A/0"
 
 [[system.jdex.children.children.children.notes]]
 name = "JDex Category Note"
@@ -71,10 +73,12 @@ format = "/=A//=C/.00 /*Name/.md"
 [[system.jdex.children.children.children.notes.ids]]
 id = "/=A//=C/"
 entry = "/=A//=C/ /=Category/"
+parent = "/=A/0-/=A/9"
 
 [[system.jdex.children.children.children.notes.ids]]
 id = "/=A//=C/.00"
 entry = "/=A//=C/.00 /=Name/"
+parent = "/=A//=C/"
 
 [[system.jdex.children.children.children.notes]]
 name = "JDex Id Note"
@@ -83,6 +87,7 @@ format = "/=A//=C/./=ID/ /*Name/.md"
 [[system.jdex.children.children.children.notes.ids]]
 id = "/=A//=C/./=ID/"
 entry = "/=A//=C/./=ID/ /=Name/"
+parent = "/=A//=C/"
 
 # Defining a top-level folder for work packages
 [[system.jdex.children]]
@@ -102,6 +107,7 @@ format = "W/=WPID/~/=AC/./=ID/ /=WPName/.md"
 [[system.jdex.children.children.notes.ids]]
 id = "W/=WPID/"
 entry = "W/=WPID/~/=AC/./=ID/ /=WPName/"
+parent = "/=AC/./=ID/"  # This allows us to check that the referenced ID exists
 
 ## #############################################################################
 #  system.default defines the *default* structure used by any roots to check
