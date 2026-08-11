@@ -556,6 +556,7 @@ allow_arbitrary_contents = true
 [[system.roots]]
 name = "Dropbox"
 path = "~/Dropbox"
+ignore = [".maestral*"]  # Ignore the folders Maestral uses
 
 # Dropbox does not use anything but terminal folders
 [[system.roots.children]]
