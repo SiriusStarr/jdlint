@@ -7,6 +7,10 @@
     "type": "system",
     "title": "My life"
   },
+  "W1": {
+    "type": "workywork",
+    "title": "Wrong"
+  },
   "10": {
     "type": "area",
     "title": "Life admin"

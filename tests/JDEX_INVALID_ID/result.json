@@ -30,6 +30,13 @@
         "id": "11.011"
       },
       {
+        "type": "JDEX_INVALID_ID",
+        "file": null,
+        "entry_type": "unknown type: \"workywork\"",
+        "entry": "W1 Wrong",
+        "id": "W1"
+      },
+      {
         "type": "JDEX_ORPHAN",
         "file": null,
         "entry": "11.02 Passport",
