@@ -6,6 +6,7 @@ clean.
 * [jdlint \[N14.0001\]](#jdlint-n140001)
   * [Installation/Requirements](#installationrequirements)
   * [Usage](#usage)
+  * [Support for JD Configuration](#support-for-jd-configuration)
   * [Config File](#config-file)
   * [Ignoring Files](#ignoring-files)
   * [Disabling Specific Rules](#disabling-specific-rules)
@@ -39,12 +40,12 @@ clean.
 ## Installation/Requirements
 
 Install a fairly recent version of
-[Python 3](https://www.python.org/downloads/); `jdlint` is tested to work on
+[Python 3](https://www.python.org/downloads/); jdlint is tested to work on
 Python 3.11 and up.
 
 That's it! There are no other dependencies.
 
-`jdlint` should work on Linux, macOS, or Windows.
+jdlint should work on Linux, macOS, or Windows.
 
 ## Usage
 
@@ -60,6 +61,21 @@ with the `-c` flag, e.g.
 ```
 
 Everything the script needs is specified in the config file.
+
+## Support for JD Configuration
+
+By default, the script supports system specification via the
+[JD configuration standard](https://johnnydecimal.com/jdhq/configuration). If
+you don't use that, there are no ill effects. If you *do* have a JD config file
+and want to ignore it for whatever reason, you can run jdlint with the `-p`
+flag, e.g.
+
+```bash
+./jdlint.py -p -c ~/my_jdlint_config.toml
+```
+
+You can alternately set [linter.ignore_environment](./configs/README.md#linter)
+in the config file.
 
 ## Config File
 

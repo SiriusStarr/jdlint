@@ -237,6 +237,8 @@ General linter behavior.
 * `linter.json_output` – Boolean, defaults to false. If true, report in
   machine-readable JSON instead of printing results. If you don't already know
   why you'd want that, you don't want it.
+* `linter.ignore_environment` – Boolean, defaults to false. If true, ignore any
+  [JD configuration](https://johnnydecimal.com/jdhq/configuration) present.
 * `linter.ignore` – A (default empty) list of strings to ignore as files or
   folders across the JDex and all locations. Supports glob patterns, so you can
   do `"*.jpg"` to ignore all files that end with `.jpg`, for example. (It uses

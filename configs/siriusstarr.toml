@@ -6,6 +6,8 @@
 disable_rules = []
 # Output machine-readable JSON instead of human-readable terminal output
 json_output = false
+# Ignore any JD configuration files present
+ignore_environment = true
 # File patterns to ignore anywhere they appear; these support rudimentary globbing
 ignore = [".stignore", ".stfolder", ".git*"]
 

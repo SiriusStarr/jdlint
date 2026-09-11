@@ -280,6 +280,9 @@ class ConfigLinter:
             from_file,
         )
         self.json_output = _pop_default_false_bool("linter", "json_output", from_file)
+        self.ignore_environment = _pop_default_false_bool(
+            "linter", "ignore_environment", from_file
+        )
         self.ignore = _pop_list_of_strings("linter", "ignore", from_file)
 
         # Validate
@@ -2107,6 +2110,14 @@ if __name__ == "__main__":
         action="store_const",
         const=True,
         help="Override config file to output machine-readable JSON",
+    )
+    parser.add_argument(
+        "-p",
+        "--pure",
+        dest="json",
+        action="store_const",
+        const=True,
+        help="Ignore any environment configuration, e.g. JD_CONFIG or ~/.jd/config.json; useful if you want to fully specify configuration in jdlint.toml.",
     )
 
     args = parser.parse_args()
