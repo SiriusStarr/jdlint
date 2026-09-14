@@ -2226,7 +2226,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-p",
         "--pure",
-        dest="json",
+        dest="pure",
         action="store_const",
         const=True,
         help="Ignore any environment configuration, e.g. JD_CONFIG or ~/.jd/config.json; useful if you want to fully specify configuration in jdlint.toml.",
