@@ -249,6 +249,23 @@ General linter behavior.
 
 Configuration of your exact JD system.
 
+Note that this can either be a single object *or* a list of systems, depending
+on whether you are linting multiple systems or not. In general, you should
+prefer it being a list, but the single object is provided for backwards
+compatibility.
+
+#### `system.id`
+
+The ID of the system. Optional when specifying only a single system. This ID
+must match one specified via the
+[JD configuration standard](https://johnnydecimal.com/jdhq/configuration) if you
+are using it.
+
+#### `system.name`
+
+The name/description of the system. Optional when specifying only a single
+system.
+
 #### `system.jdex`
 
 Configuration for the JDex of your system. This whole section can be omitted if

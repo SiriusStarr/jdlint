@@ -39,7 +39,13 @@ class AllTests(unittest.TestCase):
                     config = jdlint.Config(tomllib.load(config_file))
 
                     # Lint the test directory
-                    results = jdlint.lint_system(config)
+                    if isinstance(config.system, jdlint.ConfigSystem):
+                        results = jdlint.lint_system(config.linter, config.system)
+                    else:
+                        results = {
+                            sysID: jdlint.lint_system(config.linter, sys)
+                            for sysID, sys in config.system.items()
+                        }
                     expected = json.load(golden_file)
 
                     # Convert lint results into loaded format

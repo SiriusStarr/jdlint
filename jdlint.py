@@ -281,7 +281,9 @@ class ConfigLinter:
         )
         self.json_output = _pop_default_false_bool("linter", "json_output", from_file)
         self.ignore_environment = _pop_default_false_bool(
-            "linter", "ignore_environment", from_file
+            "linter",
+            "ignore_environment",
+            from_file,
         )
         self.ignore = _pop_list_of_strings("linter", "ignore", from_file)
 
@@ -306,17 +308,26 @@ class ConfigLinter:
 class ConfigSystem:
     """Valid configuration for the JD system."""
 
-    def __init__(self, from_file: dict) -> None:
+    def __init__(self, at: str, sys_id: str | None, from_file: dict) -> None:
         """Create a valid configuration given a loaded system section of a config file."""
+        self.id = sys_id
+
+        try:
+            self.name = _pop_nonempty_str_attribute(at, "name", from_file)
+        except ConfigMissingKeyError:
+            # Name is mandatory for non-default systems
+            if sys_id:
+                raise
+
         default_structure = [
             ConfigSystemTier(
-                f"system.default.children[{i}]",
+                f"{at}.default.children[{i}]",
                 ConfigFormatAncestorInfo((), ()),
                 v,
             )
             for i, v in enumerate(
                 _pop_list(
-                    "system.default",
+                    f"{at}.default",
                     "children",
                     from_file.pop("default", {}),
                 ),
@@ -325,11 +336,11 @@ class ConfigSystem:
 
         self.roots = [
             ConfigSystemRoot(
-                f"system.roots[{i}]",
+                f"{at}.roots[{i}]",
                 default_structure,
                 v,
             )
-            for i, v in enumerate(_pop_list("system", "roots", from_file))
+            for i, v in enumerate(_pop_list(f"{at}", "roots", from_file))
         ]
 
         accum_names = {}
@@ -337,23 +348,23 @@ class ConfigSystem:
         for root in self.roots:
             if root.name in accum_names:
                 err = ConfigConflictError(
-                    "system.roots",
+                    f"{at}.roots",
                     f"System root names must be unique. {root.name} occurs multiple times.",
                 )
                 raise err
             if root.path in accum_paths:
                 err = ConfigConflictError(
-                    "system.roots",
+                    f"{at}.roots",
                     f"System root paths must be unique. {root.path} occurs multiple times.",
                 )
                 raise err
 
         if "jdex" in from_file:
-            self.jdex = ConfigSystemJDex("system.jdex", from_file.pop("jdex"))
+            self.jdex = ConfigSystemJDex(f"{at}.jdex", from_file.pop("jdex"))
         else:
             self.jdex = None
 
-        _report_extra_keys("system", from_file, tuple(self.__dict__.keys()))
+        _report_extra_keys(f"{at}", from_file, tuple(self.__dict__.keys()))
 
 
 class ConfigStaticFormat:
@@ -728,7 +739,41 @@ class Config:
         if "system" not in from_file:
             err = ConfigMissingKeyError("system")
             raise err
-        self.system = ConfigSystem(from_file["system"])
+
+        if not isinstance(from_file["system"], list):
+            try:
+                sys_id = _pop_nonempty_str_attribute(
+                    "system",
+                    "id",
+                    from_file["system"],
+                )
+            except ConfigMissingKeyError:
+                sys_id = None
+
+            self.system: dict[str, ConfigSystem] | ConfigSystem = ConfigSystem(
+                "system",
+                sys_id,
+                from_file["system"],
+            )
+        else:
+            self.system = {}
+            for i, sys in enumerate(from_file["system"]):
+                if not isinstance(sys, dict):
+                    err = ConfigTypeError(
+                        f"system[{i}]",
+                        "dict",
+                        type(sys).__name__,
+                    )
+                    raise err
+                sys_id = _pop_nonempty_str_attribute(f"system[{i}]", "id", sys)
+                if sys_id in self.system:
+                    # Duplicate system ID!
+                    err = ConfigConflictError(
+                        f"system[{i}].id",
+                        f"The id {sys_id} was specified for more than one system!",
+                    )
+                    raise err
+                self.system[sys_id] = ConfigSystem(f"system[{i}]", sys_id, sys)
 
 
 ###############################################################################
@@ -1271,11 +1316,20 @@ class RootLintResults:
 
 
 @dataclass(frozen=True)
+class SystemInfo:
+    """Info about which system was linted (if multiple)."""
+
+    id: str
+    name: str
+
+
+@dataclass(frozen=True)
 class LintResults:
     """All errors returned from linting files, as well as the JDex and filesystems structures."""
 
     jdex: None | JDexLintResults
     roots: dict[str, RootLintResults]
+    system: SystemInfo | None
     ignored_errs: int
 
 
@@ -1907,15 +1961,12 @@ def _process_system_root(
     return (root_structure, root_errors + duplicate_id_errors + id_errors)
 
 
-def lint_system(config: Config) -> LintResults:
+def lint_system(linter: ConfigLinter, system: ConfigSystem) -> LintResults:
     """Given a valid jdlint config, lint the specified system and return results."""
     jdex_errors = []
     jdex_entries: _CollectedJDex = {}
-    if config.system.jdex:
-        (jdex_entries, jdex_errors) = _process_jdex(
-            config.linter.ignore,
-            config.system.jdex,
-        )
+    if system.jdex:
+        (jdex_entries, jdex_errors) = _process_jdex(linter.ignore, system.jdex)
         # We need to assemble a tree structure for the JDex, since we only have dependencies
         safe_entries: dict[tuple[str | None, str], JDexIDEntry] = {}
         has_children: dict[str, set[str]] = {}
@@ -2027,40 +2078,35 @@ def lint_system(config: Config) -> LintResults:
 
     roots = {}
     ignored_errors = 0
-    for root in config.system.roots:
+    for root in system.roots:
         (root_structure, root_errors) = _process_system_root(
-            config.linter.ignore,
+            linter.ignore,
             root,
-            jdex_entries if config.system.jdex else None,
+            jdex_entries if system.jdex else None,
         )
-        ignored_errors += sum(
-            1 for e in root_errors if e.type in config.linter.disable_rules
-        )
-        root_errors = [
-            e for e in root_errors if e.type not in config.linter.disable_rules
-        ]
+        ignored_errors += sum(1 for e in root_errors if e.type in linter.disable_rules)
+        root_errors = [e for e in root_errors if e.type not in linter.disable_rules]
         roots[root.name] = RootLintResults(
             sorted(root_errors, key=_sort_error),
             root.path,
             root_structure,
         )
 
-    ignored_jdex_errors = sum(
-        1 for e in jdex_errors if e.type in config.linter.disable_rules
-    )
+    ignored_jdex_errors = sum(1 for e in jdex_errors if e.type in linter.disable_rules)
 
     return LintResults(
         JDexLintResults(
             sorted(
-                [e for e in jdex_errors if e.type not in config.linter.disable_rules],
+                [e for e in jdex_errors if e.type not in linter.disable_rules],
                 key=_sort_jdex_error,
             ),
-            config.system.jdex.path,
+            system.jdex.path,
             jdex_results,
         )
-        if config.system.jdex
+        if system.jdex
         else None,
         roots,
+        SystemInfo(system.id, system.name) if system.id else None,
         ignored_errors + ignored_jdex_errors,
     )
 
@@ -2071,6 +2117,72 @@ def _pluralize(num: int, word: str, weird_plural: str | None = None) -> str:
     if weird_plural is None:
         return f"{num!s} {word}s"
     return f"{num!s} {weird_plural}"
+
+
+def _print_results(results: LintResults) -> None:
+    """Print lint results in a human-readable fashion; returns true if errors, false if none."""
+    if results.jdex:
+        jdex_errs_by_type: dict[JDexIssueType, list[JDexIssue]] = {}
+        for je in results.jdex.errors if results.jdex else []:
+            _insert_append_sorted(
+                je.type,
+                je,
+                jdex_errs_by_type,
+                key=_sort_jdex_error,
+            )
+        # Print JDex errors if any
+        if jdex_errs_by_type:
+            total_errs = sum(len(errs) for errs in jdex_errs_by_type.values())
+            print(  # noqa: T201
+                f"{'':=^80}\n{'JDex Errors Found:':^80}\n{_pluralize(total_errs, 'instance') + '; ' + _pluralize(len(jdex_errs_by_type), 'kind'):^80}\n{'':=^80}\n",
+            )
+            for errs in jdex_errs_by_type.values():
+                first_j_err = next(iter(errs))  # Just get the first error
+                explanation = first_j_err.explain()
+                print(  # noqa: T201
+                    f"{first_j_err.type + ' (' + str(len(errs)) + ')':^80}\n{explanation.explanation}\n---",
+                )
+                print(  # noqa: T201
+                    textwrap.indent(
+                        "\n".join(
+                            [e.display() for e in errs],
+                        ),
+                        "  ",
+                    ),
+                )
+                print(f"---\n{explanation.fix}\n")  # noqa: T201
+
+    # Print file errors if any
+    if any(r.errors for r in results.roots.values()):
+        for location, root in results.roots.items():
+            if root.errors:
+                errs_by_type: dict[IssueType, list[Issue]] = {}
+                for e in root.errors:
+                    _insert_append_sorted(e.type, e, errs_by_type, key=_sort_error)
+                total_errs = sum(len(errs) for errs in errs_by_type.values())
+                print(  # noqa: T201
+                    f"{'':=^80}\n{location + ' Errors Found:':^80}\n{_pluralize(total_errs, 'instance') + '; ' + _pluralize(len(errs_by_type), 'kind'):^80}\n{'':=^80}\n",
+                )
+                for errs in errs_by_type.values():
+                    first_err = next(iter(errs))  # Just get the first error
+                    explanation = first_err.explain()
+                    print(  # noqa: T201
+                        f"{first_err.type + ' (' + str(len(errs)) + ')':^80}\n{explanation.explanation}\n---",
+                    )
+                    print(  # noqa: T201
+                        textwrap.indent(
+                            "\n".join(
+                                [e.display() for e in errs],
+                            ),
+                            "  ",
+                        ),
+                    )
+                    print(f"---\n{explanation.fix}\n")  # noqa: T201
+
+    if results.ignored_errs:
+        print(  # noqa: T201
+            f"{'':=^80}\n{'Ignored Errors: ' + str(results.ignored_errs):^80}\n{'':=^80}",
+        )
 
 
 if __name__ == "__main__":
@@ -2137,85 +2249,48 @@ if __name__ == "__main__":
     config.linter.disable_rules.extend(args.disable)
 
     # We have a valid config; now run the linter
-    results = lint_system(config)
-
-    # Dump to JSON if asked
-    if config.linter.json_output:
-        json.dump(
-            results,
-            sys.stdout,
-            cls=_EnhancedJSONEncoder,
-        )
+    if isinstance(config.system, ConfigSystem):
+        results = lint_system(config.linter, config.system)
+    else:
+        results = {
+            sysID: lint_system(config.linter, sys)
+            for sysID, sys in config.system.items()
+        }
 
     any_errors = False
 
-    # If there were issues
-    if not config.linter.json_output:
-        if results.jdex:
-            jdex_errs_by_type: dict[JDexIssueType, list[JDexIssue]] = {}
-            for je in results.jdex.errors if results.jdex else []:
-                _insert_append_sorted(
-                    je.type,
-                    je,
-                    jdex_errs_by_type,
-                    key=_sort_jdex_error,
-                )
-            # Print JDex errors if any
-            if jdex_errs_by_type:
-                any_errors = True
-                total_errs = sum(len(errs) for errs in jdex_errs_by_type.values())
-                print(  # noqa: T201
-                    f"{'':=^80}\n{'JDex Errors Found:':^80}\n{_pluralize(total_errs, 'instance') + '; ' + _pluralize(len(jdex_errs_by_type), 'kind'):^80}\n{'':=^80}\n",
-                )
-                for errs in jdex_errs_by_type.values():
-                    first_j_err = next(iter(errs))  # Just get the first error
-                    explanation = first_j_err.explain()
-                    print(  # noqa: T201
-                        f"{first_j_err.type + ' (' + str(len(errs)) + ')':^80}\n{explanation.explanation}\n---",
-                    )
-                    print(  # noqa: T201
-                        textwrap.indent(
-                            "\n".join(
-                                [e.display() for e in errs],
-                            ),
-                            "  ",
-                        ),
-                    )
-                    print(f"---\n{explanation.fix}\n")  # noqa: T201
+    def _check_errors(res: LintResults) -> bool:
+        return bool(
+            (res.jdex and res.jdex.errors) or any(r.errors for r in res.roots.values()),
+        )
 
-        # Print file errors if any
-        if any(r.errors for r in results.roots.values()):
-            any_errors = True
-            for location, root in results.roots.items():
-                errs_by_type: dict[IssueType, list[Issue]] = {}
-                if root.errors:
-                    errs_by_type = {}
-                    for e in root.errors:
-                        _insert_append_sorted(e.type, e, errs_by_type, key=_sort_error)
-                    total_errs = sum(len(errs) for errs in errs_by_type.values())
-                    print(  # noqa: T201
-                        f"{'':=^80}\n{location + ' Errors Found:':^80}\n{_pluralize(total_errs, 'instance') + '; ' + _pluralize(len(errs_by_type), 'kind'):^80}\n{'':=^80}\n",
-                    )
-                    for errs in errs_by_type.values():
-                        first_err = next(iter(errs))  # Just get the first error
-                        explanation = first_err.explain()
-                        print(  # noqa: T201
-                            f"{first_err.type + ' (' + str(len(errs)) + ')':^80}\n{explanation.explanation}\n---",
-                        )
-                        print(  # noqa: T201
-                            textwrap.indent(
-                                "\n".join(
-                                    [e.display() for e in errs],
-                                ),
-                                "  ",
-                            ),
-                        )
-                        print(f"---\n{explanation.fix}\n")  # noqa: T201
-
-        if results.ignored_errs:
-            print(  # noqa: T201
-                f"{'':=^80}\n{'Ignored Errors: ' + str(results.ignored_errs):^80}\n{'':=^80}",
+    if isinstance(results, LintResults):
+        any_errors = _check_errors(results)
+        # Dump to JSON if asked
+        if config.linter.json_output:
+            json.dump(
+                results,
+                sys.stdout,
+                cls=_EnhancedJSONEncoder,
             )
+        else:
+            _print_results(results)
+    else:
+        any_errors = any(_check_errors(sys) for sys in results.values())
+        # Dump to JSON if asked
+        if config.linter.json_output:
+            json.dump(
+                results,
+                sys.stdout,
+                cls=_EnhancedJSONEncoder,
+            )
+        else:
+            for sys_id, res in results.items():
+                print(  # noqa: T201
+                    f"{'':=^80}\n{f'System: {f'{res.system.name} [{res.system.id}]' if res.system else sys_id}':^80}\n{'':=^80}\n",
+                )
+                any_errors = _print_results(res) or any_errors
+
     if any_errors:
         # Exit unhappily
         sys.exit(1)
