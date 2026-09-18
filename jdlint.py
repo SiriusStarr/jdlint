@@ -25,6 +25,90 @@ import tomllib
 ###############################################################################
 
 
+class JDConfigError(Exception):
+    """An error in the JD config."""
+
+    def __init__(self, path: Path, message: str) -> None:
+        """Create a config error, given a message."""
+        super().__init__(f"Issue with JD config file at {path}. {message}")
+
+
+class JDConfigMissingError(JDConfigError):
+    """The specified JD config file was not found."""
+
+    def __init__(self, path: Path) -> None:
+        """Create a missing file error, given the path."""
+        super().__init__(path, "JD_CONFIG was set, but no file was found.")
+
+
+class JDConfigJsonError(JDConfigError):
+    """The specified JD config file was not valid JSON."""
+
+    def __init__(self, path: Path, message: str) -> None:
+        """Create an invalid JSON error, given the decode message."""
+        super().__init__(path, f"The file was not valid JSON. {message}")
+
+
+class JDConfigFormatError(JDConfigError):
+    """The specified JD config file was not valid."""
+
+    def __init__(self, path: Path, message: str) -> None:
+        """Create an invalid format error, given the  message."""
+        super().__init__(path, f"The file was not valid. {message}")
+
+
+class JDConfigVersionError(JDConfigError):
+    """The specified JD config file was an unknown/unspecified version."""
+
+    def __init__(self, path: Path) -> None:
+        """Create a version error for the JD config."""
+        super().__init__(
+            path,
+            "The file did not specify a version or was an unsupported version. Supported versions: 1",
+        )
+
+
+class JDConfigMissingKeyError(JDConfigError):
+    """A missing key in the JD config."""
+
+    def __init__(self, path: Path, key: str) -> None:
+        """Create a missing key error."""
+        super().__init__(
+            path,
+            f"Required key {key} not found.",
+        )
+
+
+class JDConfigTypeError(JDConfigError):
+    """A value with the wrong type in the JD config."""
+
+    def __init__(self, path: Path, key: str, expected: str, got: str) -> None:
+        """Create a type error, given the key it occurs at, the expected type, and the actual type."""
+        super().__init__(
+            path,
+            f"Key {key} was the wrong type.  Expected: {expected}  Got: {got}",
+        )
+
+
+class JDConfigValueError(JDConfigError):
+    """A bad value in the JD config."""
+
+    def __init__(self, path: Path, key: str, issue: str, got: str) -> None:
+        """Create a value error, given the key it occurs at, the issue with the value, and the actual value."""
+        super().__init__(
+            path,
+            f"Key {key} was a bad value.  Got: {got}  Issue: {issue}",
+        )
+
+
+class JDConfigConflictError(JDConfigError):
+    """A conflict in the JD config."""
+
+    def __init__(self, path: Path, key: str, issue: str) -> None:
+        """Create a conflict error, given the key it occurs at and the issue."""
+        super().__init__(path, f"Conflict in JD config at key {key}.  Issue: {issue}")
+
+
 class ConfigError(Exception):
     """An error in the jdlint config."""
 
@@ -161,6 +245,60 @@ def _pop_list_of_strings(
             err = ConfigTypeError(f"{at}.{attr}[{i}]", "str", type(r).__name__)
             raise err
     return val
+
+
+class JDConfigSystem:
+    """A system loaded from the JD config format."""
+
+    def __init__(self, path: Path, at: str, from_file: dict) -> None:
+        """Create and validate a system."""
+
+        def get_nonempty_str(attr: str) -> str:
+            if attr not in from_file:
+                err = JDConfigMissingKeyError(path, f"{at}.{attr}")
+                raise err
+            val = from_file.pop(attr)
+            if not isinstance(val, str):
+                err = JDConfigTypeError(
+                    path,
+                    f"{at}.{attr}",
+                    "str",
+                    type(val).__name__,
+                )
+                raise err
+            if val == "":
+                err = JDConfigValueError(
+                    path,
+                    f"{at}.{attr}",
+                    "Must not be empty.",
+                    val,
+                )
+                raise err
+            return val
+
+        self.id = get_nonempty_str("sys")
+        self.name = get_nonempty_str("title")
+        self.root = Path(get_nonempty_str("root")).expanduser()
+        # Validate path is good
+        if not self.root.is_dir():
+            err = JDConfigValueError(
+                path,
+                f"{at}.root",
+                "Root path isn't a folder that exists!",
+                str(self.root),
+            )
+            raise err
+        if "jdex" in from_file:
+            self.jdex = Path(get_nonempty_str("jdex")).expanduser()
+            # Validate path is good
+            if not self.jdex.is_dir():
+                err = JDConfigValueError(
+                    path,
+                    f"{at}.jdex",
+                    "JDex path isn't a folder that exists!",
+                    str(self.jdex),
+                )
+                raise err
 
 
 class ConfigSystemRoot:
@@ -732,7 +870,7 @@ class ConfigFormat(ConfigFormatAncestorInfo):
 class Config:
     """Valid config for jdlint."""
 
-    def __init__(self, from_file: dict) -> None:
+    def __init__(self, jd_config: dict[str, JDConfigSystem], from_file: dict) -> None:
         """Attempt to create a valid config from loaded TOML."""
         self.linter = ConfigLinter(from_file.get("linter", {}))
 
@@ -2185,6 +2323,46 @@ def _print_results(results: LintResults) -> None:
         )
 
 
+def load_jd_config(jd_path: Path) -> dict[str, JDConfigSystem]:
+    """Load the official JD config format from a path."""
+    as_text = Path.read_text(jd_path)
+    try:
+        jd_config = json.loads(as_text)
+    except json.JSONDecodeError as e:
+        err = JDConfigJsonError(jd_path, str(e))
+        raise err from None
+    if not isinstance(jd_config, dict):
+        raise JDConfigFormatError(jd_path, "Top level was not an object.")
+    if jd_config.get("version", None) != 1:
+        raise JDConfigVersionError(jd_path)
+    if "systems" not in jd_config:
+        raise JDConfigMissingKeyError(jd_path, "systems")
+    jd_sys_list = jd_config["systems"]
+    if not isinstance(jd_sys_list, list):
+        raise JDConfigTypeError(jd_path, "systems", "list", type(jd_sys_list).__name__)
+    jd_systems = {}
+    for i, system in enumerate(jd_sys_list):
+        if not isinstance(system, dict):
+            raise JDConfigTypeError(
+                jd_path,
+                f"systems[{i}]",
+                "object",
+                type(system).__name__,
+            )
+
+        s = JDConfigSystem(jd_path, f"systems[{i}]", system)
+        if s.id in jd_systems:
+            # Duplicate system ID!
+            err = JDConfigConflictError(
+                jd_path,
+                f"systems[{i}].sys",
+                f"The id {s.id} was specified for more than one system!",
+            )
+            raise err
+        jd_systems[s.id] = s
+    return jd_systems
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         prog="jdlint",
@@ -2234,8 +2412,22 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    jd_systems = {}
+    if not args.pure:
+        jd_env = os.getenv("JD_CONFIG")
+        if not jd_env:
+            jd_path = Path("~", ".jd", "config.json").expanduser()
+        else:
+            jd_path = Path(jd_env)
+        if jd_path.is_file():
+            jd_systems = load_jd_config(jd_path)
+
+        elif jd_env:
+            err = JDConfigMissingError(jd_path)
+            raise err
+
     with Path.open(args.config, "rb") as config_file:
-        config = Config(tomllib.load(config_file))
+        config = Config(jd_systems, tomllib.load(config_file))
 
     if args.json:
         config.linter.json_output = True

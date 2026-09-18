@@ -35,8 +35,14 @@ class AllTests(unittest.TestCase):
                     Path(f, "jdlint.toml").open("rb") as config_file,
                     contextlib.chdir(f),
                 ):
+                    # Load JD config file if it exists
+                    jd_config_path = Path(f, "jd_config.json")
+                    jd_systems = {}
+                    if jd_config_path.is_file():
+                        jd_systems = jdlint.load_jd_config(jd_config_path)
+
                     # Load config
-                    config = jdlint.Config(tomllib.load(config_file))
+                    config = jdlint.Config(jd_systems, tomllib.load(config_file))
 
                     # Lint the test directory
                     if isinstance(config.system, jdlint.ConfigSystem):
