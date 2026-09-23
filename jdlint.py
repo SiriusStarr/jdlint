@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 
+#
+# Copyright © 2026 SiriusStarr
+#
+# This code is made available under the terms of the GNU General Public License v3.0
+# You should have received a copy of this license along with this code.
+# If not, a copy is available here: https://www.gnu.org/licenses/gpl-3.0.en.html
+#
+
 """Script to check for common issues with a Johnny Decimal system."""
 
 from __future__ import annotations
