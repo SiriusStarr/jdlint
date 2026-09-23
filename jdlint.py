@@ -1448,7 +1448,7 @@ class SystemInfo:
 class LintResults:
     """All errors returned from linting files, as well as the JDex and filesystems structures."""
 
-    jdex: None | JDexLintResults
+    jdex: JDexLintResults | None
     roots: dict[str, RootLintResults]
     system: SystemInfo | None
     ignored_errs: int
@@ -1535,7 +1535,7 @@ def _get_jdex_entries_from_json(
     jdex: ConfigSystemJDex,
     json: dict,
 ) -> tuple[_CollectedJDex, list[JDexIssue]]:
-    accumulated_entries: list[tuple[tuple[str | None | Literal[-1], str], str]] = []
+    accumulated_entries: list[tuple[tuple[str | Literal[-1] | None, str], str]] = []
     accumulated_errors: list[JDexIssue] = []
     system_regex = re.compile("[A-Z][0-9][0-9]")
     area_regex = re.compile("(?P<A>[0-9])0-(?P=A)9")
@@ -1543,7 +1543,7 @@ def _get_jdex_entries_from_json(
     id_regex = re.compile("(([0-9])([0-9]))\\.[0-9]{2}")
     system = None
     for jid, v in json.items():
-        built_id: None | tuple[str | None | Literal[-1], str] = None
+        built_id: tuple[str | Literal[-1] | None, str] | None = None
         entry = jdex.entry.build({"id": jid, "title": v["title"]})
         match v["type"]:
             case "system":
@@ -2040,7 +2040,7 @@ def _process_system_level_and_children(
 def _process_system_root(
     ignored: list[str],
     root: ConfigSystemRoot,
-    jdex: None | _CollectedJDex,
+    jdex: _CollectedJDex | None,
 ) -> tuple[dict[str, list[SystemFolder | SystemFile]], list[Issue]]:
     by_id: dict[str, list[_CollectedSystemEntry]] = {}
     (root_structure, root_errors) = _process_system_level_and_children(
@@ -2323,7 +2323,7 @@ def load_jd_config(jd_path: Path) -> dict[str, JDConfigSystem]:
     jd_sys_list = jd_config["systems"]
     if not isinstance(jd_sys_list, list):
         raise JDConfigTypeError(jd_path, "systems", "list", type(jd_sys_list).__name__)
-    jd_systems = {}
+    jd_systems: dict[str, JDConfigSystem] = {}
     for i, system in enumerate(jd_sys_list):
         if not isinstance(system, dict):
             raise JDConfigTypeError(
