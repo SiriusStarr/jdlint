@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "systems": [
+    {
+      "sys": "S1",
+      "title": "First System",
+      "root": "sys1/files",
+      "jdex": "sys1/jdex",
+      "default": true
+    },
+    {
+      "sys": "S2",
+      "title": "Second System",
+      "root": "sys2/files",
+      "jdex": "sys2/jdex"
+    }
+  ]
+}

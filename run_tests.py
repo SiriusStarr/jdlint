@@ -53,13 +53,8 @@ class AllTests(unittest.TestCase):
                     config = jdlint.Config(jd_systems, tomllib.load(config_file))
 
                     # Lint the test directory
-                    if isinstance(config.system, jdlint.ConfigSystem):
-                        results = jdlint.lint_system(config.linter, config.system)
-                    else:
-                        results = {
-                            sysID: jdlint.lint_system(config.linter, sys)
-                            for sysID, sys in config.system.items()
-                        }
+                    results = jdlint.lint_all_systems(config)
+
                     expected = json.load(golden_file)
 
                     # Convert lint results into loaded format

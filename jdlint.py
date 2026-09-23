@@ -308,6 +308,16 @@ class JDConfigSystem:
                 )
                 raise err
 
+        self.default = from_file.get("default", False)
+        if not isinstance(self.default, bool):
+            err = JDConfigTypeError(
+                jd_path,
+                f"{at}.default",
+                "bool",
+                type(self.default).__name__,
+            )
+            raise err
+
 
 class ConfigSystemRoot:
     """A root of a JD system to check for correctness, e.g. ~/Documents."""
@@ -361,12 +371,25 @@ class ConfigSystemRoot:
 class ConfigSystemJDex:
     """Valid configuration for the JDex of a system."""
 
-    def __init__(self, at: str, from_file: dict) -> None:
+    def __init__(
+        self,
+        jd_config: JDConfigSystem | None,
+        at: str,
+        from_file: dict,
+    ) -> None:
         """Create a valid configuration given a loaded section of a config file."""
         # Acquire and set defaults
-        self.path = Path(
-            _pop_nonempty_str_attribute(at, "path", from_file),
-        ).expanduser()
+        try:
+            self.path = Path(
+                _pop_nonempty_str_attribute(at, "path", from_file),
+            ).expanduser()
+
+        except ConfigMissingKeyError:
+            if jd_config:
+                # Note, we've already expanded user on this
+                self.path = jd_config.jdex
+            else:
+                raise
         self.ignore = _pop_list_of_strings(at, "ignore", from_file)
 
         self.children = [
@@ -446,15 +469,23 @@ class ConfigLinter:
 class ConfigSystem:
     """Valid configuration for the JD system."""
 
-    def __init__(self, at: str, sys_id: str | None, from_file: dict) -> None:
+    def __init__(
+        self,
+        jd_config: JDConfigSystem | None,
+        at: str,
+        sys_id: str | None,
+        from_file: dict,
+    ) -> None:
         """Create a valid configuration given a loaded system section of a config file."""
         self.id = sys_id
 
         try:
             self.name = _pop_nonempty_str_attribute(at, "name", from_file)
         except ConfigMissingKeyError:
-            # Name is mandatory for non-default systems
-            if sys_id:
+            if jd_config:
+                self.name = jd_config.name
+            elif sys_id:
+                # Name is mandatory for non-default systems
                 raise
 
         default_structure = [
@@ -496,9 +527,18 @@ class ConfigSystem:
                     f"System root paths must be unique. {root.path} occurs multiple times.",
                 )
                 raise err
+        if jd_config and not any(root.path == jd_config.root for root in self.roots):
+            # We need to add the root path from the JD config, if it wasn't already in
+            self.roots.append(
+                ConfigSystemRoot(
+                    "from JD config file",
+                    default_structure,
+                    {"path": str(jd_config.root), "name": "from JD config file"},
+                ),
+            )
 
         if "jdex" in from_file:
-            self.jdex = ConfigSystemJDex(f"{at}.jdex", from_file.pop("jdex"))
+            self.jdex = ConfigSystemJDex(jd_config, f"{at}.jdex", from_file.pop("jdex"))
         else:
             self.jdex = None
 
@@ -870,8 +910,16 @@ class Config:
                 )
             except ConfigMissingKeyError:
                 sys_id = None
-
+            if sys_id:
+                jd_sys = jd_config.get(sys_id)
+            else:
+                jd_sys = None
+                defaults = [v for v in jd_config.values() if v.default]
+                if defaults:
+                    jd_sys = defaults[0]
+                    sys_id = jd_sys.id
             self.system: dict[str, ConfigSystem] | ConfigSystem = ConfigSystem(
+                jd_sys,
                 "system",
                 sys_id,
                 from_file["system"],
@@ -894,7 +942,13 @@ class Config:
                         f"The id {sys_id} was specified for more than one system!",
                     )
                     raise err
-                self.system[sys_id] = ConfigSystem(f"system[{i}]", sys_id, sys)
+
+                self.system[sys_id] = ConfigSystem(
+                    jd_config.get(sys_id),
+                    f"system[{i}]",
+                    sys_id,
+                    sys,
+                )
 
 
 ###############################################################################
@@ -2232,6 +2286,17 @@ def lint_system(linter: ConfigLinter, system: ConfigSystem) -> LintResults:
     )
 
 
+def lint_all_systems(config: Config) -> dict[str, LintResults] | LintResults:
+    """Given a valid jdlint config, lint all contained systems and return results."""
+    if isinstance(config.system, ConfigSystem):
+        if config.system.id:
+            return {config.system.id: lint_system(config.linter, config.system)}
+        return lint_system(config.linter, config.system)
+    return {
+        sysID: lint_system(config.linter, sys) for sysID, sys in config.system.items()
+    }
+
+
 def _pluralize(num: int, word: str, weird_plural: str | None = None) -> str:
     if num == 1:
         return f"{num!s} {word}"
@@ -2342,7 +2407,15 @@ def load_jd_config(jd_path: Path) -> dict[str, JDConfigSystem]:
                 f"The id {s.id} was specified for more than one system!",
             )
             raise err
+        if s.default and [v for v in jd_systems.values() if v.default]:
+            err = JDConfigConflictError(
+                jd_path,
+                f"systems[{i}].default",
+                "A previous system was already specified as the default!",
+            )
+            raise err
         jd_systems[s.id] = s
+
     return jd_systems
 
 
@@ -2424,13 +2497,7 @@ if __name__ == "__main__":
     config.linter.disable_rules.extend(args.disable)
 
     # We have a valid config; now run the linter
-    if isinstance(config.system, ConfigSystem):
-        results = lint_system(config.linter, config.system)
-    else:
-        results = {
-            sysID: lint_system(config.linter, sys)
-            for sysID, sys in config.system.items()
-        }
+    results = lint_all_systems(config)
 
     any_errors = False
 
