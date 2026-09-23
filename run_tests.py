@@ -36,7 +36,7 @@ class AllTests(unittest.TestCase):
                     contextlib.chdir(f),
                 ):
                     # Load JD config file if it exists
-                    jd_config_path = Path(f, "jd_config.json")
+                    jd_config_path = Path("jd_config.json")
                     jd_systems = {}
                     if jd_config_path.is_file():
                         jd_systems = jdlint.load_jd_config(jd_config_path)
