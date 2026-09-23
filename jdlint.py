@@ -536,6 +536,13 @@ class ConfigSystem:
                     {"path": str(jd_config.root), "name": "from JD config file"},
                 ),
             )
+        if not self.roots:
+            err = ConfigValueError(
+                f"{at}.roots",
+                "At least one root must be specified!",
+                "[]",
+            )
+            raise err
 
         if "jdex" in from_file:
             self.jdex = ConfigSystemJDex(jd_config, f"{at}.jdex", from_file.pop("jdex"))
