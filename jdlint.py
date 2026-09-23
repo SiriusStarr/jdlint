@@ -440,14 +440,6 @@ class ConfigLinter:
             err = ConfigValueError("linter.disable_rules", "not a valid rule name", r)
             raise err
 
-        if not isinstance(self.json_output, bool):
-            err = ConfigTypeError(
-                "linter.json_output",
-                "bool",
-                type(self.json_output).__name__,
-            )
-            raise err
-
         _report_extra_keys("linter", from_file, tuple(self.__dict__.keys()))
 
 
@@ -650,15 +642,6 @@ class ConfigFolderTier:
             from_file,
         )
 
-        # Validate
-        if not isinstance(self.allow_arbitrary_contents, bool):
-            err = ConfigTypeError(
-                f"{at}.allow_arbitrary_contents",
-                "bool",
-                type(self.allow_arbitrary_contents).__name__,
-            )
-            raise err
-
         # Compile Format & Children
         self.format = ConfigFormat(
             at,
@@ -709,14 +692,6 @@ class ConfigSystemTier(ConfigFolderTier):
         super().__init__(ConfigSystemTier, at, ancestors, from_file)
 
         self.id = ConfigID(at, self.format, from_file, supports_parent=False)
-
-        if not isinstance(self.can_be_file, bool):
-            err = ConfigTypeError(
-                f"{at}.can_be_file",
-                "bool",
-                type(self.can_be_file).__name__,
-            )
-            raise err
 
         if self.children and self.can_be_file:
             err = ConfigConflictError(
