@@ -15,9 +15,15 @@
       * [Wildcard Segments](#wildcard-segments)
     * [Bound Segments](#bound-segments)
     * [Segment Identifiers](#segment-identifiers)
+  * [Templates](#templates)
+    * [Template Imports](#template-imports)
+    * [Template Functionality](#template-functionality)
+    * [Template Example](#template-example)
   * [Full Config Specification](#full-config-specification)
     * [`linter`](#linter)
     * [`system`](#system)
+      * [`system.id`](#systemid)
+      * [`system.name`](#systemname)
       * [`system.jdex`](#systemjdex)
         * [JDex `*.children` Tier](#jdex-children-tier)
         * [JDex `*.notes`](#jdex-notes)
@@ -25,6 +31,9 @@
       * [`system.roots`](#systemroots)
         * [Root `*.children` Tier](#root-children-tier)
       * [`system.default`](#systemdefault)
+    * [`template`](#template)
+      * [`system.imports`](#systemimports)
+    * [`system.TEMPLATE_NAME`](#systemtemplate_name)
 
 ## Introduction
 
@@ -219,6 +228,136 @@ must consist only of letters. They may not be reused, since it would be
 ambiguous what a bound segment referred to then (this will throw an error if you
 try).
 
+## Templates
+
+`jdlint` supports some limited templating to reduce verbosity of repeated
+structure. Please note that these are an advanced feature and can very easily
+lead to very confusing error messages if you are not careful.
+
+Templates can be used within anywhere that expects tiers of folders or notes,
+namely `jdex`, `system.default`, `system.roots`, or anywhere within their
+children.
+
+### Template Imports
+
+The key `imports` is reserved and cannot be used as a template name. Instead, it
+takes a list of TOML files to import for templates. Templates imported in this
+way are equivalent to those defined locally in the file. In imported files,
+templates should be defined as top-level keys, without the `template` prefix. If
+a template is defined with the same name in multiple imports, the earlier in the
+list takes precedence. If a template is defined in imports and also locally, the
+local definition takes precedence.
+
+### Template Functionality
+
+A template is just a TOML table with any number of keys. `jdlint` does not
+eagerly check it for validity (nor for excess keys). As such, you may use a
+template that defines keys not valid in a location in that location (such as
+defining `notes` in a system folder).
+
+To use a template, simply set the key `template` to the name of the desired
+template. Any keys not specified will be checked from the template instead. This
+allows you to override template keys at the site they are applied.
+
+### Template Example
+
+```toml
+[system]
+[[system.roots]]
+name = "Files"
+path = "~/Documents"
+
+[system.jdex]
+path = "~/JDex"
+template = "standard_jdex"
+
+[system.default]
+template = "standard_system"
+
+[template]
+imports = ["./standard_templates.toml"]
+
+[template.standard_jdex]
+[[template.standard_jdex.children]]
+template = "area_folder"
+
+[[template.standard_jdex.children.children]]
+template = "category_folder"
+children = [] # No ID folders in the JDex; this overrides the usual `children` key
+
+[template.standard_system]
+[[template.standard_system.children]]
+template = "area_folder"
+
+[[template.standard_system.children.children]]
+# It doesn't matter that `notes` is defined, it will just be ignored
+template = "category_folder"
+```
+
+where `standard_templates.toml` contains:
+
+```toml
+[area_folder]
+name = "Area"
+format = "/#A/0-/=A/9 /*Area/"
+id = "/=A/0-/=A/9"
+
+[category_folder]
+name = "Category"
+format = "/=A//#C/ /*Category/"
+id = "/=A//=C/"
+children = [{ template = "id_folder" }]
+notes = [{ template = "area_note" }, { template = "category_note" }, { template = "id_note" }]
+
+[id_folder]
+name = "ID"
+format = "/=A//=C/./##ID/ /*IDName/"
+id = "/=A//=C/./=ID/"
+can_be_file = true
+allow_arbitrary_contents = true
+
+[area_note]
+name = "JDex Area Note"
+format = "/=A/0.00 /*Name/.md"
+
+[[area_note.ids]]
+id = "/=A/0-/=A/9"
+entry = "/=A/0-/=A/9 /=Name/"
+
+[[area_note.ids]]
+id = "/=A/0"
+parent = "/=A/0-/=A/9"
+entry = "/=A/0 /=Name/"
+
+[[area_note.ids]]
+id = "/=A/0.00"
+parent = "/=A/0"
+entry = "/=A/0.00 /=Name/"
+
+[category_note]
+name = "JDex Category Note"
+format = "/=A//=C/.00 /*Name/.md"
+
+[[category_note.ids]]
+id = "/=A//=C/"
+parent = "/=A/0-/=A/9"
+entry = "/=A//=C/ /=Name/"
+
+[[category_note.ids]]
+id = "/=A//=C/.00"
+parent = "/=A//=C/"
+entry = "/=A//=C/.00 /=Name/"
+
+[id_note]
+name = "JDex Id Note"
+format = "/=A//=C/./##ID/ /*Name/.md"
+
+[[id_note.ids]]
+id = "/=A//=C/./=ID/"
+parent = "/=A//=C/"
+entry = "/=A//=C/./=ID/ /=Name/"
+```
+
 ## Full Config Specification
 
 This section describes all available keys that can be specified; as always,
@@ -291,6 +430,7 @@ errors.
   below for the expected format. Not relevant to single file JDexes.
 * `system.jdex.notes` – A list of top-level notes expected in the JDex; see
   below for the expected format. Not relevant to single file JDexes.
+* `system.jdex.template` -- Optionally, a string specifying a template to apply.
 
 ##### JDex `*.children` Tier
 
@@ -316,6 +456,7 @@ This is a "level" of folder in the JDex, e.g. Areas.
   existence of anything that matches this format, reporting its existence as an
   error. You can do this to define, for example, how a standard zero should
   *not* be named.
+* `*.children.template` -- Optionally, a string specifying a template to apply.
 
 ##### JDex `*.notes`
 
@@ -333,6 +474,7 @@ can define multiple IDs.
   known to exist). This usually should just be one, but some notes (`10.00`, for
   example) might create e.g. an Area ID `10-19`, a Category ID `10`, and an ID
   `10.00`.
+* `*.notes.template` -- Optionally, a string specifying a template to apply.
 
 ##### JDex `*.notes.ids`
 
@@ -345,6 +487,7 @@ can define multiple IDs.
   *under*. For instance, for the ID `"/=A//=C/./=ID/"`, its parent should be
   `"/=A//=C/"`. This can be used to detect orphans, e.g. IDs that are missing a
   category, or work packages that reference an ID that doesn't exist.
+* `*.ids.template` -- Optionally, a string specifying a template to apply.
 
 #### `system.roots`
 
@@ -359,6 +502,8 @@ A list of root directories to check. These contain your actual "stuff".
   might want this to be `[".stfolder"]` if you use Syncthing, for example
 * `system.roots.children` – A list of top-level folders expected in this root;
   see below for the expected format.
+* `system.roots.template` -- Optionally, a string specifying a template to
+  apply.
 
 ##### Root `*.children` Tier
 
@@ -393,6 +538,7 @@ This is a "level" of folder in the root, e.g. Areas.
   report as an error if you do not have a matching entry for this ID defined in
   the JDex. Set it to true if you happen to just have a folder that you don't
   care about matching to an ID (e.g. maybe `W0000-W9999 Work Packages`)
+* `*.children.template` -- Optionally, a string specifying a template to apply.
 
 #### `system.default`
 
@@ -403,3 +549,22 @@ are just going to specify the children of each root separately.
 * `system.default.children` – A list of top-level folders expected in all roots
   that don't specify their own; this follows the same format as the
   root-specific children specified above.
+* `system.default.template` -- Optionally, a string specifying a template to
+  apply.
+
+### `template`
+
+Optionally, templates that may be used.
+
+#### `system.imports`
+
+A list of files to import the top-level keys of as templates; this is reserved
+and cannot be used as a template name.
+
+### `system.TEMPLATE_NAME`
+
+Defining this creates the template `TEMPLATE_NAME`.
+
+* `system.TEMPLATE_NAME.*` -- Any keys defined here are what is copied to the
+  location a template is applied; note that extra keys will just be ignored, so
+  it's okay to specify otherwise invalid keys.
