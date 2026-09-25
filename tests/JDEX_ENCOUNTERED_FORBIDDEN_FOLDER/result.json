@@ -40,7 +40,7 @@
         "type": "JDEX_ENCOUNTERED_FORBIDDEN_FOLDER",
         "matched_pattern": {
           "name": [
-            "JDex Area Folder",
+            "Area",
             "JDex Bad Area Management Folder"
           ],
           "format": "/=A/0 /*AreaManagement/"

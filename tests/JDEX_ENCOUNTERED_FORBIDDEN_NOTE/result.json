@@ -40,8 +40,8 @@
         "type": "JDEX_ENCOUNTERED_FORBIDDEN_NOTE",
         "matched_pattern": {
           "name": [
-            "JDex Area Folder",
-            "JDex Category Folder",
+            "Area",
+            "Category",
             "JDex Bad Inbox"
           ],
           "format": "/=A//=C/.01 /*Name/"

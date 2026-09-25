@@ -9,77 +9,27 @@ path = "files"
 [system.jdex]
 path = "jdex"
 
-[[system.jdex.children]]
-name = "JDex Area Folder"
-format = "/#A/0-/=A/9 /*Area/"
+template = "standard_jdex"
 
-[[system.jdex.children.children]]
+[system.default]
+template = "standard_system"
+
+[template]
+imports = ["../standard_templates.toml"]
+
+[template.standard_jdex]
+[[template.standard_jdex.children]]
+template = "area_folder"
+
+[[template.standard_jdex.children.children]]
 name = "JDex Area Management Folder"
 format = "/=A/0 Management of area /=A/0-/=A/9"
+notes = [{ template = "area_note" }]
 
-[[system.jdex.children.children.notes]]
-name = "JDex Area Note"
-format = "/=A/0.00 /*Name/.md"
-
-[[system.jdex.children.children.notes.ids]]
-id = "/=A/0-/=A/9"
-entry = "/=A/0-/=A/9 /=Name/"
-
-[[system.jdex.children.children.notes.ids]]
-id = "/=A/0"
-parent = "/=A/0-/=A/9"
-entry = "/=A/0 /=Name/"
-
-[[system.jdex.children.children.notes.ids]]
-id = "/=A/0.00"
-parent = "/=A/0"
-entry = "/=A/0.00 /=Name/"
-
-[[system.jdex.children.children]]
+[[template.standard_jdex.children.children]]
 name = "JDex Bad Area Management Folder"
 format = "/=A/0 /*AreaManagement/"
 forbidden = true
 
-[[system.jdex.children.children]]
-name = "JDex Category Folder"
-format = "/=A//#C/ /*Category/"
-
-[[system.jdex.children.children.notes]]
-name = "JDex Category Note"
-format = "/=A//=C/.00 /*Name/.md"
-
-[[system.jdex.children.children.notes.ids]]
-id = "/=A//=C/"
-parent = "/=A/0-/=A/9"
-entry = "/=A//=C/ /=Name/"
-
-[[system.jdex.children.children.notes.ids]]
-id = "/=A//=C/.00"
-parent = "/=A//=C/"
-entry = "/=A//=C/.00 /=Name/"
-
-[[system.jdex.children.children.notes]]
-name = "JDex Id Note"
-format = "/=A//=C/./##ID/ /*Name/.md"
-
-[[system.jdex.children.children.notes.ids]]
-id = "/=A//=C/./=ID/"
-parent = "/=A//=C/"
-entry = "/=A//=C/./=ID/ /=Name/"
-
-[[system.default.children]]
-name = "Area"
-format = "/#A/0-/=A/9 /*Area/"
-id = "/=A/0-/=A/9"
-
-[[system.default.children.children]]
-name = "Category"
-format = "/=A//#C/ /*Category/"
-id = "/=A//=C/"
-
-[[system.default.children.children.children]]
-name = "ID"
-format = "/=A//=C/./##ID/ /*IDName/"
-id = "/=A//=C/./=ID/"
-can_be_file = true
-allow_arbitrary_contents = true
+[[template.standard_jdex.children.children]]
+template = "category_folder"
