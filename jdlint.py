@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import dataclasses
 import json
 import os
@@ -181,12 +182,20 @@ def _report_extra_keys(at: str, from_file: dict, valid: tuple[str, ...]) -> None
         raise err
 
 
-def _pop_nonempty_str_attribute(at: str, attr: str, from_file: dict) -> str:
+def _pop_nonempty_str_attribute(
+    at: str,
+    attr: str,
+    from_file: dict,
+    template: _Template | None,
+) -> str:
     """Given a parent location, a mandatory attribute to get, and data, return it."""
-    if attr not in from_file:
+    if attr in from_file:
+        val = from_file.pop(attr)
+    elif template and attr in template.vals:
+        val = template.vals[attr]
+    else:
         err = ConfigMissingKeyError(f"{at}.{attr}")
         raise err
-    val = from_file.pop(attr)
     if not isinstance(val, str):
         err = ConfigTypeError(
             f"{at}.{attr}",
@@ -204,9 +213,18 @@ def _pop_nonempty_str_attribute(at: str, attr: str, from_file: dict) -> str:
     return val
 
 
-def _pop_default_false_bool(at: str, attr: str, from_file: dict) -> bool:
+def _pop_default_false_bool(
+    at: str,
+    attr: str,
+    from_file: dict,
+    template: _Template | None,
+) -> bool:
     """Get a boolean at the specified attribute, defaulting to false, or fail."""
-    val = from_file.pop(attr, False)
+    val = False
+    if attr in from_file:
+        val = from_file.pop(attr)
+    elif template:
+        val = template.vals.get(attr, False)
     if not isinstance(val, bool):
         err = ConfigTypeError(
             f"{at}.{attr}",
@@ -221,14 +239,22 @@ def _pop_list(
     at: str,
     attr: str,
     from_file: dict,
+    template: _Template | None,
     *,
     default_empty: bool = True,
-) -> list:
+) -> tuple[list, list]:
     """Get a list at the specified attribute, defaulting to [], or fail."""
-    if not default_empty and attr not in from_file:
+    is_template = False
+    if attr in from_file:
+        val = from_file.pop(attr)
+    elif template and attr in template.vals:
+        val = template.vals[attr]
+        is_template = True
+    elif default_empty:
+        val = []
+    else:
         err = ConfigMissingKeyError(f"{at}.{attr}")
         raise err
-    val = from_file.pop(attr, [])
     if not isinstance(val, list):
         err = ConfigTypeError(
             f"{at}.{attr}",
@@ -236,23 +262,51 @@ def _pop_list(
             type(val).__name__,
         )
         raise err
-    return val
+    if is_template:
+        return ([], val)
+    return (val, [])
+
+
+def _recurse[C](
+    process: Callable[[int, dict | _Template], C],
+    at: str,
+    attr: str,
+    from_file: dict,
+    template: _Template | None,
+) -> list[C]:
+    (cs, template_cs) = _pop_list(
+        at,
+        attr,
+        from_file,
+        template,
+    )
+    if template_cs:
+        return [process(i, _Template(t, {})) for i, t in enumerate(template_cs)]
+    return [process(i, v) for i, v in enumerate(cs)]
 
 
 def _pop_list_of_strings(
     at: str,
     attr: str,
     from_file: dict,
+    template: _Template | None,
     *,
     default_empty: bool = True,
 ) -> list[str]:
     """Get a list of strings at .ignore or fail, defaulting to []."""
-    val = _pop_list(at, attr, from_file, default_empty=default_empty)
+    (val, template_val) = _pop_list(
+        at,
+        attr,
+        from_file,
+        template,
+        default_empty=default_empty,
+    )
     for i, r in enumerate(val):
         if not isinstance(r, str):
             err = ConfigTypeError(f"{at}.{attr}[{i}]", "str", type(r).__name__)
             raise err
-    return val
+    # Strings never matter whether they came from template or not, so just return whichever
+    return val + template_val
 
 
 class JDConfigSystem:
@@ -324,16 +378,33 @@ class ConfigSystemRoot:
 
     def __init__(
         self,
+        templates: ConfigTemplates,
         at: str,
         default_structure: list[ConfigSystemTier],
         from_file: dict,
     ) -> None:
         """Create a valid configuration given a loaded section of a config file."""
-        self.name = _pop_nonempty_str_attribute(at, "name", from_file)
+        template = templates.get_template(at, from_file)
+        self.name = _pop_nonempty_str_attribute(
+            at,
+            "name",
+            from_file,
+            template,
+        )
         self.path = Path(
-            _pop_nonempty_str_attribute(at, "path", from_file),
+            _pop_nonempty_str_attribute(
+                at,
+                "path",
+                from_file,
+                template,
+            ),
         ).expanduser()
-        self.ignore = _pop_list_of_strings(at, "ignore", from_file)
+        self.ignore = _pop_list_of_strings(
+            at,
+            "ignore",
+            from_file,
+            template,
+        )
 
         # Validate path is good
         if not self.path.is_dir():
@@ -345,25 +416,27 @@ class ConfigSystemRoot:
             raise err
 
         # Load specialized structure, if any
-        if "children" in from_file:
-            self.children = [
-                ConfigSystemTier(
-                    f"{at}.children[{i}]",
-                    ConfigFormatAncestorInfo((), ()),
-                    v,
+        self.children = _recurse(
+            lambda i, v: ConfigSystemTier(
+                templates,
+                f"{at}.children[{i}]",
+                ConfigFormatAncestorInfo((), ()),
+                v,
+            ),
+            at,
+            "children",
+            from_file,
+            template,
+        )
+        if not self.children:
+            if default_structure:
+                self.children = default_structure
+            else:
+                err = ConfigConflictError(
+                    f"{at}",
+                    "Either system.default.children must be specified or every root must specify its own children.",
                 )
-                for i, v in enumerate(
-                    _pop_list(at, "children", from_file),
-                )
-            ]
-        elif default_structure:
-            self.children = default_structure
-        else:
-            err = ConfigConflictError(
-                f"{at}",
-                "Either system.default.children must be specified or every root must specify its own children.",
-            )
-            raise err
+                raise err
 
         _report_extra_keys(at, from_file, tuple(self.__dict__.keys()))
 
@@ -374,14 +447,21 @@ class ConfigSystemJDex:
     def __init__(
         self,
         jd_config: JDConfigSystem | None,
+        templates: ConfigTemplates,
         at: str,
         from_file: dict,
     ) -> None:
         """Create a valid configuration given a loaded section of a config file."""
+        template = templates.get_template(at, from_file)
         # Acquire and set defaults
         try:
             self.path = Path(
-                _pop_nonempty_str_attribute(at, "path", from_file),
+                _pop_nonempty_str_attribute(
+                    at,
+                    "path",
+                    from_file,
+                    template,
+                ),
             ).expanduser()
 
         except ConfigMissingKeyError:
@@ -390,24 +470,38 @@ class ConfigSystemJDex:
                 self.path = jd_config.jdex
             else:
                 raise
-        self.ignore = _pop_list_of_strings(at, "ignore", from_file)
+        self.ignore = _pop_list_of_strings(
+            at,
+            "ignore",
+            from_file,
+            template,
+        )
 
-        self.children = [
-            ConfigJDexTier(
+        self.children = _recurse(
+            lambda i, v: ConfigJDexTier(
+                templates,
                 f"{at}.children[{i}]",
                 ConfigFormatAncestorInfo((), ()),
                 v,
-            )
-            for i, v in enumerate(_pop_list(at, "children", from_file))
-        ]
-        self.notes = [
-            ConfigJDexNotes(
+            ),
+            at,
+            "children",
+            from_file,
+            template,
+        )
+
+        self.notes = _recurse(
+            lambda i, v: ConfigJDexNotes(
+                templates,
                 f"{at}.notes[{i}]",
                 ConfigFormatAncestorInfo((), ()),
                 v,
-            )
-            for i, v in enumerate(_pop_list(at, "notes", from_file))
-        ]
+            ),
+            at,
+            "notes",
+            from_file,
+            template,
+        )
 
         # Validate path
         if not self.path.is_dir():
@@ -432,7 +526,12 @@ class ConfigSystemJDex:
                 f"{at}.entry",
                 # This is the default info made available to a file JDex
                 ConfigFormatAncestorInfo(("Single File JDex",), ("id", "title")),
-                _pop_nonempty_str_attribute(at, "entry", from_file),
+                _pop_nonempty_str_attribute(
+                    at,
+                    "entry",
+                    from_file,
+                    template,
+                ),
             )
         _report_extra_keys(at, from_file, tuple(self.__dict__.keys()))
 
@@ -443,18 +542,30 @@ class ConfigLinter:
     def __init__(self, from_file: dict) -> None:
         """Create a valid configuration given a loaded linter section of a config file."""
         # Acquire and set defaults
-        self.disable_rules = _pop_list(
+        self.disable_rules = _pop_list_of_strings(
             "linter",
             "disable_rules",
             from_file,
+            None,
         )
-        self.json_output = _pop_default_false_bool("linter", "json_output", from_file)
+        self.json_output = _pop_default_false_bool(
+            "linter",
+            "json_output",
+            from_file,
+            None,
+        )
         self.ignore_environment = _pop_default_false_bool(
             "linter",
             "ignore_environment",
             from_file,
+            None,
         )
-        self.ignore = _pop_list_of_strings("linter", "ignore", from_file)
+        self.ignore = _pop_list_of_strings(
+            "linter",
+            "ignore",
+            from_file,
+            None,
+        )
 
         # Validate
         for r in self.disable_rules:
@@ -472,6 +583,7 @@ class ConfigSystem:
     def __init__(
         self,
         jd_config: JDConfigSystem | None,
+        templates: ConfigTemplates,
         at: str,
         sys_id: str | None,
         from_file: dict,
@@ -480,7 +592,12 @@ class ConfigSystem:
         self.id = sys_id
 
         try:
-            self.name = _pop_nonempty_str_attribute(at, "name", from_file)
+            self.name = _pop_nonempty_str_attribute(
+                at,
+                "name",
+                from_file,
+                None,
+            )
         except ConfigMissingKeyError:
             if jd_config:
                 self.name = jd_config.name
@@ -488,28 +605,31 @@ class ConfigSystem:
                 # Name is mandatory for non-default systems
                 raise
 
-        default_structure = [
-            ConfigSystemTier(
+        default = from_file.pop("default", {})
+
+        default_structure = _recurse(
+            lambda i, v: ConfigSystemTier(
+                templates,
                 f"{at}.default.children[{i}]",
                 ConfigFormatAncestorInfo((), ()),
                 v,
-            )
-            for i, v in enumerate(
-                _pop_list(
-                    f"{at}.default",
-                    "children",
-                    from_file.pop("default", {}),
-                ),
-            )
-        ]
+            ),
+            f"{at}.default",
+            "children",
+            default,
+            templates.get_template(f"{at}.default", default),
+        )
 
         self.roots = [
             ConfigSystemRoot(
+                templates,
                 f"{at}.roots[{i}]",
                 default_structure,
                 v,
             )
-            for i, v in enumerate(_pop_list(f"{at}", "roots", from_file))
+            for i, v in enumerate(
+                _pop_list(f"{at}", "roots", from_file, None)[0],
+            )
         ]
 
         accum_names = {}
@@ -531,6 +651,7 @@ class ConfigSystem:
             # We need to add the root path from the JD config, if it wasn't already in
             self.roots.append(
                 ConfigSystemRoot(
+                    templates,
                     "from JD config file",
                     default_structure,
                     {"path": str(jd_config.root), "name": "from JD config file"},
@@ -545,7 +666,12 @@ class ConfigSystem:
             raise err
 
         if "jdex" in from_file:
-            self.jdex = ConfigSystemJDex(jd_config, f"{at}.jdex", from_file.pop("jdex"))
+            self.jdex = ConfigSystemJDex(
+                jd_config,
+                templates,
+                f"{at}.jdex",
+                from_file.pop("jdex"),
+            )
         else:
             self.jdex = None
 
@@ -610,21 +736,33 @@ class ConfigID:
         at: str,
         ancestors: ConfigFormatAncestorInfo,
         from_file: dict,
+        template: _Template | None,
         *,
         supports_parent: bool,
     ) -> None:
         """Create a valid ID given a loaded section of a config file."""
+        # Expanding templates is done at the layer above
         self.id = ConfigStaticFormat(
             f"{at}.id",
             ancestors,
-            _pop_nonempty_str_attribute(at, "id", from_file),
+            _pop_nonempty_str_attribute(
+                at,
+                "id",
+                from_file,
+                template,
+            ),
         )
         if supports_parent:
             try:
                 self.parent = ConfigStaticFormat(
                     f"{at}.parent",
                     ancestors,
-                    _pop_nonempty_str_attribute(at, "parent", from_file),
+                    _pop_nonempty_str_attribute(
+                        at,
+                        "parent",
+                        from_file,
+                        template,
+                    ),
                 )
             except ConfigMissingKeyError:
                 self.parent = None
@@ -633,7 +771,12 @@ class ConfigID:
             self.entry = ConfigStaticFormat(
                 f"{at}.entry",
                 ancestors,
-                _pop_nonempty_str_attribute(at, "entry", from_file),
+                _pop_nonempty_str_attribute(
+                    at,
+                    "entry",
+                    from_file,
+                    template,
+                ),
             )
         except ConfigMissingKeyError:
             self.entry = None
@@ -646,27 +789,58 @@ class ConfigJDexNotes:
 
     def __init__(
         self,
+        templates: ConfigTemplates,
         at: str,
         ancestors: ConfigFormatAncestorInfo,
-        from_file: dict,
+        load: dict | _Template,
     ) -> None:
         """Create a valid note format given a loaded section of a config file."""
+        if isinstance(load, _Template):
+            from_file = {}
+            template = templates.subtemplate(at, load)
+        else:
+            from_file = load
+            template = templates.get_template(at, load)
+
         # Compile Format
-        if "format" not in from_file:
-            err = ConfigMissingKeyError(f"{at}.format")
-            raise err
         self.format = ConfigFormat(
             f"{at}",
             ancestors,
             from_file,
+            template,
         )
-        if "ids" not in from_file and not self.format.forbidden:
+
+        (cs, template_cs) = _pop_list(
+            at,
+            "ids",
+            from_file,
+            template,
+        )
+        if template_cs:
+            self.ids = [
+                ConfigID(
+                    f"{at}.ids[{i}]",
+                    self.format,
+                    {},
+                    templates.subtemplate(f"{at}.ids[{i}]", _Template(t, {})),
+                    supports_parent=True,
+                )
+                for i, t in enumerate(template_cs)
+            ]
+        else:
+            self.ids = [
+                ConfigID(
+                    f"{at}.ids[{i}]",
+                    self.format,
+                    v,
+                    templates.get_template(f"{at}.ids[{i}]", v),
+                    supports_parent=True,
+                )
+                for i, v in enumerate(cs)
+            ]
+        if not self.ids and not self.format.forbidden:
             err = ConfigMissingKeyError(f"{at}.ids")
             raise err
-        self.ids = [
-            ConfigID(f"{at}.ids[{i}]", self.format, v, supports_parent=True)
-            for i, v in enumerate(_pop_list(at, "ids", from_file))
-        ]
 
         _report_extra_keys(at, from_file, tuple(self.__dict__.keys()))
 
@@ -676,17 +850,21 @@ class ConfigFolderTier:
 
     def __init__(
         self,
+        templates: ConfigTemplates,
         child_class: Callable,
         at: str,
         ancestors: ConfigFormatAncestorInfo,
         from_file: dict,
+        template: _Template | None,
     ) -> None:
         """Create a valid tier given a loaded section of a config file."""
+        # Note that we have already gotten any template that exists at this level, so we don't need to do it here
         # Acquire and set defaults
         self.allow_arbitrary_contents = _pop_default_false_bool(
             at,
             "allow_arbitrary_contents",
             from_file,
+            template,
         )
 
         # Compile Format & Children
@@ -694,15 +872,22 @@ class ConfigFolderTier:
             at,
             ancestors,
             from_file,
+            template,
         )
-        self.children = [
-            child_class(
+
+        self.children = _recurse(
+            lambda i, v: child_class(
+                templates,
                 f"{at}.children[{i}]",
                 self.format,
                 v,
-            )
-            for i, v in enumerate(_pop_list(at, "children", from_file))
-        ]
+            ),
+            at,
+            "children",
+            from_file,
+            template,
+        )
+
         if self.children and self.allow_arbitrary_contents:
             raise ConfigConflictError(
                 at,
@@ -725,20 +910,50 @@ class ConfigSystemTier(ConfigFolderTier):
 
     def __init__(
         self,
+        templates: ConfigTemplates,
         at: str,
         ancestors: ConfigFormatAncestorInfo,
-        from_file: dict,
+        load: dict | _Template,
     ) -> None:
         """Create a valid tier given a loaded section of a config file."""
+        if isinstance(load, _Template):
+            from_file = {}
+            template = templates.subtemplate(at, load)
+        else:
+            from_file = load
+            template = templates.get_template(at, load)
         # Acquire and set defaults
 
-        self.can_be_file = _pop_default_false_bool(at, "can_be_file", from_file)
-        self.no_jdex_entry = _pop_default_false_bool(at, "no_jdex_entry", from_file)
+        self.can_be_file = _pop_default_false_bool(
+            at,
+            "can_be_file",
+            from_file,
+            template,
+        )
+        self.no_jdex_entry = _pop_default_false_bool(
+            at,
+            "no_jdex_entry",
+            from_file,
+            template,
+        )
 
         # Call the folder tier stuff
-        super().__init__(ConfigSystemTier, at, ancestors, from_file)
+        super().__init__(
+            templates,
+            ConfigSystemTier,
+            at,
+            ancestors,
+            from_file,
+            template,
+        )
 
-        self.id = ConfigID(at, self.format, from_file, supports_parent=False)
+        self.id = ConfigID(
+            at,
+            self.format,
+            from_file,
+            template,
+            supports_parent=False,
+        )
 
         if self.children and self.can_be_file:
             err = ConfigConflictError(
@@ -768,22 +983,41 @@ class ConfigJDexTier(ConfigFolderTier):
 
     def __init__(
         self,
+        templates: ConfigTemplates,
         at: str,
         ancestors: ConfigFormatAncestorInfo,
-        from_file: dict,
+        load: dict | _Template,
     ) -> None:
         """Create a valid tier given a loaded section of a config file."""
-        # Call the folder tier stuff
-        super().__init__(ConfigJDexTier, at, ancestors, from_file)
+        if isinstance(load, _Template):
+            from_file = {}
+            template = templates.subtemplate(at, load)
+        else:
+            from_file = load
+            template = templates.get_template(at, load)
 
-        self.notes = [
-            ConfigJDexNotes(
+        # Call the folder tier stuff
+        super().__init__(
+            templates,
+            ConfigJDexTier,
+            at,
+            ancestors,
+            from_file,
+            template,
+        )
+
+        self.notes = _recurse(
+            lambda i, v: ConfigJDexNotes(
+                templates,
                 f"{at}.notes[{i}]",
                 self.format,
                 v,
-            )
-            for i, v in enumerate(_pop_list(at, "notes", from_file))
-        ]
+            ),
+            at,
+            "notes",
+            from_file,
+            template,
+        )
 
         if self.notes and self.format.forbidden:
             raise ConfigConflictError(
@@ -813,11 +1047,27 @@ class ConfigFormat(ConfigFormatAncestorInfo):
         at: str,
         ancestors: ConfigFormatAncestorInfo,
         from_file: dict,
+        template: _Template | None,
     ) -> None:
         """Create a valid format given a string from a config file."""
-        name = _pop_nonempty_str_attribute(at, "name", from_file)
-        self.raw_format = _pop_nonempty_str_attribute(at, "format", from_file)
-        self.forbidden = _pop_default_false_bool(at, "forbidden", from_file)
+        name = _pop_nonempty_str_attribute(
+            at,
+            "name",
+            from_file,
+            template,
+        )
+        self.raw_format = _pop_nonempty_str_attribute(
+            at,
+            "format",
+            from_file,
+            template,
+        )
+        self.forbidden = _pop_default_false_bool(
+            at,
+            "forbidden",
+            from_file,
+            template,
+        )
 
         # Validate
         if self.raw_format.count("/") % 2 != 0:
@@ -897,11 +1147,153 @@ class ConfigFormat(ConfigFormatAncestorInfo):
         self.build_regex = lambda d: "".join([f(d) for f in regex])
 
 
+@dataclass(frozen=True)
+class _Template:
+    """A template loaded in the config."""
+
+    vals: dict[str, typing.Any]
+    binds: dict[str, str]
+
+
+class ConfigTemplates:
+    """Valid templates for jdlint."""
+
+    def __init__(self, config_file_path: Path, from_file: dict) -> None:
+        """Attempt to load templates from loaded TOML."""
+        # Load and validate templates
+        templates = from_file.get("template", {})
+        if not isinstance(templates, dict):
+            err = ConfigTypeError(
+                "template",
+                "dict",
+                type(templates).__name__,
+            )
+            raise err
+        imports = templates.pop("imports", [])
+        if not isinstance(imports, list):
+            err = ConfigTypeError(
+                "template.imports",
+                "list",
+                type(imports).__name__,
+            )
+            raise err
+        for k, v in templates.items():
+            if not isinstance(v, dict):
+                err = ConfigTypeError(
+                    f"template.{k}",
+                    "dict",
+                    type(v).__name__,
+                )
+                raise err
+        imported = {}
+        with contextlib.chdir(config_file_path.parent):
+            for i, f in reversed(list(enumerate(imports))):
+                if not isinstance(f, str):
+                    err = ConfigTypeError(
+                        f"template.imports[{i}]",
+                        "string",
+                        type(f).__name__,
+                    )
+                    raise err
+                as_path = Path(f).expanduser()
+                if not as_path.is_file():
+                    err = ConfigValueError(
+                        f"template.imports[{i}]",
+                        "Template import path isn't a file that exists!",
+                        str(as_path),
+                    )
+                    raise err
+
+                with Path.open(as_path, "rb") as import_file:
+                    to_import = tomllib.load(import_file)
+
+                for k, v in to_import.items():
+                    if not isinstance(v, dict):
+                        err = ConfigTypeError(
+                            f"template.{k}",
+                            "dict",
+                            type(v).__name__,
+                        )
+                        raise err
+                imported |= to_import
+
+        self.templates = imported | templates
+
+    def get_template(self, at: str, from_file: dict) -> _Template | None:
+        """Get a template specified by the loaded data structure, if it specifies one."""
+        try:
+            template_name = _pop_nonempty_str_attribute(
+                f"{at}.template",
+                "template",
+                from_file,
+                None,
+            )
+            return_keys = self.templates.get(template_name, {})
+            if not return_keys:
+                err = ConfigValueError(
+                    f"{at}.template",
+                    f"The specified template could not be found or was completely empty; check your spelling, maybe? Known templates are: {', '.join(sorted(self.templates.keys()))}",
+                    template_name,
+                )
+                raise err
+        except ConfigMissingKeyError:
+            # This is fine, no need to have a template
+            return None
+
+        return self._subtemplate_recurse(at, [template_name], _Template(return_keys))
+
+    def _subtemplate_recurse(
+        self, at: str, inside: list[str], template: _Template
+    ) -> _Template:
+        """Get a template inside of a template, if it specifies one, and merge them."""
+        try:
+            template_name = _pop_nonempty_str_attribute(
+                f"{at}.template",
+                "template",
+                {},
+                template,
+            )
+            if template_name in inside:
+                # Infinite recursion
+                err = ConfigValueError(
+                    f"{at}.template",
+                    f"Infinite template recursion encountered. Ancestry: {inside}",
+                    template_name,
+                )
+                raise err
+            return_keys = self.templates.get(template_name, {})
+            if not return_keys:
+                err = ConfigValueError(
+                    f"{at}.template",
+                    f"The specified template could not be found or was completely empty; check your spelling, maybe? Known templates are: {', '.join(sorted(self.templates.keys()))}",
+                    template_name,
+                )
+                raise err
+        except ConfigMissingKeyError:
+            # This is fine, no need to have a template; return the input one
+            return template
+
+        inside.append(template_name)
+        subtemp = self._subtemplate_recurse(at, inside, _Template(return_keys))
+        # We have to merge keys; as always, the deeper you are the lower priority
+        return _Template(subtemp.vals | template.vals)
+
+    def subtemplate(self, at: str, template: _Template) -> _Template:
+        return self._subtemplate_recurse(at, [], template)
+
+
 class Config:
     """Valid config for jdlint."""
 
-    def __init__(self, jd_config: dict[str, JDConfigSystem], from_file: dict) -> None:
+    def __init__(
+        self,
+        config_file_path: Path,
+        jd_config: dict[str, JDConfigSystem],
+        from_file: dict,
+    ) -> None:
         """Attempt to create a valid config from loaded TOML."""
+        templates = ConfigTemplates(config_file_path, from_file)
+
         self.linter = ConfigLinter(from_file.get("linter", {}))
 
         if "system" not in from_file:
@@ -914,6 +1306,7 @@ class Config:
                     "system",
                     "id",
                     from_file["system"],
+                    None,
                 )
             except ConfigMissingKeyError:
                 sys_id = None
@@ -927,6 +1320,7 @@ class Config:
                     sys_id = jd_sys.id
             self.system: dict[str, ConfigSystem] | ConfigSystem = ConfigSystem(
                 jd_sys,
+                templates,
                 "system",
                 sys_id,
                 from_file["system"],
@@ -941,7 +1335,12 @@ class Config:
                         type(sys).__name__,
                     )
                     raise err
-                sys_id = _pop_nonempty_str_attribute(f"system[{i}]", "id", sys)
+                sys_id = _pop_nonempty_str_attribute(
+                    f"system[{i}]",
+                    "id",
+                    sys,
+                    None,
+                )
                 if sys_id in self.system:
                     # Duplicate system ID!
                     err = ConfigConflictError(
@@ -952,6 +1351,7 @@ class Config:
 
                 self.system[sys_id] = ConfigSystem(
                     jd_config.get(sys_id),
+                    templates,
                     f"system[{i}]",
                     sys_id,
                     sys,
@@ -2490,7 +2890,7 @@ if __name__ == "__main__":
             raise err
 
     with Path.open(args.config, "rb") as config_file:
-        config = Config(jd_systems, tomllib.load(config_file))
+        config = Config(Path(args.config), jd_systems, tomllib.load(config_file))
 
     if args.json:
         config.linter.json_output = True

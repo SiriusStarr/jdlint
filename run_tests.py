@@ -33,9 +33,6 @@ class AllTests(unittest.TestCase):
         # Find all tests
         with os.scandir(PurePath("tests")) as test_it:
             for f in test_it:
-                # Allow files in test folder (for templates or whatnot)
-                if f.is_file():
-                    continue
                 # Make a sub-test and open result file
                 with (
                     self.subTest(msg=f.name, f=f),
@@ -53,7 +50,11 @@ class AllTests(unittest.TestCase):
                         jd_systems = jdlint.load_jd_config(jd_config_path)
 
                     # Load config
-                    config = jdlint.Config(jd_systems, tomllib.load(config_file))
+                    config = jdlint.Config(
+                        jd_config_path,
+                        jd_systems,
+                        tomllib.load(config_file),
+                    )
 
                     # Lint the test directory
                     results = jdlint.lint_all_systems(config)
