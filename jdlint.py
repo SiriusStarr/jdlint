@@ -491,12 +491,24 @@ class ConfigSystemJDex:
             template,
         )
 
+        try:
+            note_extension = _pop_nonempty_str(
+                at,
+                "note_extension",
+                from_file,
+                template,
+            )
+        except ConfigMissingKeyError:
+            # This is fine, it's an optional key
+            note_extension = None
+
         self.children = _recurse(
             lambda i, v: ConfigJDexTier(
                 templates,
                 f"{at}.children[{i}]",
                 ConfigFormatAncestorInfo((), ()),
                 v,
+                note_extension=note_extension,
             ),
             at,
             "children",
@@ -510,6 +522,7 @@ class ConfigSystemJDex:
                 f"{at}.notes[{i}]",
                 ConfigFormatAncestorInfo((), ()),
                 v,
+                note_extension=note_extension,
             ),
             at,
             "notes",
@@ -529,10 +542,10 @@ class ConfigSystemJDex:
                 raise err
 
             # We have a file-based JDex; that's fine
-            if self.children or self.notes or self.ignore:
+            if self.children or self.notes or self.ignore or note_extension:
                 err = ConfigConflictError(
                     at,
-                    "Single file JDexes must not specify children or notes or ignore!",
+                    "Single file JDexes must not specify children or notes or ignore or note_extension!",
                 )
                 raise err
             # Load format
@@ -808,6 +821,8 @@ class ConfigJDexNotes:
         at: str,
         ancestors: ConfigFormatAncestorInfo,
         load: dict | _Template,
+        *,
+        note_extension: str | None,
     ) -> None:
         """Create a valid note format given a loaded section of a config file."""
         if isinstance(load, _Template):
@@ -819,11 +834,10 @@ class ConfigJDexNotes:
 
         # Compile Format
         self.format = ConfigFormat(
-            f"{at}",
-            ancestors,
-            from_file,
-            template,
+            at, ancestors, from_file, template, note_extension=note_extension
         )
+
+        self.extension = note_extension
 
         (cs, template_cs) = _pop_list(
             at,
@@ -884,10 +898,7 @@ class ConfigFolderTier:
 
         # Compile Format & Children
         self.format = ConfigFormat(
-            at,
-            ancestors,
-            from_file,
-            template,
+            at, ancestors, from_file, template, note_extension=None
         )
 
         self.children = _recurse(
@@ -1002,6 +1013,8 @@ class ConfigJDexTier(ConfigFolderTier):
         at: str,
         ancestors: ConfigFormatAncestorInfo,
         load: dict | _Template,
+        *,
+        note_extension: str | None,
     ) -> None:
         """Create a valid tier given a loaded section of a config file."""
         if isinstance(load, _Template):
@@ -1014,7 +1027,13 @@ class ConfigJDexTier(ConfigFolderTier):
         # Call the folder tier stuff
         super().__init__(
             templates,
-            ConfigJDexTier,
+            lambda t, at, an, lo: ConfigJDexTier(
+                t,
+                at,
+                an,
+                lo,
+                note_extension=note_extension,
+            ),
             at,
             ancestors,
             from_file,
@@ -1027,6 +1046,7 @@ class ConfigJDexTier(ConfigFolderTier):
                 f"{at}.notes[{i}]",
                 self.format,
                 v,
+                note_extension=note_extension,
             ),
             at,
             "notes",
@@ -1063,6 +1083,8 @@ class ConfigFormat(ConfigFormatAncestorInfo):
         ancestors: ConfigFormatAncestorInfo,
         from_file: dict,
         template: _Template | None,
+        *,
+        note_extension: str | None = None,
     ) -> None:
         """Create a valid format given a string from a config file."""
         name = _pop_nonempty_str(
@@ -1155,6 +1177,10 @@ class ConfigFormat(ConfigFormatAncestorInfo):
                             f"(?P<{identifier}>[0-9]{{{match_len}}})"
                         ),
                     )
+
+        if note_extension:
+            # Literal segment
+            regex.append(lambda _, v=note_extension: re.escape(v))
 
         self.name = (*ancestors.name, name)
         self.segments = ancestors.segments + tuple(new_segments)
@@ -2294,14 +2320,18 @@ def _get_jdex_entries_here_or_children(
                             if jid.parent is not None
                             else None
                         )
+                        if jid.entry:
+                            entry = jid.entry.build(
+                                {**bound_segments, **match.groupdict()},
+                            )
+                        else:
+                            entry = x.name
+                            if note.extension:
+                                entry = entry.removesuffix(note.extension)
                         _insert_append_sorted(
                             child_id,
                             CollectedJDexEntry(
-                                jid.entry.build(
-                                    {**bound_segments, **match.groupdict()},
-                                )
-                                if jid.entry
-                                else x.name,
+                                entry,
                                 parent_id,
                                 PurePath(x).relative_to(root_path),
                             ),
