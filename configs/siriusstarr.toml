@@ -9,7 +9,7 @@ json_output = false
 # Ignore any JD configuration files present
 ignore_environment = true
 # File patterns to ignore anywhere they appear; these support rudimentary globbing
-ignore = [".stignore", ".stfolder", ".git*"]
+ignore = [".stignore", ".stfolder"]
 
 ## #############################################################################
 # The system section handles defining your system format
@@ -23,7 +23,9 @@ ignore = [".stignore", ".stfolder", ".git*"]
 # The path to begin JDex structure within.
 path = "~/Knowledge"
 # File patterns to ignore just in the JDex
-ignore = [".obsidian", ".trash"]
+ignore = [".obsidian", ".trash", ".git*"]
+# This will be appended to all *note* formats within the JDex; it is provided for convenience to allow format re-use between folders and files
+note_extension = ".md"
 
 # `children` specifies folders on the disk that are expected in the JDex.  These
 # may then define `notes`, which specify files on the disk (generally they are
@@ -44,7 +46,7 @@ children = [
 [[system.roots]]
 name = "Knowledge"
 path = "~/Knowledge"
-ignore = [".git", ".gitignore", ".obsidian", ".trash"]
+ignore = [".obsidian", ".trash", ".git*"]
 
 [[system.roots.children]]
 template = "trunk"
@@ -84,7 +86,6 @@ path = "~/Caches"
 
 [[system.roots.children]]
 template = "trunk"
-children = []  # Outside of Knowledge, Trunks are just headers
 
 [[system.roots.children]]
 template = "branch"
@@ -114,8 +115,7 @@ path = "~/Dropbox"
 ignore = [".maestral*"]  # Ignore the folders Maestral uses
 # Dropbox does not use anything but terminal folders;
 children = [
-  # Notice how you can inline a non-template folder in with templates
-  { name = "Cache", format = "C/#T//#B/./##ID/ /*Cache/", allow_arbitrary_contents = true, id = "C/=T//=B/./=ID/" },
+  { template = "cache_flat" },
   { template = "nest_to_cache_flat" },
   { template = "nest_to_nest_flat" },
 ]
@@ -127,17 +127,28 @@ children = [
 name = "Trunk"
 format = "B/#T/0 /*Trunk/ ⬇️"
 id = "B/=T/0"
+parent = "B/=T/0-/=T/9"
+
+[[template.trunk.ids]]
+id = "B/=T/0-/=T/9"
+entry = "B/=T/0-/=T/9 /=Trunk/ ⬇️"
 
 [template.branch]
 name = "Branch"
 format = "B/#T//#B/ /*Branch/"
 id = "B/=T//=B/"
+parent = "B/=T/0-/=T/9"
 
 [template.cache]
 name = "Cache"
 format = "C/=T//=B/./##ID/ /*Cache/"
 allow_arbitrary_contents = true
 id = "C/=T//=B/./=ID/"
+parent = "B/=T//=B/"
+
+[template.cache_flat]
+template = "cache"
+format = "C/#T//#B/./##ID/ /*Cache/"
 
 ## #############################################################################
 # Nests (Work Packages)
@@ -146,51 +157,78 @@ id = "C/=T//=B/./=ID/"
 name = "Nest To Cache"
 format = "N/=T//=B/./####ID/~C/=T//=B/./##RelID/ /*Nest/"
 id = "N/=T//=B/./=ID/"
+parent = "C/=T//=B/./=RelID/"
 allow_arbitrary_contents = true
 
 [template.nest_to_nest]
 name = "Nest To Nest"
 format = "N/=T//=B/./####ID/~N/=T//=B/./####RelID/ /*Nest/"
 id = "N/=T//=B/./=ID/"
-allow_arbitrary_contents = true
-
-[template.nest_to_nest_flat]
-name = "Nest To Nest"
-format = "N/#T//#B/./####ID/~N/=T//=B/./####RelID/ /*Nest/"
-id = "N/=T//=B/./=ID/"
+parent = "N/=T//=B/./=RelID/"
 allow_arbitrary_contents = true
 
 [template.nest_to_cache_flat]
-name = "Nest To Cache"
+template = "nest_to_cache"
 format = "N/#T//#B/./####ID/~C/=T//=B/./##RelID/ /*Nest/"
-id = "N/=T//=B/./=ID/"
-allow_arbitrary_contents = true
+
+[template.nest_to_nest_flat]
+template = "nest_to_nest"
+format = "N/#T//#B/./####ID/~N/=T//=B/./####RelID/ /*Nest/"
 
 ## #############################################################################
 # The Standard Zeros
 ## #############################################################################
-[template.header]
-name = "Header"
-format = "C/=T//=B/./#H/0 /*Header/ ⬇️"
-id = "C/=T//=B/./=H/0"
+[template.zero]
+format = "C/=T//=B/.0/#Z/ /*ZName/"
+name = "Standard Zero"
+id = "C/=T//=B/.0/=Z/"
+parent = "B/=T//=B/"
+allow_arbitrary_contents = true
 
-[template.bad_header]
-name = "Invalid Header Or Index"
-format = "C/=T//=B/./#H/0 /*Header/"
-id = "C/=T//=B/./=H/0"
+[template.bad_zero]
+name = "Invalid Standard Zero (Or Where It Doesn't Belong)"
+format = "C/=T//=B/.0/#Z/ /*Name/"
+id = "C/=T//=B/.0/=Z/"
 forbidden = true
 
-[template.trunk_index]
-name = "Index"
-format = "C/=T/0.00 📇 Index"
-id = "C/=T/0.00"
-notes = [{ template = "trunk_note" }, { template = "trunk_index_note" }]
-
 [template.index]
-name = "Index"
-format = "C/=T//=B/.00 📇 Index"
-id = "C/=T//=B/.00"
-notes = [{ template = "branch_note" }, { template = "cache_note" }, { template = "nest_to_cache_note" }, { template = "nest_to_nest_note" }]
+template = "zero"
+bind = { Z = "0", ZName = "📇 Index" }
+notes = [
+  { template = "branch" },
+  { template = "index" },
+  { template = "bad_index" },
+  { template = "inbox" },
+  { template = "bad_inbox" },
+  { template = "control" },
+  { template = "bad_control" },
+  { template = "templates" },
+  { template = "bad_templates" },
+  { template = "links" },
+  { template = "bad_links" },
+  { template = "ideas" },
+  { template = "bad_ideas" },
+  { template = "tags" },
+  { template = "bad_tags" },
+  { template = "unused_07" },
+  { template = "unused_08" },
+  { template = "adr" },
+  { template = "bad_adr" },
+  { template = "header" },
+  { template = "bad_header" },
+  { template = "cache" },
+  { template = "nest_to_cache" },
+  { template = "nest_to_nest" },
+  { template = "cache" },
+  { template = "nest_to_cache" },
+  { template = "nest_to_nest" },
+]
+allow_arbitrary_contents = false
+
+[template.trunk_index]
+template = "index"
+bind = { B = "0" }
+notes = [{ template = "trunk" }, { template = "trunk_index" }]
 
 [template.bad_index]
 name = "Index Invalid Or Where It Doesn't Belong"
@@ -199,162 +237,83 @@ id = "C/=T//=B/.00"
 forbidden = true
 
 [template.inbox]
-name = "Inbox"
-format = "C/=T//=B/.01 📥️ Inbox"
-id = "C/=T//=B/.01"
+template = "zero"
+bind = { Z = "1", ZName = "📥️ Inbox" }
+allow_arbitrary_contents = false
 
 [template.bad_inbox]
-name = "Invalid Inbox"
-format = "C/=T//=B/.01/*Inbox/"
-id = "C/=T//=B/.01"
-forbidden = true
+template = "bad_zero"
+bind = { Z = "1" }
 
 [template.control]
-name = "Control"
-format = "C/=T//=B/.02 ✅ Control"
-id = "C/=T//=B/.02"
-allow_arbitrary_contents = true
+template = "zero"
+bind = { Z = "2", ZName = "✅ Control" }
 
 [template.bad_control]
-name = "Control Invalid Or Where It Doesn't Belong"
-format = "C/=T//=B/.02/*Control/"
-id = "C/=T//=B/.02"
-forbidden = true
+template = "bad_zero"
+bind = { Z = "2" }
 
 [template.templates]
-name = "Templates"
-format = "C/=T//=B/.03 📑 Templates & Standards"
-id = "C/=T//=B/.03"
-allow_arbitrary_contents = true
+template = "zero"
+bind = { Z = "3", ZName = "📑 Templates & Standards" }
 
 [template.bad_templates]
-name = "Invalid Templates"
-format = "C/=T//=B/.03/*Templates/"
-id = "C/=T//=B/.03"
-forbidden = true
+template = "bad_zero"
+bind = { Z = "3" }
 
 [template.links]
-name = "Links"
-format = "C/=T//=B/.04 🔗 Sources, Resources, & Links"
-id = "C/=T//=B/.04"
-allow_arbitrary_contents = true
+template = "zero"
+bind = { Z = "4", ZName = "🔗 Sources, Resources, & Links" }
 
 [template.bad_links]
-name = "Links Invalid Or Where It Doesn't Belong"
-format = "C/=T//=B/.04/*Links/"
-id = "C/=T//=B/.04"
-forbidden = true
+template = "bad_zero"
+bind = { Z = "4" }
 
 [template.ideas]
-name = "Ideas"
-format = "C/=T//=B/.05 💭 Inspiration, Ideas, & Percolation"
-id = "C/=T//=B/.05"
-allow_arbitrary_contents = true
+template = "zero"
+bind = { Z = "5", ZName = "💭 Inspiration, Ideas, & Percolation" }
 
 [template.bad_ideas]
-name = "Invalid Ideas"
-format = "C/=T//=B/.05/*Ideas/"
-id = "C/=T//=B/.05"
-forbidden = true
+template = "bad_zero"
+bind = { Z = "5" }
 
 [template.tags]
-name = "Tags"
-format = "C/=T//=B/.06 🏷️ Topics & Tags"
-id = "C/=T//=B/.06"
-allow_arbitrary_contents = true
+template = "zero"
+bind = { Z = "6", ZName = "🏷️ Topics & Tags" }
 
 [template.bad_tags]
-name = "Tags Invalid Or Where It Doesn't Belong"
-format = "C/=T//=B/.06/*Tags/"
-id = "C/=T//=B/.06"
-forbidden = true
+template = "bad_zero"
+bind = { Z = "6" }
 
 [template.unused_07]
-name = "Unused .07"
-format = "C/=T//=B/.07/*Name/"
-id = "C/=T//=B/.07"
-forbidden = true
+template = "bad_zero"
+bind = { Z = "7" }
 
 [template.unused_08]
-name = "Unused .08"
-format = "C/=T//=B/.08/*Name/"
-id = "C/=T//=B/.08"
-forbidden = true
+template = "bad_zero"
+bind = { Z = "8" }
 
 [template.adr]
-name = "ADR"
-format = "C/=T//=B/.09 ⚖️ Decision Log"
-id = "C/=T//=B/.09"
-allow_arbitrary_contents = true
+template = "zero"
+bind = { Z = "9", ZName = "⚖️ Decision Log" }
 
 [template.bad_adr]
-name = "ADR Invalid Or Where It Doesn't Belong"
-format = "C/=T//=B/.09/*ADR/"
-id = "C/=T//=B/.09"
+template = "bad_zero"
+bind = { Z = "9" }
+
+[template.header]
+name = "Header"
+format = "C/=T//=B/./#H/0 /*Header/ ⬇️"
+id = "C/=T//=B/./=H/0"
+parent = "B/=T//=B/"
+
+[template.bad_header]
+name = "Invalid Header Or Index"
+format = "C/=T//=B/./#H/0 /*Header/"
+id = "C/=T//=B/./=H/0"
 forbidden = true
 
 [template.attachments_folder]
 name = "Attachments Folder"
 format = "Attachments"
 allow_arbitrary_contents = true
-
-## #############################################################################
-# Notes
-## #############################################################################
-[template.trunk_note]
-name = "JDex Trunk Note"
-format = "B/=T/0 /=Trunk/ ⬇️.md"
-
-[[template.trunk_note.ids]]
-id = "B/=T/0-/=T/9"
-entry = "B/=T/0-/=T/9 /=Trunk/ ⬇️"
-
-[[template.trunk_note.ids]]
-id = "B/=T/0"
-parent = "B/=T/0-/=T/9"
-entry = "B/=T/0 /=Trunk/ ⬇️"
-
-[template.trunk_index_note]
-name = "JDex Trunk Index Note"
-format = "C/=T/0.00 📇 Index.md"
-
-[[template.trunk_index_note.ids]]
-id = "C/=T/0.00"
-parent = "B/=T/0"
-entry = "C/=T/0.00 📇 Index"
-
-[template.branch_note]
-name = "JDex Branch Note"
-format = "B/=T//=B/ /=Branch/.md"
-
-[[template.branch_note.ids]]
-id = "B/=T//=B/"
-parent = "B/=T/0-/=T/9"
-entry = "B/=T//=B/ /=Branch/"
-
-[template.cache_note]
-name = "JDex Cache Note"
-format = "C/=T//=B/./##ID/ /*Name/.md"
-
-[[template.cache_note.ids]]
-id = "C/=T//=B/./=ID/"
-parent = "B/=T//=B/"
-entry = "C/=T//=B/./=ID/ /=Name/"
-
-[template.nest_to_cache_note]
-name = "Nest To Cache Note"
-format = "N/=T//=B/./####ID/~C/=T//=B/./##RelID/ /*Nest/.md"
-
-[[template.nest_to_cache_note.ids]]
-id = "N/=T//=B/./=ID/"
-parent = "C/=T//=B/./=RelID/"
-entry = "N/=T//=B/./=ID/~C/=T//=B/./=RelID/ /=Nest/"
-
-[template.nest_to_nest_note]
-name = "Nest To Nest Note"
-format = "N/=T//=B/./####ID/~N/=T//=B/./####RelID/ /*Nest/.md"
-
-[[template.nest_to_nest_note.ids]]
-id = "N/=T//=B/./=ID/"
-parent = "N/=T//=B/./=RelID/"
-entry = "N/=T//=B/./=ID/~N/=T//=B/./=RelID/ /=Nest/"
