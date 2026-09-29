@@ -560,6 +560,13 @@ class ConfigSystemJDex:
                     template,
                 ),
             )
+        elif not self.children and not self.notes:
+            err = ConfigValueError(
+                at,
+                "JDex must specify at least one child folder or note.",
+                "[]",
+            )
+            raise err
         _report_extra_keys(at, from_file, tuple(self.__dict__.keys()))
 
 
