@@ -841,7 +841,11 @@ class ConfigJDexNotes:
 
         # Compile Format
         self.format = ConfigFormat(
-            at, ancestors, from_file, template, note_extension=note_extension
+            at,
+            ancestors,
+            from_file,
+            template,
+            note_extension=note_extension,
         )
 
         self.extension = note_extension
@@ -905,7 +909,11 @@ class ConfigFolderTier:
 
         # Compile Format & Children
         self.format = ConfigFormat(
-            at, ancestors, from_file, template, note_extension=None
+            at,
+            ancestors,
+            from_file,
+            template,
+            note_extension=None,
         )
 
         self.children = _recurse(
