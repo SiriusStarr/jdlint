@@ -749,7 +749,11 @@ class ConfigStaticFormat:
                         "Malformed format; variable segment must consist of = followed by an alphabetic identifier.",
                         v,
                     )
-                if match.group(1) in ancestors.segments:
+                if binds and match.group(1) in binds:
+                    # Bind made this a literal segment
+                    bind = binds[match.group(1)]
+                    build.append(lambda _, v=bind: v)
+                elif match.group(1) in ancestors.segments:
                     p = match.group(1)
                     build.append(lambda d, p=p: d[p])
 
@@ -1133,10 +1137,13 @@ class ConfigFormat(ConfigFormatAncestorInfo):
         regex = []
         new_segments = []
 
+        def handle_literal(v: str) -> None:
+            # Literal segment
+            regex.append(lambda _, v=v: re.escape(v))
+
         for i, v in enumerate(self.raw_format.split("/")):
             if i % 2 == 0:
-                # Literal segment
-                regex.append(lambda _, v=v: re.escape(v))
+                handle_literal(v)
                 continue
             # Variable segment
             match = ConfigFormat.variable_segment_re.fullmatch(v)
@@ -1149,6 +1156,22 @@ class ConfigFormat(ConfigFormatAncestorInfo):
                 raise err
             segment_type = match.group(1)
             identifier = match.group(2)
+
+            if binds and identifier in binds:
+                if segment_type == "=":
+                    handle_literal(binds[identifier])
+
+                else:
+                    # Bind made this a literal segment, not variable
+                    new_segments.append(identifier)
+                    bind = binds[identifier]
+                    regex.append(
+                        lambda _, identifier=identifier, bind=bind: (
+                            f"(?P<{identifier}>{re.escape(bind)})"
+                        ),
+                    )
+                continue
+
             if segment_type == "=":
                 if identifier in ancestors.segments:
                     p = identifier
@@ -1164,21 +1187,26 @@ class ConfigFormat(ConfigFormatAncestorInfo):
                         v,
                     )
                     raise err
-            else:
-                if identifier in ancestors.segments:
+            elif identifier in ancestors.segments:
+                if binds is not None:
+                    # We're in a template, so convert it to a bound segment
+                    p = identifier
+                    regex.append(lambda d, p=p: re.escape(d[p]))
+                else:
                     err = ConfigValueError(
                         f"{at}.format",
                         f'Malformed format; variable segment tried to rebind the identifier "{identifier}", which was already bound in a parent.',
                         v,
                     )
                     raise err
-                if identifier in new_segments:
-                    err = ConfigValueError(
-                        f"{at}.format",
-                        f'Malformed format; variable segment tried to rebind the identifier "{identifier}", which was already bound in this format.',
-                        v,
-                    )
-                    raise err
+            elif identifier in new_segments:
+                err = ConfigValueError(
+                    f"{at}.format",
+                    f'Malformed format; variable segment tried to rebind the identifier "{identifier}", which was already bound in this format.',
+                    v,
+                )
+                raise err
+            else:
                 new_segments.append(identifier)
                 if segment_type == "*":
                     regex.append(
@@ -1295,10 +1323,33 @@ class ConfigTemplates:
             # This is fine, no need to have a template
             return None
 
-        return self._subtemplate_recurse(at, [template_name], _Template(return_keys))
+        binds = from_file.pop("bind") if "bind" in from_file else {}
+        if not isinstance(binds, dict):
+            err = ConfigTypeError(
+                f"{at}.bind",
+                "dict",
+                type(binds).__name__,
+            )
+            raise err
+        for k, v in binds.items():
+            if not isinstance(v, str):
+                err = ConfigTypeError(
+                    f"{at}.bind.{k}",
+                    "str",
+                    type(v).__name__,
+                )
+                raise err
+        return self._subtemplate_recurse(
+            at,
+            [template_name],
+            _Template(return_keys, binds),
+        )
 
     def _subtemplate_recurse(
-        self, at: str, inside: list[str], template: _Template
+        self,
+        at: str,
+        inside: list[str],
+        template: _Template,
     ) -> _Template:
         """Get a template inside of a template, if it specifies one, and merge them."""
         try:
@@ -1328,12 +1379,30 @@ class ConfigTemplates:
             # This is fine, no need to have a template; return the input one
             return template
 
+        binds = template.vals.get("bind", {})
+        if not isinstance(binds, dict):
+            err = ConfigTypeError(
+                f"{at}.bind",
+                "dict",
+                type(binds).__name__,
+            )
+            raise err
+        for k, v in binds.items():
+            if not isinstance(v, str):
+                err = ConfigTypeError(
+                    f"{at}.bind.{k}",
+                    "str",
+                    type(v).__name__,
+                )
+                raise err
+
         inside.append(template_name)
-        subtemp = self._subtemplate_recurse(at, inside, _Template(return_keys))
-        # We have to merge keys; as always, the deeper you are the lower priority
-        return _Template(subtemp.vals | template.vals)
+        subtemp = self._subtemplate_recurse(at, inside, _Template(return_keys, binds))
+        # We have to merge keys and binds; as always, the deeper you are the lower priority
+        return _Template(subtemp.vals | template.vals, subtemp.binds | template.binds)
 
     def subtemplate(self, at: str, template: _Template) -> _Template:
+        """Resolve templating within the current template, if necessary."""
         return self._subtemplate_recurse(at, [], template)
 
 
