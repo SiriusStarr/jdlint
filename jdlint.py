@@ -182,17 +182,31 @@ def _report_extra_keys(at: str, from_file: dict, valid: tuple[str, ...]) -> None
         raise err
 
 
-def _pop_nonempty_str_attribute(
+def _pop_nonempty_str(
     at: str,
     attr: str,
     from_file: dict,
     template: _Template | None,
 ) -> str:
-    """Given a parent location, a mandatory attribute to get, and data, return it."""
+    return _pop_nonempty_str_with_binds(at, attr, from_file, template)[0]
+
+
+def _pop_nonempty_str_with_binds(
+    at: str,
+    attr: str,
+    from_file: dict,
+    template: _Template | None,
+) -> tuple[str, dict[str, str] | None]:
+    """Given a parent location, a mandatory attribute to get, and data, return it.
+
+    If the template is used, return the template as well (for binds).
+    """
     if attr in from_file:
         val = from_file.pop(attr)
+        binds = None
     elif template and attr in template.vals:
         val = template.vals[attr]
+        binds = template.binds
     else:
         err = ConfigMissingKeyError(f"{at}.{attr}")
         raise err
@@ -210,7 +224,7 @@ def _pop_nonempty_str_attribute(
             val,
         )
         raise err
-    return val
+    return (val, binds)
 
 
 def _pop_default_false_bool(
@@ -385,14 +399,14 @@ class ConfigSystemRoot:
     ) -> None:
         """Create a valid configuration given a loaded section of a config file."""
         template = templates.get_template(at, from_file)
-        self.name = _pop_nonempty_str_attribute(
+        self.name = _pop_nonempty_str(
             at,
             "name",
             from_file,
             template,
         )
         self.path = Path(
-            _pop_nonempty_str_attribute(
+            _pop_nonempty_str(
                 at,
                 "path",
                 from_file,
@@ -456,7 +470,7 @@ class ConfigSystemJDex:
         # Acquire and set defaults
         try:
             self.path = Path(
-                _pop_nonempty_str_attribute(
+                _pop_nonempty_str(
                     at,
                     "path",
                     from_file,
@@ -526,7 +540,7 @@ class ConfigSystemJDex:
                 f"{at}.entry",
                 # This is the default info made available to a file JDex
                 ConfigFormatAncestorInfo(("Single File JDex",), ("id", "title")),
-                _pop_nonempty_str_attribute(
+                _pop_nonempty_str_with_binds(
                     at,
                     "entry",
                     from_file,
@@ -592,7 +606,7 @@ class ConfigSystem:
         self.id = sys_id
 
         try:
-            self.name = _pop_nonempty_str_attribute(
+            self.name = _pop_nonempty_str(
                 at,
                 "name",
                 from_file,
@@ -688,20 +702,21 @@ class ConfigStaticFormat:
         self,
         at: str,
         ancestors: ConfigFormatAncestorInfo,
-        from_file: str,
+        str_and_binds: tuple[str, dict[str, str] | None],
     ) -> None:
         """Create a valid format given a string from a config file."""
+        (format_str, binds) = str_and_binds
         # Validate
-        if from_file.count("/") % 2 != 0:
+        if format_str.count("/") % 2 != 0:
             raise ConfigValueError(
                 at,
                 "Malformed format; there must be an even number of / characters. You have an extra/are missing one.",
-                from_file,
+                format_str,
             )
 
         build = []
 
-        for i, v in enumerate(from_file.split("/")):
+        for i, v in enumerate(format_str.split("/")):
             if i % 2 == 0:
                 # Literal segment
                 build.append(lambda _, v=v: v)
@@ -745,7 +760,7 @@ class ConfigID:
         self.id = ConfigStaticFormat(
             f"{at}.id",
             ancestors,
-            _pop_nonempty_str_attribute(
+            _pop_nonempty_str_with_binds(
                 at,
                 "id",
                 from_file,
@@ -757,7 +772,7 @@ class ConfigID:
                 self.parent = ConfigStaticFormat(
                     f"{at}.parent",
                     ancestors,
-                    _pop_nonempty_str_attribute(
+                    _pop_nonempty_str_with_binds(
                         at,
                         "parent",
                         from_file,
@@ -771,7 +786,7 @@ class ConfigID:
             self.entry = ConfigStaticFormat(
                 f"{at}.entry",
                 ancestors,
-                _pop_nonempty_str_attribute(
+                _pop_nonempty_str_with_binds(
                     at,
                     "entry",
                     from_file,
@@ -1050,13 +1065,13 @@ class ConfigFormat(ConfigFormatAncestorInfo):
         template: _Template | None,
     ) -> None:
         """Create a valid format given a string from a config file."""
-        name = _pop_nonempty_str_attribute(
+        name = _pop_nonempty_str(
             at,
             "name",
             from_file,
             template,
         )
-        self.raw_format = _pop_nonempty_str_attribute(
+        (self.raw_format, binds) = _pop_nonempty_str_with_binds(
             at,
             "format",
             from_file,
@@ -1105,7 +1120,6 @@ class ConfigFormat(ConfigFormatAncestorInfo):
                     regex.append(
                         lambda _, identifier=identifier: f"(?P={identifier})",
                     )
-
                 else:
                     err = ConfigValueError(
                         f"{at}.format",
@@ -1161,7 +1175,7 @@ class ConfigTemplates:
     def __init__(self, config_file_path: Path, from_file: dict) -> None:
         """Attempt to load templates from loaded TOML."""
         # Load and validate templates
-        templates = from_file.get("template", {})
+        templates = from_file.pop("template", {})
         if not isinstance(templates, dict):
             err = ConfigTypeError(
                 "template",
@@ -1222,7 +1236,7 @@ class ConfigTemplates:
     def get_template(self, at: str, from_file: dict) -> _Template | None:
         """Get a template specified by the loaded data structure, if it specifies one."""
         try:
-            template_name = _pop_nonempty_str_attribute(
+            template_name = _pop_nonempty_str(
                 f"{at}.template",
                 "template",
                 from_file,
@@ -1247,7 +1261,7 @@ class ConfigTemplates:
     ) -> _Template:
         """Get a template inside of a template, if it specifies one, and merge them."""
         try:
-            template_name = _pop_nonempty_str_attribute(
+            template_name = _pop_nonempty_str(
                 f"{at}.template",
                 "template",
                 {},
@@ -1294,7 +1308,7 @@ class Config:
         """Attempt to create a valid config from loaded TOML."""
         templates = ConfigTemplates(config_file_path, from_file)
 
-        self.linter = ConfigLinter(from_file.get("linter", {}))
+        self.linter = ConfigLinter(from_file.pop("linter", {}))
 
         if "system" not in from_file:
             err = ConfigMissingKeyError("system")
@@ -1302,7 +1316,7 @@ class Config:
 
         if not isinstance(from_file["system"], list):
             try:
-                sys_id = _pop_nonempty_str_attribute(
+                sys_id = _pop_nonempty_str(
                     "system",
                     "id",
                     from_file["system"],
@@ -1323,11 +1337,11 @@ class Config:
                 templates,
                 "system",
                 sys_id,
-                from_file["system"],
+                from_file.pop("system"),
             )
         else:
             self.system = {}
-            for i, sys in enumerate(from_file["system"]):
+            for i, sys in enumerate(from_file.pop("system")):
                 if not isinstance(sys, dict):
                     err = ConfigTypeError(
                         f"system[{i}]",
@@ -1335,7 +1349,7 @@ class Config:
                         type(sys).__name__,
                     )
                     raise err
-                sys_id = _pop_nonempty_str_attribute(
+                sys_id = _pop_nonempty_str(
                     f"system[{i}]",
                     "id",
                     sys,
