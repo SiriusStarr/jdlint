@@ -1357,6 +1357,8 @@ class Config:
                     sys,
                 )
 
+        _report_extra_keys("", from_file, ("linter", "system", "template"))
+
 
 ###############################################################################
 # Issues
