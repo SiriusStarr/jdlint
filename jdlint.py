@@ -854,14 +854,18 @@ class ConfigJDexNotes:
 
         self.extension = note_extension
 
+        try:
+            self.ids = [
+                ConfigID(at, self.format, from_file, template, supports_parent=True)
+            ]
+        except ConfigMissingKeyError:
+            self.ids = []
+
         (cs, template_cs) = _pop_list(
-            at,
-            "ids",
-            from_file,
-            template,
+            at, "ids", from_file, template, default_empty=True
         )
         if template_cs:
-            self.ids = [
+            self.ids.extend(
                 ConfigID(
                     f"{at}.ids[{i}]",
                     self.format,
@@ -870,9 +874,9 @@ class ConfigJDexNotes:
                     supports_parent=True,
                 )
                 for i, t in enumerate(template_cs)
-            ]
+            )
         else:
-            self.ids = [
+            self.ids.extend(
                 ConfigID(
                     f"{at}.ids[{i}]",
                     self.format,
@@ -881,7 +885,7 @@ class ConfigJDexNotes:
                     supports_parent=True,
                 )
                 for i, v in enumerate(cs)
-            ]
+            )
         if not self.ids and not self.format.forbidden:
             err = ConfigMissingKeyError(f"{at}.ids")
             raise err
