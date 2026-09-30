@@ -19,6 +19,7 @@
     * [Template Imports](#template-imports)
     * [Template Functionality](#template-functionality)
     * [Template Example](#template-example)
+    * [Standard Templates](#standard-templates)
   * [Full Config Specification](#full-config-specification)
     * [`linter`](#linter)
     * [`system`](#system)
@@ -231,12 +232,16 @@ try).
 ## Templates
 
 `jdlint` supports some limited templating to reduce verbosity of repeated
-structure. Please note that these are an advanced feature and can very easily
-lead to very confusing error messages if you are not careful.
+structure. Please note that these are an advanced feature and can easily lead to
+very confusing error messages if you are not careful.
 
-Templates can be used within anywhere that expects tiers of folders or notes,
-namely `jdex`, `system.default`, `system.roots`, or anywhere within their
-children.
+Templates can be used anywhere that expects tiers of folders or notes, namely
+`jdex`, `system.default`, `system.roots`, or anywhere within their children.
+
+Templates are also valid **within templates**, allowing you to easily make a
+copy of a template with one key overridden or the like. Infinitely recursive
+templates are, of course, an error (though you can use a template in its own
+descendants, if it does not cause infinite recursion).
 
 ### Template Imports
 
@@ -248,16 +253,26 @@ a template is defined with the same name in multiple imports, the earlier in the
 list takes precedence. If a template is defined in imports and also locally, the
 local definition takes precedence.
 
+Note that **imports with relative paths are resolved relative to the config
+file**, not relative to the current working directory.
+
 ### Template Functionality
 
 A template is just a TOML table with any number of keys. `jdlint` does not
 eagerly check it for validity (nor for excess keys). As such, you may use a
-template that defines keys not valid in a location in that location (such as
-defining `notes` in a system folder).
+template in a location even if it contains keys that would not be valid there
+(such as defining `notes` in a system folder).
 
 To use a template, simply set the key `template` to the name of the desired
 template. Any keys not specified will be checked from the template instead. This
 allows you to override template keys at the site they are applied.
+
+Note that **variable segment binds within templates will be automatically
+converted to bound segments if their identifier has already been bound** in an
+ancestor (rather than this being an error).
+
+You may also set the key `bind` alongside any template to specify how variable
+segments within the template should be reassigned to literal values.
 
 ### Template Example
 
@@ -358,6 +373,15 @@ parent = "/=A//=C/"
 entry = "/=A//=C/./=ID/ /=Name/"
 ```
 
+### Standard Templates
+
+Some generally-useful "standards-compliant" templates are provided in
+[standard_templates.toml](./standard_templates.toml); feel free to use these in
+your own configs, but make certain you understand what's being specified in
+them.
+
+If you have additions/corrections to these, please make a PR or open an issue.
+
 ## Full Config Specification
 
 This section describes all available keys that can be specified; as always,
@@ -426,11 +450,19 @@ errors.
 * `system.jdex.ignore` – Like `linter.ignore`, but only for the JDex structure.
   You might want this to be `[".obsidian", ".trash"]`, for example. Not relevant
   to single file JDexes.
+* `system.jdex.note_extension` – A string to append to all `*.notes.format`
+  within the JDex. This is optional, but allows reusing the same formats for
+  folders and notes. Note that this extension will also be stripped off when
+  generating converting filenames to an `entry`, e.g. `11.01 Inbox.md` will
+  create `11.01 Inbox`.
 * `system.jdex.children` – A list of top-level folders expected in the JDex; see
   below for the expected format. Not relevant to single file JDexes.
 * `system.jdex.notes` – A list of top-level notes expected in the JDex; see
   below for the expected format. Not relevant to single file JDexes.
-* `system.jdex.template` -- Optionally, a string specifying a template to apply.
+* `system.jdex.template` – Optionally, a string specifying a template to apply.
+* `system.jdex.bind` – A table with keys that are
+  [segment identifiers](#segment-identifiers) and values that are strings to
+  bind them to.
 
 ##### JDex `*.children` Tier
 
@@ -456,7 +488,10 @@ This is a "level" of folder in the JDex, e.g. Areas.
   existence of anything that matches this format, reporting its existence as an
   error. You can do this to define, for example, how a standard zero should
   *not* be named.
-* `*.children.template` -- Optionally, a string specifying a template to apply.
+* `*.children.template` – Optionally, a string specifying a template to apply.
+* `*.children.bind` – A table with keys that are
+  [segment identifiers](#segment-identifiers) and values that are strings to
+  bind them to.
 
 ##### JDex `*.notes`
 
@@ -470,11 +505,16 @@ can define multiple IDs.
 * `*.notes.forbidden` – A boolean, default false. If true, forbid the existence
   of anything that matches this format, reporting its existence as an error. You
   can do this to define, for example, how a standard zero should *not* be named.
+* `*.notes.id`, `*.notes.entry`, `*.notes.parent` – Optional. If set, these
+  behave identically as if they were a single entry in `*.notes.ids`.
 * `*.notes.ids` – A list of IDs that this note "creates" (i.e. specifies as
   known to exist). This usually should just be one, but some notes (`10.00`, for
   example) might create e.g. an Area ID `10-19`, a Category ID `10`, and an ID
   `10.00`.
-* `*.notes.template` -- Optionally, a string specifying a template to apply.
+* `*.notes.template` – Optionally, a string specifying a template to apply.
+* `*.notes.bind` – A table with keys that are
+  [segment identifiers](#segment-identifiers) and values that are strings to
+  bind them to.
 
 ##### JDex `*.notes.ids`
 
@@ -482,12 +522,16 @@ can define multiple IDs.
   `"/=A//=C/./=ID/"` See [formats](#formats) for details.
 * `*.notes.ids.entry` – A string that specifies the entry (expected file/folder
   name) created by the note, e.g. `"/=A//=C/./=ID/ /=Name/"`. See
-  [formats](#formats) for details.
+  [formats](#formats) for details. If not specified, the filename is used
+  instead, with `note_extension` stripped if it has been set.
 * `*.notes.ids.parent` – A string that specifies the ID this ID is nested
   *under*. For instance, for the ID `"/=A//=C/./=ID/"`, its parent should be
   `"/=A//=C/"`. This can be used to detect orphans, e.g. IDs that are missing a
   category, or work packages that reference an ID that doesn't exist.
-* `*.ids.template` -- Optionally, a string specifying a template to apply.
+* `*.ids.template` – Optionally, a string specifying a template to apply.
+* `*.ids.bind` – A table with keys that are
+  [segment identifiers](#segment-identifiers) and values that are strings to
+  bind them to.
 
 #### `system.roots`
 
@@ -502,8 +546,10 @@ A list of root directories to check. These contain your actual "stuff".
   might want this to be `[".stfolder"]` if you use Syncthing, for example
 * `system.roots.children` – A list of top-level folders expected in this root;
   see below for the expected format.
-* `system.roots.template` -- Optionally, a string specifying a template to
-  apply.
+* `system.roots.template` – Optionally, a string specifying a template to apply.
+* `system.roots.bind` – A table with keys that are
+  [segment identifiers](#segment-identifiers) and values that are strings to
+  bind them to.
 
 ##### Root `*.children` Tier
 
@@ -527,6 +573,7 @@ This is a "level" of folder in the root, e.g. Areas.
 * `*.children.entry` – A string that specifies the JDex entry (ID and name)
   expected by this folder, e.g. `"/=A//=C/./=ID/ /=Name/"`. jdlint will check
   that a corresponding JDex entry exists. See [formats](#formats) for details.
+  If not specified, the filename is used instead.
 * `*.children.forbidden` – A boolean, default false. If true, forbid the
   existence of anything that matches this format, reporting its existence as an
   error. You can do this to define, for example, how a standard zero should
@@ -537,8 +584,11 @@ This is a "level" of folder in the root, e.g. Areas.
 * `*.children.no_jdex_entry` – Boolean, default false. If false, jdlint will
   report as an error if you do not have a matching entry for this ID defined in
   the JDex. Set it to true if you happen to just have a folder that you don't
-  care about matching to an ID (e.g. maybe `W0000-W9999 Work Packages`)
-* `*.children.template` -- Optionally, a string specifying a template to apply.
+  care about matching to an ID (e.g. maybe `W0000-W9999 Work Packages`).
+* `*.children.template` – Optionally, a string specifying a template to apply.
+* `*.children.bind` – A table with keys that are
+  [segment identifiers](#segment-identifiers) and values that are strings to
+  bind them to.
 
 #### `system.default`
 
@@ -549,8 +599,11 @@ are just going to specify the children of each root separately.
 * `system.default.children` – A list of top-level folders expected in all roots
   that don't specify their own; this follows the same format as the
   root-specific children specified above.
-* `system.default.template` -- Optionally, a string specifying a template to
+* `system.default.template` – Optionally, a string specifying a template to
   apply.
+* `system.default.bind` – A table with keys that are
+  [segment identifiers](#segment-identifiers) and values that are strings to
+  bind them to.
 
 ### `template`
 
@@ -565,6 +618,11 @@ and cannot be used as a template name.
 
 Defining this creates the template `TEMPLATE_NAME`.
 
-* `system.TEMPLATE_NAME.*` -- Any keys defined here are what is copied to the
+* `system.TEMPLATE_NAME.template` – Optionally, a string specifying a template
+  to apply.
+* `system.TEMPLATE_NAME.bind` – A table with keys that are
+  [segment identifiers](#segment-identifiers) and values that are strings to
+  bind them to.
+* `system.TEMPLATE_NAME.*` – Any keys defined here are what is copied to the
   location a template is applied; note that extra keys will just be ignored, so
   it's okay to specify otherwise invalid keys.
