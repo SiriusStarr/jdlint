@@ -10,24 +10,4 @@ path = "files"
 template = "standard_system"
 
 [template]
-imports = ["../standard_templates.toml"]
-
-[template.standard_system]
-[[template.standard_system.children]]
-template = "area_folder"
-
-[[template.standard_system.children.children]]
-template = "category_folder"
-children = [{ template = "header_folder" }, { template = "bad_header" }, { template = "inbox_folder" }, { template = "bad_inbox" }, { template = "id_folder" }]
-
-[template.bad_inbox]
-name = "Bad Inbox"
-format = "/=A//=C/.01 /*Inbox/"
-id = "/=A//=C/.01"
-forbidden = true
-
-[template.bad_header]
-name = "Bad Header"
-format = "/=A//=C/./#I/0 /*Header/"
-id = "/=A//=C/./=I/0"
-forbidden = true
+imports = ["../../configs/standard_templates.toml"]

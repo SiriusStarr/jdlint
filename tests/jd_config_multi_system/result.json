@@ -43,7 +43,7 @@
               "name": [
                 "Area",
                 "Category",
-                "JDex Bad Inbox"
+                "Bad Inbox"
               ],
               "format": "/=A//=C/.01 /*Name/"
             },
@@ -63,7 +63,7 @@
               "10": {
                 "entries": [
                   {
-                    "entry": "10 Life Admin",
+                    "entry": "10 Management of area 10-19",
                     "path": "10-19 Life Admin/10 Management of area 10-19/10.00 Life Admin.md"
                   }
                 ],
@@ -190,7 +190,7 @@
               "10": {
                 "entries": [
                   {
-                    "entry": "10 Life Admin",
+                    "entry": "10 Management of area 10-19",
                     "path": "10-19 Life Admin/10 Management of area 10-19/10.00 Life Admin.md"
                   }
                 ],

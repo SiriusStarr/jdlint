@@ -1,0 +1,172 @@
+## #############################################################################
+# This is the "standard", partially-nested JDex, complete with work-packages
+## #############################################################################
+[standard_jdex]
+note_extension = ".md"
+
+[[standard_jdex.children]]
+template = "system_area_folder"
+children = [{ template = "system_category_folder", children = [] }, { template = "category_folder", children = [] }]
+
+[[standard_jdex.children]]
+template = "area_folder"
+children = [{ template = "area_category_folder", children = [] }, { template = "category_folder", children = [] }]
+
+[[standard_jdex.children]]
+template = "work_package_area_folder"
+
+## #############################################################################
+# This is the "standard" JD file system, complete with work-packages
+## #############################################################################
+[standard_system]
+[[standard_system.children]]
+template = "system_area_folder"
+
+[[standard_system.children]]
+template = "area_folder"
+
+[[standard_system.children]]
+template = "work_package_area_folder"
+children = [{ template = "work_package" }]
+
+## #############################################################################
+# This is a system that has a top-level system folder
+## #############################################################################
+[system_folder]
+name = "System"
+format = "/*SYS/ /*System/"
+id = "/=SYS/"
+
+[[system_folder.children]]
+template = "system_area_folder"
+
+[[system_folder.children]]
+template = "area_folder"
+
+[[system_folder.children]]
+template = "work_package_area_folder"
+children = [{ template = "work_package" }]
+
+## #############################################################################
+# Areas
+## #############################################################################
+[system_area_folder]
+template = "area_folder"
+bind = { A = "0" }
+children = [{ template = "system_category_folder" }, { template = "category_folder" }]
+
+[area_folder]
+name = "Area"
+format = "/#A/0-/=A/9 /*Area/"
+id = "/=A/0-/=A/9"
+children = [{ template = "area_category_folder" }, { template = "category_folder" }]
+
+## #############################################################################
+# Category folders
+## #############################################################################
+[system_category_folder]
+template = "category_folder"
+bind = { A = "0", C = "0" }
+notes = [{ template = "area_note" }, { template = "system_inbox" }, { template = "bad_inbox" }, { template = "id_note" }]
+children = [{ template = "header_folder" }, { template = "system_inbox" }, { template = "id_folder" }]
+
+[area_category_folder]
+template = "category_folder"
+bind = { C = "0" }
+notes = [{ template = "area_note" }, { template = "area_inbox" }, { template = "bad_inbox" }, { template = "id_note" }]
+children = [{ template = "header_folder" }, { template = "area_inbox" }, { template = "id_folder" }]
+
+[category_folder]
+name = "Category"
+format = "/=A//#C/ /*Category/"
+id = "/=A//=C/"
+notes = [{ template = "category_note" }, { template = "cat_inbox" }, { template = "bad_inbox" }, { template = "id_note" }]
+children = [{ template = "header_folder" }, { template = "cat_inbox" }, { template = "bad_inbox" }, { template = "id_folder" }]
+
+## #############################################################################
+# Headers and inboxes, which should both remain empty
+## #############################################################################
+[header_folder]
+name = "Header"
+format = "/=A//=C/./#I/0 ■ /*Header/"
+id = "/=A//=C/./=I/0"
+
+[system_inbox]
+name = "Inbox"
+format = "00.01 Inbox for the /*System/ System 📥"
+id = "00.01"
+parent = "00"
+
+[area_inbox]
+name = "Inbox"
+format = "/=A/0.01 Inbox for area /=A/0-/=A/9 📥"
+id = "/=A/0.01"
+parent = "/=A/0"
+
+[cat_inbox]
+name = "Inbox"
+format = "/=A//=C/.01 Inbox for category /=A//=C/ 📥"
+id = "/=A//=C/.01"
+parent = "/=A//=C/"
+
+[bad_inbox]
+name = "Bad Inbox"
+format = "/=A//=C/.01 /*Name/"
+id = "/=A//=C/.01"
+forbidden = true
+
+## #############################################################################
+# ID folders, which can have anything in them
+## #############################################################################
+[id_folder]
+template = "id_note"
+can_be_file = true
+allow_arbitrary_contents = true
+
+## #############################################################################
+# Work packages
+## #############################################################################
+[work_package_area_folder]
+name = "Work Packages Area"
+format = "W0000-W9999 /*Area/"
+id = "W0000-W9999"
+no_jdex_entry = true
+notes = [{ template = "work_package" }]
+
+[work_package]
+name = "Work Package"
+format = "W/####WPID/~/##AC/./##ID/ /*WPName/"
+id = "W/=WPID/"
+parent = "/=AC/./=ID/"
+allow_arbitrary_contents = true
+
+## #############################################################################
+# JDex notes
+## #############################################################################
+[area_note]
+template = "id_note"
+bind = { C = "0", ID = "00" }
+
+[[area_note.ids]]
+id = "/=A/0-/=A/9"
+entry = "/=A/0-/=A/9 /=Area/"
+
+[[area_note.ids]]
+id = "/=A/0"
+parent = "/=A/0-/=A/9"
+entry = "/=A/0 /=Category/"
+
+[category_note]
+template = "id_note"
+bind = { ID = "00" }
+
+[[category_note.ids]]
+id = "/=A//=C/"
+parent = "/=A/0-/=A/9"
+entry = "/=A//=C/ /=Category/"
+
+[id_note]
+name = "Id"
+format = "/=A//=C/./##ID/ /*Name/"
+id = "/=A//=C/./=ID/"
+parent = "/=A//=C/"

@@ -35,4 +35,4 @@ allow_arbitrary_contents = true
 template = "id_folder"
 
 [template]
-imports = ["../standard_templates.toml"]
+imports = ["../../configs/standard_templates.toml"]

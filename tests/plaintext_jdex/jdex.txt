@@ -3,13 +3,13 @@
       // Comments may be the only content
       // on a line and multiple may occur
       // in a row if desired
-      11.01 Birth certificate
+      11.02 Birth certificate
          - expiryDate: 2028-04-15
-      11.02 Passport
+      11.03 Passport
 
    12 Household
-      12.01 Insurance policies
+      12.02 Insurance policies
          - url: https://example.com/policy 
 
-   // 12.02 Missing // This should not be an ID
-   // 12.03 Not an ID either
+   // 12.03 Missing // This should not be an ID
+   // 12.04 Not an ID either

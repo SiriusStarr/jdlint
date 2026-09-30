@@ -8,28 +8,17 @@ path = "files"
 
 [system.jdex]
 path = "jdex"
-
 template = "standard_jdex"
 
 [system.default]
 template = "standard_system"
 
 [template]
-imports = ["../standard_templates.toml"]
+imports = ["../../configs/standard_templates.toml"]
 
 [template.standard_jdex]
+note_extension = ".md"
+
 [[template.standard_jdex.children]]
 template = "area_folder"
-
-[[template.standard_jdex.children.children]]
-name = "JDex Area Management Folder"
-format = "/=A/0 Management of area /=A/0-/=A/9"
-notes = [{ template = "area_note" }]
-
-[[template.standard_jdex.children.children]]
-name = "JDex Bad Area Management Folder"
-format = "/=A/0 /*AreaManagement/"
-forbidden = true
-
-[[template.standard_jdex.children.children]]
-template = "category_folder"
+children = [{ name = "Bad", format = "Bad", forbidden = true }, { template = "area_category_folder", children = [] }, { template = "category_folder", children = [] }]

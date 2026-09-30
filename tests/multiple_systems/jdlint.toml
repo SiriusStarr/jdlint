@@ -33,4 +33,4 @@ template = "standard_jdex"
 template = "standard_system"
 
 [template]
-imports = ["../standard_templates.toml"]
+imports = ["../../configs/standard_templates.toml"]

@@ -15,20 +15,12 @@ template = "standard_jdex"
 template = "standard_system"
 
 [template]
-imports = ["../standard_templates.toml"]
+imports = ["../../configs/standard_templates.toml"]
 
 # Override work packages to inherit from other ones
-[template.work_package_folder]
+[template.work_package]
 name = "Work Package"
 format = "W/####WPID/~W/####ID/ /*WPName/"
 id = "W/=WPID/"
-allow_arbitrary_contents = true
-
-[template.work_package_note]
-name = "Work Package"
-format = "W/####WPID/~W/####ID/ /*WPName/.md"
-
-[[template.work_package_note.ids]]
-id = "W/=WPID/"
 parent = "W/=ID/"
-entry = "W/=WPID/~W/=ID/ /=WPName/"
+allow_arbitrary_contents = true

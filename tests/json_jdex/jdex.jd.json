@@ -11,16 +11,16 @@
     "type": "area",
     "title": "Life admin"
   },
-  "11.01": {
+  "11.02": {
     "type": "id",
     "title": "Birth certificate"
   },
-  "11.02": {
+  "11.03": {
     "type": "id",
     "title": "Passport",
     "metadata": {
       "relatesTo": [
-        "11.01"
+        "11.02"
       ],
       "expiryDate": "2028-04-15"
     }
@@ -29,7 +29,7 @@
     "type": "category",
     "title": "Household"
   },
-  "12.01": {
+  "12.02": {
     "type": "id",
     "title": "Insurance policies",
     "metadata": {

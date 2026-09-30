@@ -4,9 +4,9 @@
       "errors": [
         {
           "type": "FOLDER_SHOULD_BE_EMPTY",
-          "file": "10-19 Life Admin/11 Me, Myself, & I/11.01 Inbox",
+          "file": "10-19 Life Admin/11 Me, Myself, & I/11.01 Inbox for category 11 📥",
           "children": [
-            "10-19 Life Admin/11 Me, Myself, & I/11.01 Inbox/Content"
+            "10-19 Life Admin/11 Me, Myself, & I/11.01 Inbox for category 11 📥/Content"
           ]
         },
         {
@@ -29,7 +29,7 @@
                   "children": {
                     "11.01": [
                       {
-                        "path": "10-19 Life Admin/11 Me, Myself, & I/11.01 Inbox",
+                        "path": "10-19 Life Admin/11 Me, Myself, & I/11.01 Inbox for category 11 📥",
                         "children": {}
                       }
                     ],

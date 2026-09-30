@@ -10,7 +10,7 @@
               "Category",
               "Bad Inbox"
             ],
-            "format": "/=A//=C/.01 /*Inbox/"
+            "format": "/=A//=C/.01 /*Name/"
           },
           "file": "10-19 Life Admin/11 Me, Myself, & I/11.01 Inbxo"
         },
@@ -20,11 +20,11 @@
             "name": [
               "Area",
               "Category",
-              "Bad Header"
+              "Bad Inbox"
             ],
-            "format": "/=A//=C/./#I/0 /*Header/"
+            "format": "/=A//=C/.01 /*Name/"
           },
-          "file": "10-19 Life Admin/11 Me, Myself, & I/11.10 ■Selves.md"
+          "file": "10-19 Life Admin/11 Me, Myself, & I/11.01 nth.md"
         }
       ],
       "path": "files",

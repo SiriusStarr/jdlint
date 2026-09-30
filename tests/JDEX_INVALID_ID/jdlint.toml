@@ -12,7 +12,7 @@ path = "jdex.jd.json"
 entry = "/=id/ /=title/"
 
 [[system.default.children]]
-template = "standard_system_with_sys_folder"
+template = "system_folder"
 
 [template]
-imports = ["../standard_templates.toml"]
+imports = ["../../configs/standard_templates.toml"]

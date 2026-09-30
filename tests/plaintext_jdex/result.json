@@ -19,19 +19,19 @@
               }
             ],
             "children": {
-              "11.01": {
+              "11.02": {
                 "entries": [
                   {
-                    "entry": "11.01 Birth certificate",
+                    "entry": "11.02 Birth certificate",
                     "path": null
                   }
                 ],
                 "children": {}
               },
-              "11.02": {
+              "11.03": {
                 "entries": [
                   {
-                    "entry": "11.02 Passport",
+                    "entry": "11.03 Passport",
                     "path": null
                   }
                 ],
@@ -47,10 +47,10 @@
               }
             ],
             "children": {
-              "12.01": {
+              "12.02": {
                 "entries": [
                   {
-                    "entry": "12.01 Insurance policies",
+                    "entry": "12.02 Insurance policies",
                     "path": null
                   }
                 ],
@@ -67,12 +67,12 @@
       "errors": [
         {
           "type": "ID_DIFFERENT_FROM_JDEX",
-          "id": "11.02",
-          "file": "10-19 Life admin/11 Me/11.02 Passpor",
-          "expected_jdex_entry": "11.02 Passpor",
+          "id": "11.03",
+          "file": "10-19 Life admin/11 Me/11.03 Passpor",
+          "expected_jdex_entry": "11.03 Passpor",
           "known_jdex_entries": [
             {
-              "entry": "11.02 Passport",
+              "entry": "11.03 Passport",
               "parent": "11",
               "path": null
             }
@@ -80,8 +80,8 @@
         },
         {
           "type": "ID_NOT_IN_JDEX",
-          "id": "12.02",
-          "file": "10-19 Life admin/12 Household/12.02 Missing"
+          "id": "12.03",
+          "file": "10-19 Life admin/12 Household/12.03 Missing"
         }
       ],
       "path": "files",
@@ -94,15 +94,15 @@
                 {
                   "path": "10-19 Life admin/11 Me",
                   "children": {
-                    "11.01": [
+                    "11.02": [
                       {
-                        "path": "10-19 Life admin/11 Me/11.01 Birth certificate",
+                        "path": "10-19 Life admin/11 Me/11.02 Birth certificate",
                         "children": {}
                       }
                     ],
-                    "11.02": [
+                    "11.03": [
                       {
-                        "path": "10-19 Life admin/11 Me/11.02 Passpor",
+                        "path": "10-19 Life admin/11 Me/11.03 Passpor",
                         "children": {}
                       }
                     ]
@@ -113,15 +113,15 @@
                 {
                   "path": "10-19 Life admin/12 Household",
                   "children": {
-                    "12.01": [
+                    "12.02": [
                       {
-                        "path": "10-19 Life admin/12 Household/12.01 Insurance policies",
+                        "path": "10-19 Life admin/12 Household/12.02 Insurance policies",
                         "children": {}
                       }
                     ],
-                    "12.02": [
+                    "12.03": [
                       {
-                        "path": "10-19 Life admin/12 Household/12.02 Missing",
+                        "path": "10-19 Life admin/12 Household/12.03 Missing",
                         "children": {}
                       }
                     ]
