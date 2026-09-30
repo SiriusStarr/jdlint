@@ -310,7 +310,7 @@ def _pop_list_of_strings(
     *,
     default_empty: bool = True,
 ) -> list[str]:
-    """Get a list of strings at .ignore or fail, defaulting to []."""
+    """Get a list of strings at attr or fail, defaulting to []."""
     (val, template_val) = _pop_list(
         at,
         attr,
@@ -859,13 +859,17 @@ class ConfigJDexNotes:
 
         try:
             self.ids = [
-                ConfigID(at, self.format, from_file, template, supports_parent=True)
+                ConfigID(at, self.format, from_file, template, supports_parent=True),
             ]
         except ConfigMissingKeyError:
             self.ids = []
 
         (cs, template_cs) = _pop_list(
-            at, "ids", from_file, template, default_empty=True
+            at,
+            "ids",
+            from_file,
+            template,
+            default_empty=True,
         )
         if template_cs:
             self.ids.extend(
