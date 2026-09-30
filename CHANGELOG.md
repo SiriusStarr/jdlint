@@ -1,11 +1,50 @@
 # Changelog
 
 * [Changelog](#changelog)
+  * [`v3.1.0`](#v310)
   * [`v3.0.0`](#v300)
   * [`v2.0.1`](#v201)
   * [`v2.0.0`](#v200)
   * [`v1.0.1`](#v101)
   * [`v1.0.0`](#v100)
+
+## `v3.1.0`
+
+* ✨ – Templates! Make your configs shorter. My personal config got ~45% shorter
+  (and way easier to read), while actually becoming more thorough. Do note that
+  these should be considered an "advanced" feature; make sure you understand how
+  configs work before using them, as it's very easy to end up with some very
+  arcane error messages. Some standards-compliant ones are available
+  [here](./configs/standard_templates.toml) for use in your own configs.
+* ✨ – The config key `system` can now be a list instead of a single entry,
+  allowing a single config file to specify multiple systems. If doing so, the
+  new `system.id` and `system.name` keys are mandatory.
+* ✨ – The linter now reads `JD_CONFIG` (and checks the default location at
+  `~/.jd/config.json`) for a
+  [JD configuration file](https://johnnydecimal.com/jdhq/configuration). If such
+  a file exists, it can substitute for the equivalent keys in a `system` (namely
+  `name`, root path, and JDex path). If `system` is a single item without an ID,
+  the default system specified in the config format will be used.
+* ✨ – `notes` in the JDex can now set `id`, `entry`, and `parent` directly on
+  themselves if they only need to specify a single ID. This is especially useful
+  when combined with templates. Configuration via the old `ids` list still works
+  (and is necessary to create multiple IDs from one note).
+* ✨ – A new `system.jdex.note_extension` key. Set it to `".md"` and you can
+  drop that from the formats of all your notes. This is especially powerful when
+  combined with templates, since folder and note formats become interchangeable.
+  This extension will also be stripped when generating entries from filenames
+  (i.e. `11.01 Inbox.md` will generate the entry `11.01 Inbox`).
+* 🛠️ – Invalid keys at the top level are now reported as errors (like they are
+  elsewhere). *Technically* this is a **breaking change**, but shame on you if
+  it is.
+* 🛠️ – A system with zero roots is now an error, since it was previously kind of
+  worthless. *Technically* this is a **breaking change**, but shame on you if it
+  is.
+* 🛠️ – A (non-single file) JDex with neither children nor notes is now an error,
+  since it was previously kind of worthless. *Technically* this is a **breaking
+  change**, but shame on you if it is.
+* 🐛 – Exit code is now correctly set with JSON output. Previously, script
+  always exited successfully if JSON output was used.
 
 ## `v3.0.0`
 
