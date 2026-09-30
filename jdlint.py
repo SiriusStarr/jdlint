@@ -3076,8 +3076,11 @@ if __name__ == "__main__":
             )
         else:
             for sys_id, res in results.items():
+                system_name = (
+                    f"{res.system.name} [{res.system.id}]" if res.system else sys_id
+                )
                 print(  # noqa: T201
-                    f"{'':=^80}\n{f'System: {f'{res.system.name} [{res.system.id}]' if res.system else sys_id}':^80}\n{'':=^80}\n",
+                    f"{'':=^80}\n{f'System: {system_name}':^80}\n{'':=^80}\n",
                 )
                 any_errors = _print_results(res) or any_errors
 
