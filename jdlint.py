@@ -281,7 +281,10 @@ def _pop_list(
     return (val, [])
 
 
-def _recurse[C](
+C = TypeVar("C")
+
+
+def _recurse(
     process: Callable[[int, dict | _Template], C],
     at: str,
     attr: str,
