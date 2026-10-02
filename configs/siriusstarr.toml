@@ -32,15 +32,35 @@ note_extension = ".md"
 # going to be Markdown notes, but they don't have to be) that make up the JDex.
 [[system.jdex.children]]
 template = "trunk"
-children = [{ template = "trunk_index", children = [{ template = "attachments_folder" }] }]
+children = [{ template = "trunk_index", allow_arbitrary_contents = false }]
 
 [[system.jdex.children]]
 template = "branch"
 children = [
-  { template = "index", children = [{ template = "attachments_folder" }] },
+  { template = "branch", allow_arbitrary_contents = false },
+  { template = "index", allow_arbitrary_contents = false },
+  { template = "bad_index" },
+  { template = "inbox", allow_arbitrary_contents = true },
+  { template = "bad_inbox" },
+  { template = "control" },
+  { template = "bad_control" },
+  { template = "templates" },
+  { template = "bad_templates" },
+  { template = "links" },
+  { template = "bad_links" },
+  { template = "ideas" },
+  { template = "bad_ideas" },
+  { template = "tags" },
+  { template = "bad_tags" },
+  { template = "unused_07" },
+  { template = "unused_08" },
+  { template = "adr" },
+  { template = "bad_adr" },
+  { template = "header" },
+  { template = "bad_header" },
   { template = "cache" },
-  { template = "nest_to_nest" },
   { template = "nest_to_cache" },
+  { template = "nest_to_nest" },
 ]
 
 [[system.roots]]
@@ -50,12 +70,18 @@ ignore = [".obsidian", ".trash", ".git*"]
 
 [[system.roots.children]]
 template = "trunk"
-children = [{ template = "trunk_index", allow_arbitrary_contents = true }]
+children = [
+  # Don't ID check the folder note
+  { template = "trunk", can_be_file = true, format = "B/=T/0 /=Trunk/ ⬇️.md", no_jdex_entry = true },
+  { template = "trunk_index" }
+]
 
 [[system.roots.children]]
 template = "branch"
 children = [
-  { template = "index", allow_arbitrary_contents = true },
+  # Don't ID check the folder note
+  { template = "branch", can_be_file = true, format = "B/=T//=B/ /=Branch/.md", no_jdex_entry = true },
+  { template = "index" },
   { template = "bad_index" },
   { template = "inbox" },
   { template = "bad_inbox" },
@@ -73,7 +99,8 @@ children = [
   { template = "unused_08" },
   { template = "adr" },
   { template = "bad_adr" },
-  { template = "header" },
+  # Don't ID check the folder note
+  { template = "header", children = [{ template = "header", can_be_file = true, format = "C/=T//=B/./=H/0 /=Header/ ⬇️.md", no_jdex_entry = true }] },
   { template = "bad_header" },
   { template = "cache" },
   { template = "nest_to_cache" },
@@ -128,6 +155,7 @@ name = "Trunk"
 format = "B/#T/0 /*Trunk/ ⬇️"
 id = "B/=T/0"
 parent = "B/=T/0-/=T/9"
+notes = [{ template = "trunk" }]
 
 [[template.trunk.ids]]
 id = "B/=T/0-/=T/9"
@@ -138,6 +166,7 @@ name = "Branch"
 format = "B/#T//#B/ /*Branch/"
 id = "B/=T//=B/"
 parent = "B/=T/0-/=T/9"
+notes = [{ template = "branch" }]
 
 [template.cache]
 name = "Cache"
@@ -145,6 +174,7 @@ format = "C/=T//=B/./##ID/ /*Cache/"
 allow_arbitrary_contents = true
 id = "C/=T//=B/./=ID/"
 parent = "B/=T//=B/"
+notes = [{ template = "cache" }]
 
 [template.cache_flat]
 template = "cache"
@@ -159,6 +189,7 @@ format = "N/=T//=B/./####ID/~C/=T//=B/./##RelID/ /*Nest/"
 id = "N/=T//=B/./=ID/"
 parent = "C/=T//=B/./=RelID/"
 allow_arbitrary_contents = true
+notes = [{ template = "nest_to_cache" }]
 
 [template.nest_to_nest]
 name = "Nest To Nest"
@@ -166,6 +197,7 @@ format = "N/=T//=B/./####ID/~N/=T//=B/./####RelID/ /*Nest/"
 id = "N/=T//=B/./=ID/"
 parent = "N/=T//=B/./=RelID/"
 allow_arbitrary_contents = true
+notes = [{ template = "nest_to_nest" }]
 
 [template.nest_to_cache_flat]
 template = "nest_to_cache"
@@ -184,6 +216,7 @@ name = "Standard Zero"
 id = "C/=T//=B/.0/=Z/"
 parent = "B/=T//=B/"
 allow_arbitrary_contents = true
+notes = [{ template = "zero" }]
 
 [template.bad_zero]
 name = "Invalid Standard Zero (Or Where It Doesn't Belong)"
@@ -194,47 +227,15 @@ forbidden = true
 [template.index]
 template = "zero"
 bind = { Z = "0", ZName = "📇 Index" }
-notes = [
-  { template = "branch" },
-  { template = "index" },
-  { template = "bad_index" },
-  { template = "inbox" },
-  { template = "bad_inbox" },
-  { template = "control" },
-  { template = "bad_control" },
-  { template = "templates" },
-  { template = "bad_templates" },
-  { template = "links" },
-  { template = "bad_links" },
-  { template = "ideas" },
-  { template = "bad_ideas" },
-  { template = "tags" },
-  { template = "bad_tags" },
-  { template = "unused_07" },
-  { template = "unused_08" },
-  { template = "adr" },
-  { template = "bad_adr" },
-  { template = "header" },
-  { template = "bad_header" },
-  { template = "cache" },
-  { template = "nest_to_cache" },
-  { template = "nest_to_nest" },
-  { template = "cache" },
-  { template = "nest_to_cache" },
-  { template = "nest_to_nest" },
-]
-allow_arbitrary_contents = false
 
 [template.trunk_index]
 template = "index"
 bind = { B = "0" }
-notes = [{ template = "trunk" }, { template = "trunk_index" }]
+notes = [{ template = "trunk_index" }]
 
 [template.bad_index]
-name = "Index Invalid Or Where It Doesn't Belong"
-format = "C/=T//=B/.00/*Index/"
-id = "C/=T//=B/.00"
-forbidden = true
+template = "bad_zero"
+bind = { Z = "0" }
 
 [template.inbox]
 template = "zero"
@@ -306,14 +307,10 @@ name = "Header"
 format = "C/=T//=B/./#H/0 /*Header/ ⬇️"
 id = "C/=T//=B/./=H/0"
 parent = "B/=T//=B/"
+notes = [{ template = "header" }]
 
 [template.bad_header]
 name = "Invalid Header Or Index"
 format = "C/=T//=B/./#H/0 /*Header/"
 id = "C/=T//=B/./=H/0"
 forbidden = true
-
-[template.attachments_folder]
-name = "Attachments Folder"
-format = "Attachments"
-allow_arbitrary_contents = true
